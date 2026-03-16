@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  clerkId   String    @unique
+  email     String    @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  contents  Content[]
+}
+
+model Content {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic       String
+  platform    String   // instagram | twitter | linkedin | facebook | tiktok
+  tone        String   // casual | professional | humorous | inspirational | educational
+  titles      String[]
+  captions    String[]
+  hashtags    String[]
+  imageUrl    String?
+  imagePrompt String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([platform])
+  @@index([createdAt])
+}
