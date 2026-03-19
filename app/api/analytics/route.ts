@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-
+import prisma from "@/lib/prisma";
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -73,7 +72,7 @@ export async function GET() {
     }
 
     // --- Recent 5 for overview ---
-    const recentContents = contents.slice(0, 5).map((c) => ({
+    const recentContents = contents.slice(0, 5).map((c : any ) => ({
       id: c.id,
       topic: c.topic,
       platform: c.platform,
