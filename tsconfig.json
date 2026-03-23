@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "forceConsistentCasingInFileNames": true ,
     "target": "ES2017",
     "lib": [
       "dom",
@@ -35,7 +36,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "next.config.js"  ],
   "exclude": [
     "node_modules"
   ]

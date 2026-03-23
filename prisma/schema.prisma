@@ -1,13 +1,87 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Platform {
+  INSTAGRAM
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+}
+
+enum Tone {
+  PROFESSIONAL
+  CASUAL
+  INSPIRATIONAL
+  HUMOROUS
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
+  email         String   @unique
+  name          String?
+  imageUrl      String?
+  plan          Plan     @default(FREE)
+  role          Role     @default(USER)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  usage         Usage[]
+  generations   Generation[]
+}
+
+model Generation {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic       String
+  platform    Platform
+  tone        Tone
+  caption     String    @db.Text
+  hashtags    String[]
+  imageUrl    String?
+  imageKitId  String?
+  isFlagged   Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Usage {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @default(now()) @db.Date
+  captionCount   Int      @default(0)
+  imageCount     Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model PlanLimit {
+  id            String  @id @default(cuid())
+  plan          Plan    @unique
+  dailyCaptions Int
+  dailyImages   Int
+  platforms     String[]
+  tones         String[]
 }

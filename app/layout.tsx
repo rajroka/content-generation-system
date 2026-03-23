@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Toaster } from "sonner";
+import { ThemeProvider } from "@/componentss/shared/ThemeProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BanamSathi – AI Social Media Content Generator",
-  description:
-    "AI-powered platform to generate captions, hashtags, titles, and images for social media",
+  title: "BanamSathi — Create smarter. Post faster.",
+  description: "AI-powered social media content generation platform",
 };
 
 export default function RootLayout({
@@ -24,10 +19,17 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={cn( inter.className, "font-sans", geist.variable)}>
+      <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
-          {children}
-          <Toaster richColors position="top-right" />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster richColors position="top-right" />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
