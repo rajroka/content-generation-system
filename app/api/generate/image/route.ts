@@ -1,30 +1,58 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
-import { generateAndStoreImage } from "@/lib/openai";
+// import { auth } from "@clerk/nextjs/server";
+// import { NextResponse } from "next/server";
+// import OpenAI from "openai";
 
-export async function POST(req: NextRequest) {
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// export async function POST(req: Request) {
+//   try {
+//     const { userId } = await auth();
+//     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+//     const { topic, platform } = await req.json();
+
+//     const sizes: Record<string, "1024x1024" | "1024x1792" | "1792x1024"> = {
+//       INSTAGRAM: "1024x1024",
+//       TWITTER: "1792x1024",
+//       LINKEDIN: "1792x1024",
+//       FACEBOOK: "1792x1024",
+//     };
+
+//     const response = await openai.images.generate({
+//       model: "dall-e-3",
+//       prompt: `Professional social media image for ${platform} about: ${topic}. Clean, modern, visually striking, suitable for social media.`,
+//       n: 1,
+//       size: sizes[platform] || "1024x1024",
+//       quality: "standard",
+//     });
+
+//     const imageUrl = response.data[0]?.url;
+//     if (!imageUrl) throw new Error("No image generated");
+
+//     return NextResponse.json({ imageUrl });
+
+//   } catch (err: any) {
+//     console.error("Image generation error:", err);
+//     return NextResponse.json({ error: err.message || "Failed to generate image" }, { status: 500 });
+//   }
+// }
+
+
+
+import { auth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+
+export async function POST(req: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { topic, platform } = await req.json();
+    // Placeholder image for testing
+    return NextResponse.json({
+      imageUrl: "https://placehold.co/1024x1024/2563eb/ffffff?text=BanamSathi"
+    });
 
-    if (!topic || !platform) {
-      return NextResponse.json(
-        { error: "Topic and platform are required" },
-        { status: 400 }
-      );
-    }
-
-    const result = await generateAndStoreImage(topic, platform);
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("[IMAGE GENERATION ERROR]", error);
-    return NextResponse.json(
-      { error: "Image generation failed" },
-      { status: 500 }
-    );
+  } catch (err: any) {
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
