@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
   Linkedin,
   CheckCircle2,
   ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,12 +50,28 @@ export default function GeneratePage() {
   const [tone, setTone] = useState("CASUAL");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
 
   const selectedPlatform = platforms.find((p) => p.value === platform);
+
+  useEffect(() => {
+    fetchConnectedAccounts();
+  }, []);
+
+  const fetchConnectedAccounts = async () => {
+    try {
+      const response = await fetch("/api/social/connections");
+      const accounts = await response.json();
+      setConnectedAccounts(accounts.filter((a: any) => a.isActive).map((a: any) => a.platform));
+    } catch (error) {
+      console.error("Failed to fetch connections:", error);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -114,6 +131,34 @@ export default function GeneratePage() {
     setTimeout(() => window.open("https://www.instagram.com", "_blank"), 1000);
   };
 
+  const handlePostToSocial = async (socialPlatform: string) => {
+    const fullText = `${caption}\n\n${hashtags.join(" ")}`;
+    
+    setIsPosting(true);
+    try {
+      const response = await fetch("/api/social/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: socialPlatform.toUpperCase(),
+          caption: fullText,
+          imageUrl: imageUrl || null,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success(`Posted to ${socialPlatform}!`);
+      } else {
+        const error = await response.json();
+        throw new Error(error.error);
+      }
+    } catch (error: any) {
+      toast.error(error.message || `Failed to post to ${socialPlatform}`);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   const handleDownloadImage = async () => {
     if (!imageUrl) return;
     const link = document.createElement("a");
@@ -149,8 +194,6 @@ export default function GeneratePage() {
                   onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
                 />
               </div>
-
-
 
               {/* Platform */}
               <div className="flex flex-col gap-2">
@@ -286,10 +329,10 @@ export default function GeneratePage() {
                 <Textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  className="min-h-37.5 resize-none"
+                  className="min-h-[150px] resize-none"
                 />
               ) : (
-                <div className="min-h-37.5 flex items-center justify-center text-sm text-muted-foreground">
+                <div className="min-h-[150px] flex items-center justify-center text-sm text-muted-foreground">
                   Your caption will appear here
                 </div>
               )}
@@ -338,22 +381,81 @@ export default function GeneratePage() {
 
           {/* Actions */}
           {caption && (
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={handleGenerate}
-                variant="outline"
-                className="flex-1"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Regenerate
-              </Button>
-              <Button
-                onClick={handlePostToInstagram}
-                className="flex-1"
-              >
-                <Instagram className="w-4 h-4 mr-2" />
-                Post to Instagram
-              </Button>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleGenerate}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regenerate
+                </Button>
+                <Button
+                  onClick={handlePostToInstagram}
+                  className="flex-1"
+                >
+                  <Instagram className="w-4 h-4 mr-2" />
+                  Copy for Instagram
+                </Button>
+              </div>
+              
+              {/* Direct post buttons for connected accounts */}
+              {connectedAccounts.length > 0 && (
+                <div className="border-t pt-4 mt-2">
+                  <p className="text-xs text-muted-foreground mb-2">Post directly:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {connectedAccounts.includes("INSTAGRAM") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePostToSocial("instagram")}
+                        disabled={isPosting}
+                        className="gap-2"
+                      >
+                        {isPosting ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Instagram className="w-3 h-3" />
+                        )}
+                        Instagram
+                      </Button>
+                    )}
+                    {connectedAccounts.includes("FACEBOOK") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePostToSocial("facebook")}
+                        disabled={isPosting}
+                        className="gap-2"
+                      >
+                        {isPosting ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Facebook className="w-3 h-3" />
+                        )}
+                        Facebook
+                      </Button>
+                    )}
+                    {connectedAccounts.includes("TWITTER") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePostToSocial("twitter")}
+                        disabled={isPosting}
+                        className="gap-2"
+                      >
+                        {isPosting ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Twitter className="w-3 h-3" />
+                        )}
+                        Twitter/X
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

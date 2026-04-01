@@ -41,7 +41,7 @@ export function Navbar() {
           <ModeToggle />
           {isSignedIn ? (
             <>
-              <Button asChild size="sm">
+              <Button asChild className="flex items-center px-4 py-2  justify-center">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
               <UserButton afterSignOutUrl="/" />
@@ -49,9 +49,11 @@ export function Navbar() {
           ) : (
             <>
               <SignInButton mode="modal">
-                <Button variant="ghost" size="sm">Sign in</Button>
+                <Button variant="ghost" size="sm" className="flex items-center px-4 py-2  justify-center">
+                  Sign in
+                </Button>
               </SignInButton>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="flex items-center px-4 py-2  justify-center">
                 <Link href="/sign-up">Get started</Link>
               </Button>
             </>
@@ -84,15 +86,15 @@ export function Navbar() {
             {link.label}
           </Link>
         ))}
-        <div className="flex items-center gap-3 pt-2 border-t">
+        <div className="flex items-center border-t">
           <ModeToggle />
           {isSignedIn ? (
-            <Button asChild size="sm" className="w-full">
-              <Link href="/dashboard">Dashboard</Link>
+            <Button    className="flex items-center px-4 py-2  justify-center">
+              <Link href="/dashboard" className="flex items-center px-4 py-2  justify-center">Dashboard</Link>
             </Button>
           ) : (
-            <Button asChild size="sm" className="w-full">
-              <Link href="/sign-up">Get started</Link>
+            <Button  className="flex items-center px-4 py-2  justify-center">
+              <Link href="/sign-up" className="flex items-center px-4 py-2  justify-center">Get started</Link>
             </Button>
           )}
         </div>

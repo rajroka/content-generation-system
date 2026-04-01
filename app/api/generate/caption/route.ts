@@ -73,11 +73,9 @@
 
 
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
-// import { db } from "@/lib/db";
-// import { PrismaClient } from "../../../lib/generated/prisma";
 import prisma from "@/lib/prisma";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -89,6 +87,11 @@ export async function POST(req: Request) {
 
     const { topic, platform, tone } = await req.json();
     if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
+
+    // Get Clerk user data for email
+    const clerkUser = await currentUser();
+    const userEmail = clerkUser?.emailAddresses[0]?.emailAddress;
+    const userName = `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim();
 
     const platformLimits: Record<string, number> = {
       INSTAGRAM: 2200,
@@ -128,16 +131,59 @@ Rules:
     if (!jsonMatch) throw new Error("Invalid response format");
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // Find or create user in DB
+    // Find or create user in DB with proper email handling
     let user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          clerkId: userId,
-          email: "unknown@email.com",
-          plan: "FREE",
+      // Check if user exists by email first
+      const existingUserByEmail = userEmail 
+        ? await prisma.user.findUnique({ where: { email: userEmail } })
+        : null;
+      
+      if (existingUserByEmail) {
+        // Update existing user with clerkId
+        user = await prisma.user.update({
+          where: { id: existingUserByEmail.id },
+          data: { clerkId: userId },
+        });
+      } else {
+        // Create new user with actual email or generate unique fallback
+        const uniqueEmail = userEmail || `user_${userId}_${Date.now()}@temp.banamsathi.com`;
+        
+        user = await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email: uniqueEmail,
+            name: userName || null,
+            imageUrl: clerkUser?.imageUrl || null,
+            plan: "FREE",
+            role: "USER",
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    // Check daily limits for free users
+    if (user.plan === "FREE") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const usage = await prisma.usage.findUnique({
+        where: {
+          userId_date: {
+            userId: user.id,
+            date: today,
+          },
         },
       });
+      const captionCount = usage?.captionCount ?? 0;
+      
+      if (captionCount >= 5) {
+        return NextResponse.json(
+          { error: "Daily caption limit reached. Upgrade to Pro for unlimited." },
+          { status: 403 }
+        );
+      }
     }
 
     // Save generation
@@ -156,9 +202,21 @@ Rules:
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     await prisma.usage.upsert({
-      where: { userId_date: { userId: user.id, date: today } },
-      update: { captionCount: { increment: 1 } },
-      create: { userId: user.id, date: today, captionCount: 1 },
+      where: {
+        userId_date: {
+          userId: user.id,
+          date: today,
+        },
+      },
+      update: {
+        captionCount: { increment: 1 },
+      },
+      create: {
+        userId: user.id,
+        date: today,
+        captionCount: 1,
+        imageCount: 0,
+      },
     });
 
     return NextResponse.json({
@@ -171,7 +229,6 @@ Rules:
     return NextResponse.json({ error: err.message || "Failed to generate caption" }, { status: 500 });
   }
 }
-
 
 
 

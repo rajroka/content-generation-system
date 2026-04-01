@@ -1,6 +1,6 @@
-import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -11,16 +11,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { userId: targetUserId, plan } = await req.json();
+    const { id, flag } = await req.json();
 
-    await prisma.user.update({
-      where: { id: targetUserId },
-      data: { plan: plan as any },
+    await prisma.generation.update({
+      where: { id },
+      data: { isFlagged: flag },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update plan" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update flag" }, { status: 500 });
   }
 }
-
