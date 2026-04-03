@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -23,13 +18,7 @@ enum Platform {
   FACEBOOK
   TWITTER
   LINKEDIN
-}
-
-enum Tone {
-  PROFESSIONAL
-  CASUAL
-  INSPIRATIONAL
-  HUMOROUS
+  YOUTUBE
 }
 
 enum Role {
@@ -37,57 +26,112 @@ enum Role {
   ADMIN
 }
 
-model User {
-  id            String   @id @default(cuid())
-  clerkId       String   @unique
-  email         String   @unique
-  name          String?
-  imageUrl      String?
-  plan          Plan     @default(FREE)
-  role          Role     @default(USER)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+enum ScheduleStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
 
-  usage         Usage[]
-  generations   Generation[]
+enum SocialPlatform {
+  INSTAGRAM
+  FACEBOOK
+  TWITTER
+  YOUTUBE
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  email       String   @unique
+  name        String?
+  imageUrl    String?
+  plan        Plan     @default(FREE)
+  role        Role     @default(USER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  usage          Usage[]
+  generations    Generation[]
+  scheduledPosts ScheduledPost[]
+  socialAccounts SocialAccount[]
 }
 
 model Generation {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic       String
-  platform    Platform
-  tone        Tone
-  caption     String    @db.Text
-  hashtags    String[]
-  imageUrl    String?
-  imageKitId  String?
-  isFlagged   Boolean   @default(false)
-  isDeleted   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic      String
+  platform   Platform
+  caption    String   @db.Text
+  hashtags   String[]
+  imageUrl   String?
+  imageKitId String?
+  isFlagged  Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  scheduledPost ScheduledPost?
+}
+
+model ScheduledPost {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generationId String?        @unique
+  generation   Generation?    @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  caption      String         @db.Text
+  hashtags     String[]
+  imageUrl     String?
+  platforms    Platform[]
+  scheduledFor DateTime
+  status       ScheduleStatus @default(SCHEDULED)
+  publishedAt  DateTime?
+  failureReason String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([userId, scheduledFor])
+  @@index([status, scheduledFor])
 }
 
 model Usage {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date           DateTime @default(now()) @db.Date
-  captionCount   Int      @default(0)
-  imageCount     Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @default(now()) @db.Date
+  captionCount Int      @default(0)
+  imageCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, date])
 }
 
 model PlanLimit {
-  id            String  @id @default(cuid())
-  plan          Plan    @unique
+  id            String   @id @default(cuid())
+  plan          Plan     @unique
   dailyCaptions Int
   dailyImages   Int
   platforms     String[]
-  tones         String[]
+}
+
+model SocialAccount {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     SocialPlatform
+  accessToken  String         @db.Text
+  refreshToken String?        @db.Text
+  expiresAt    DateTime?
+  accountId    String?        // Platform-specific user ID
+  accountName  String?        // Platform username/name
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([userId, platform])
 }

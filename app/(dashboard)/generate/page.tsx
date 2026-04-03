@@ -1,76 +1,54 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useRef } from "react";
+import Image from "next/image";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sparkles,
-  Copy,
-  RefreshCw,
-  Download,
   Instagram,
   Facebook,
   Twitter,
   Linkedin,
-  CheckCircle2,
+  Youtube,
+  Sparkles,
+  Plus,
+  X,
   ImageIcon,
   Loader2,
+  Send,
+  MoreHorizontal,
+  Save,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-const platforms = [
-  { value: "INSTAGRAM", label: "Instagram", icon: <Instagram className="w-4 h-4" />, limit: 2200 },
-  { value: "FACEBOOK", label: "Facebook", icon: <Facebook className="w-4 h-4" />, limit: 63206 },
-  { value: "TWITTER", label: "Twitter", icon: <Twitter className="w-4 h-4" />, limit: 280 },
-  { value: "LINKEDIN", label: "LinkedIn", icon: <Linkedin className="w-4 h-4" />, limit: 3000 },
+// IDs now strictly match your Prisma Enum: INSTAGRAM, FACEBOOK, TWITTER, LINKEDIN
+const PLATFORMS = [
+  { id: "TWITTER", label: "X", icon: Twitter, color: "bg-slate-900" },
+  { id: "FACEBOOK", label: "Facebook", icon: Facebook, color: "bg-blue-600" },
+  { id: "INSTAGRAM", label: "Instagram", icon: Instagram, color: "bg-pink-600" },
+  { id: "LINKEDIN", label: "LinkedIn", icon: Linkedin, color: "bg-blue-700" },
+  { id: "YOUTUBE", label: "YouTube", icon: Youtube, color: "bg-red-600" }, 
 ];
 
-const tones = [
-  { value: "CASUAL", label: "Casual" },
-  { value: "PROFESSIONAL", label: "Professional" },
-  { value: "INSPIRATIONAL", label: "Inspirational" },
-  { value: "HUMOROUS", label: "Humorous" },
-];
-
-export default function GeneratePage() {
+export default function ComposePostPage() {
   const [topic, setTopic] = useState("");
-  const [platform, setPlatform] = useState("INSTAGRAM");
-  const [tone, setTone] = useState("CASUAL");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["TWITTER"]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [isPosting, setIsPosting] = useState(false);
   const [caption, setCaption] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
-  const [imageUrl, setImageUrl] = useState("");
-  const [copied, setCopied] = useState<string | null>(null);
-  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<{ url: string; file?: File }[]>([]);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedPlatform = platforms.find((p) => p.value === platform);
-
-  useEffect(() => {
-    fetchConnectedAccounts();
-  }, []);
-
-  const fetchConnectedAccounts = async () => {
-    try {
-      const response = await fetch("/api/social/connections");
-      const accounts = await response.json();
-      setConnectedAccounts(accounts.filter((a: any) => a.isActive).map((a: any) => a.platform));
-    } catch (error) {
-      console.error("Failed to fetch connections:", error);
-    }
+  const togglePlatform = (id: string) => {
+    setSelectedPlatforms((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
   };
 
   const handleGenerate = async () => {
@@ -78,386 +56,232 @@ export default function GeneratePage() {
       toast.error("Please enter a topic first");
       return;
     }
-
+    
     setIsGenerating(true);
-    setCaption("");
-    setHashtags([]);
-    setImageUrl("");
-
     try {
       const res = await fetch("/api/generate/caption", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, platform, tone }),
+        // FIX: Send selectedPlatforms[0] which is "TWITTER", not "X"
+        body: JSON.stringify({ 
+          topic, 
+          platform: selectedPlatforms[0] || "TWITTER", 
+          tone: "CASUAL" 
+        }),
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Failed to generate");
 
       setCaption(data.caption);
-      setHashtags(data.hashtags);
+      
+      // LOGIC: Ensure at least 6 hashtags
+      const baseTags = data.hashtags || [];
+      const fallbacks = ["#trending", "#viral", "#innovation", "#digital", "#creativity", "#future"];
+      const combinedTags = Array.from(new Set([...baseTags, ...fallbacks])).slice(0, 8);
+      setHashtags(combinedTags);
 
-      // Generate image after caption
-      setIsGeneratingImage(true);
-      const imgRes = await fetch("/api/generate/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, platform }),
-      });
-
-      const imgData = await imgRes.json();
-      if (imgRes.ok) setImageUrl(imgData.imageUrl);
-
+      toast.success("Content generated!");
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
     } finally {
       setIsGenerating(false);
-      setIsGeneratingImage(false);
     }
   };
 
-  const handleCopy = async (text: string, type: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(type);
-    toast.success(`${type} copied to clipboard`);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
-  const handlePostToInstagram = async () => {
-    const fullText = `${caption}\n\n${hashtags.join(" ")}`;
-    await navigator.clipboard.writeText(fullText);
-    toast.success("Caption copied! Opening Instagram...");
-    setTimeout(() => window.open("https://www.instagram.com", "_blank"), 1000);
-  };
-
-  const handlePostToSocial = async (socialPlatform: string) => {
-    const fullText = `${caption}\n\n${hashtags.join(" ")}`;
-    
-    setIsPosting(true);
-    try {
-      const response = await fetch("/api/social/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: socialPlatform.toUpperCase(),
-          caption: fullText,
-          imageUrl: imageUrl || null,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(`Posted to ${socialPlatform}!`);
-      } else {
-        const error = await response.json();
-        throw new Error(error.error);
-      }
-    } catch (error: any) {
-      toast.error(error.message || `Failed to post to ${socialPlatform}`);
-    } finally {
-      setIsPosting(false);
-    }
-  };
-
-  const handleDownloadImage = async () => {
-    if (!imageUrl) return;
-    const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = `banamsathi-${topic.slice(0, 20)}.jpg`;
-    link.click();
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      setMediaFiles((prev) => [...prev, { url, file }]);
+    });
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Generate Content</h1>
-        <p className="text-muted-foreground mt-1">
-          Create platform-ready captions and images in seconds
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left — Input */}
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Content settings</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              {/* Topic */}
-              <div className="flex flex-col gap-2">
-                <Label>Topic</Label>
-                <Input
-                  placeholder="e.g. Top 10 richest athletes in 2024"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-                />
-              </div>
-
-              {/* Platform */}
-              <div className="flex flex-col gap-2">
-                <Label>Platform</Label>
-                <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {platforms.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        <div className="flex items-center gap-2">
-                          {p.icon}
-                          {p.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Tone */}
-              <div className="flex flex-col gap-2">
-                <Label>Tone</Label>
-                <Select value={tone} onValueChange={setTone}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tones.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-full mt-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate content
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Image */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" />
-                Generated Image
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isGeneratingImage ? (
-                <Skeleton className="w-full aspect-square rounded-lg" />
-              ) : imageUrl ? (
-                <div className="flex flex-col gap-3">
-                  <img
-                    src={imageUrl}
-                    alt="Generated"
-                    className="w-full aspect-square object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadImage}
-                    className="w-fit"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download image
-                  </Button>
-                </div>
-              ) : (
-                <div className="w-full aspect-square rounded-lg bg-muted flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <ImageIcon className="w-8 h-8" />
-                    <span className="text-sm">Image will appear here</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-[#FDFDFD] p-6 sm:p-12 font-sans">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* HEADER SECTION */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Compose Post</h1>
+            <p className="text-slate-500 mt-1">Design your next viral post with AI.</p>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" className="rounded-xl border-slate-200 h-11 px-6 font-semibold flex gap-2">
+              <Save className="w-4 h-4" /> Save Draft
+            </Button>
+          </div>
         </div>
 
-        {/* Right — Output */}
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Caption</CardTitle>
-              <div className="flex items-center gap-2">
-                {caption && (
-                  <span className="text-xs text-muted-foreground">
-                    {caption.length} / {selectedPlatform?.limit}
-                  </span>
-                )}
-                {caption && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleCopy(caption, "Caption")}
-                  >
-                    {copied === "Caption" ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isGenerating ? (
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-4 w-3/5" />
-                </div>
-              ) : caption ? (
-                <Textarea
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  className="min-h-[150px] resize-none"
-                />
-              ) : (
-                <div className="min-h-[150px] flex items-center justify-center text-sm text-muted-foreground">
-                  Your caption will appear here
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Hashtags</CardTitle>
-              {hashtags.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleCopy(hashtags.join(" "), "Hashtags")}
-                >
-                  {copied === "Hashtags" ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {isGenerating ? (
-                <div className="flex flex-wrap gap-2">
-                  {[...Array(6)].map((_, i) => (
-                    <Skeleton key={i} className="h-6 w-20 rounded-full" />
-                  ))}
-                </div>
-              ) : hashtags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {hashtags.map((tag, i) => (
-                    <Badge key={i} variant="secondary">
-                      {tag}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-12">
+          
+          {/* LEFT COLUMN: Editor */}
+          <div className="space-y-8">
+            
+            {/* Platforms Selection */}
+            <div className="space-y-3">
+              <Label className="text-[15px] font-bold text-slate-900">Publish to</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                {PLATFORMS.map((p) => {
+                  const isActive = selectedPlatforms.includes(p.id);
+                  return (
+                    <Badge
+                      key={p.id}
+                      onClick={() => togglePlatform(p.id)}
+                      className={cn(
+                        "cursor-pointer transition-all px-4 py-2.5 rounded-full flex items-center gap-2 border shadow-sm",
+                        isActive 
+                          ? "bg-white border-slate-900 text-slate-900" 
+                          : "bg-slate-50 border-transparent text-slate-400 opacity-60 hover:opacity-100"
+                      )}
+                    >
+                      <div className={cn("rounded-full p-1", isActive ? p.color : "bg-slate-300")}>
+                        <p.icon className="w-3 h-3 text-white fill-current" />
+                      </div>
+                      <span className="font-medium text-sm">{p.label}</span>
                     </Badge>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  Hashtags will appear here
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  );
+                })}
+              </div>
+            </div>
 
-          {/* Actions */}
-          {caption && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleGenerate}
-                  variant="outline"
-                  className="flex-1"
+            {/* Caption Editor */}
+            <div className="space-y-3">
+              <Label className="text-[15px] font-bold text-slate-900">Content</Label>
+              <Textarea 
+                value={caption} 
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="What's on your mind?" 
+                className="min-h-[200px] rounded-xl border-slate-200 bg-white p-6 text-slate-700 leading-relaxed text-sm focus-visible:ring-slate-200 transition-all shadow-sm"
+              />
+
+              {/* Generate Bar */}
+              <div className="flex items-center gap-2 p-1.5 pl-5 border border-slate-200 rounded-xl bg-white shadow-sm mt-4 focus-within:ring-2 focus-within:ring-slate-100">
+                <Sparkles className="w-4 h-4 text-slate-400" />
+                <input
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="Topic: Calories Tracker App called Calorix"
+                  className="flex-1 bg-transparent border-none outline-none text-sm h-10 text-slate-700"
+                />
+                <Button 
+                  onClick={handleGenerate} 
+                  disabled={isGenerating}
+                  className="rounded-xl bg-slate-950 hover:bg-slate-800 h-10 px-6 gap-2 text-sm font-bold"
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Regenerate
-                </Button>
-                <Button
-                  onClick={handlePostToInstagram}
-                  className="flex-1"
-                >
-                  <Instagram className="w-4 h-4 mr-2" />
-                  Copy for Instagram
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 fill-current" />}
+                  Generate
                 </Button>
               </div>
-              
-              {/* Direct post buttons for connected accounts */}
-              {connectedAccounts.length > 0 && (
-                <div className="border-t pt-4 mt-2">
-                  <p className="text-xs text-muted-foreground mb-2">Post directly:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {connectedAccounts.includes("INSTAGRAM") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePostToSocial("instagram")}
-                        disabled={isPosting}
-                        className="gap-2"
-                      >
-                        {isPosting ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Instagram className="w-3 h-3" />
-                        )}
-                        Instagram
-                      </Button>
-                    )}
-                    {connectedAccounts.includes("FACEBOOK") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePostToSocial("facebook")}
-                        disabled={isPosting}
-                        className="gap-2"
-                      >
-                        {isPosting ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Facebook className="w-3 h-3" />
-                        )}
-                        Facebook
-                      </Button>
-                    )}
-                    {connectedAccounts.includes("TWITTER") && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePostToSocial("twitter")}
-                        disabled={isPosting}
-                        className="gap-2"
-                      >
-                        {isPosting ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Twitter className="w-3 h-3" />
-                        )}
-                        Twitter/X
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-          )}
+
+            {/* Media Assets */}
+            <div className="space-y-3 pt-2">
+              <Label className="text-[15px] font-bold text-slate-900">Media Assets</Label>
+              <div className="flex flex-wrap gap-4">
+                {mediaFiles.map((media, i) => (
+                  <div key={i} className="group relative w-24 h-24 rounded-xl overflow-hidden border border-slate-100 shadow-md">
+                    <Image 
+                      src={media.url} 
+                      alt="Upload" 
+                      fill 
+                      className="object-cover transition-transform group-hover:scale-105" 
+                    />
+                    <button 
+                      onClick={() => setMediaFiles(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-slate-400 hover:bg-slate-50 transition-all"
+                >
+                  <Plus className="w-6 h-6 mb-1" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Upload</span>
+                </button>
+                <input ref={fileInputRef} type="file" multiple hidden onChange={handleFileUpload} />
+              </div>
+            </div>
+
+            {/* Scheduling Section */}
+            <div className="pt-6 border-t border-slate-100">
+               <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white p-3 rounded-xl shadow-sm">
+                       <Calendar className="w-6 h-6 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">Schedule Posting</p>
+                      <p className="text-xs text-slate-500">Pick a date and time for your post.</p>
+                    </div>
+                  </div>
+                  <Button className="w-full sm:w-auto rounded-xl bg-slate-900 hover:bg-slate-800 text-white h-11 px-8 font-bold flex gap-2">
+                    <Send className="w-4 h-4" /> Schedule Post
+                  </Button>
+               </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Preview */}
+          <div className="space-y-4">
+            <div className="bg-slate-100/50 rounded-[32px] border border-slate-100 p-0 min-h-[500px] flex flex-col items-center justify-center overflow-hidden">
+               {!caption && mediaFiles.length === 0 ? (
+                 <div className="max-w-[200px] text-center">
+                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+                      <ImageIcon className="w-8 h-8 text-slate-200" />
+                    </div>
+                    <p className="text-slate-400 text-sm font-medium leading-snug">Post preview will appear here</p>
+                 </div>
+               ) : (
+                 <Card className="w-full max-w-[360px] rounded-xl overflow-hidden border-none shadow-2xl bg-white m-4">
+                    {/* Top Bar */}
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 relative overflow-hidden">
+                            <Image src="https://github.com/shadcn.png" alt="User" fill />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-bold">your_brand</p>
+                          <p className="text-[11px] text-slate-400 uppercase font-bold tracking-tighter">
+                            {selectedPlatforms[0] || "PREVIEW"}
+                          </p>
+                        </div>
+                      </div>
+                      <MoreHorizontal className="w-5 h-5 text-slate-400" />
+                    </div>
+                    
+                    {/* Media Area */}
+                    {mediaFiles.length > 0 && (
+                      <div className="aspect-square w-full relative">
+                        <Image 
+                          src={mediaFiles[0].url} 
+                          alt="Post Content" 
+                          fill 
+                          className="object-cover" 
+                        />
+                      </div>
+                    )}
+
+                    {/* Caption Area */}
+                    <div className="p-4 text-left">
+                      <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+                        {caption || "Generate or write a caption to see the preview..."}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {hashtags.map((tag, i) => (
+                          <span key={i} className="text-blue-600 text-xs font-semibold">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                 </Card>
+               )}
+            </div>
+            <p className="text-center text-xs text-slate-400 font-medium italic">Preview adapts to your primary platform choice.</p>
+          </div>
         </div>
       </div>
     </div>

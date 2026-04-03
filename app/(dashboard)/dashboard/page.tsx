@@ -76,7 +76,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted-foreground">
               Create your first AI-powered caption and image in seconds.
             </p>
-            <Button asChild className="w-fit">
+            <Button className="w-fit">
               <Link href="/generate">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Generate content
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
             <div className="w-full bg-muted rounded-full h-2">
               <div className="bg-primary h-2 rounded-full w-0" />
             </div>
-            <Button asChild variant="outline" className="w-fit mt-1">
+            <Button  variant="outline" className="w-fit mt-1">
               <Link href="/pricing">Upgrade for unlimited</Link>
             </Button>
           </CardContent>

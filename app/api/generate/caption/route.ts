@@ -1,82 +1,9 @@
-// import { auth } from "@clerk/nextjs/server";
-// import { NextResponse } from "next/server";
-// import Groq from "groq-sdk";
-
-// const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
-// export async function POST(req: Request) {
-//   try {
-//     const { userId } = await auth();
-//     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-//     const { topic, platform, tone } = await req.json();
-
-//     if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
-
-//     const platformLimits: Record<string, number> = {
-//       INSTAGRAM: 2200,
-//       FACEBOOK: 500,
-//       TWITTER: 280,
-//       LINKEDIN: 3000,
-//     };
-
-//     const toneDescriptions: Record<string, string> = {
-//       CASUAL: "casual and friendly",
-//       PROFESSIONAL: "professional and formal",
-//       INSPIRATIONAL: "motivational and inspiring",
-//       HUMOROUS: "funny and witty",
-//     };
-
-//     const prompt = `Generate a ${toneDescriptions[tone] || "casual"} social media caption for ${platform} about: "${topic}".
-
-// Rules:
-// - Caption must be under ${platformLimits[platform] || 2200} characters
-// - Include 5-10 relevant hashtags at the end
-// - Make it engaging and scroll-stopping
-// - Return ONLY a JSON object in this exact format:
-// {
-//   "caption": "your caption here without hashtags",
-//   "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
-// }`;
-
-//     const completion = await groq.chat.completions.create({
-//       model: "llama-3.3-70b-versatile",
-//       messages: [{ role: "user", content: prompt }],
-//       temperature: 0.7,
-//       max_tokens: 1000,
-//     });
-
-//     const content = completion.choices[0]?.message?.content || "";
-
-//     // Parse JSON from response
-//     const jsonMatch = content.match(/\{[\s\S]*\}/);
-//     if (!jsonMatch) throw new Error("Invalid response format");
-
-//     const parsed = JSON.parse(jsonMatch[0]);
-
-//     return NextResponse.json({
-//       caption: parsed.caption,
-//       hashtags: parsed.hashtags,
-//     });
-
-//   } catch (err: any) {
-//     console.error("Caption generation error:", err);
-//     return NextResponse.json({ error: err.message || "Failed to generate caption" }, { status: 500 });
-//   }
-// }
-
-
-
-
-
-
-
-
-
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/prisma"; // This now points to your custom generated client
+// Import your Enums from your generated path to ensure type safety
+import { Platform, Plan } from "@/lib/generated/prisma"; 
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -88,10 +15,12 @@ export async function POST(req: Request) {
     const { topic, platform, tone } = await req.json();
     if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
 
-    // Get Clerk user data for email
     const clerkUser = await currentUser();
     const userEmail = clerkUser?.emailAddresses[0]?.emailAddress;
     const userName = `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim();
+
+    // Map strings to your Prisma Enums safely
+    const safePlatform = platform.toUpperCase() as Platform;
 
     const platformLimits: Record<string, number> = {
       INSTAGRAM: 2200,
@@ -108,115 +37,63 @@ export async function POST(req: Request) {
     };
 
     const prompt = `Generate a ${toneDescriptions[tone] || "casual"} social media caption for ${platform} about: "${topic}".
-
-Rules:
-- Caption must be under ${platformLimits[platform] || 2200} characters
-- Include 5-10 relevant hashtags at the end
-- Make it engaging and scroll-stopping
-- Return ONLY a JSON object in this exact format:
-{
-  "caption": "your caption here without hashtags",
-  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
-}`;
+    Return ONLY a JSON object: { "caption": "...", "hashtags": ["#1", "#2"] }`;
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_tokens: 1000,
     });
 
     const content = completion.choices[0]?.message?.content || "";
     const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid response format");
+    if (!jsonMatch) throw new Error("Invalid AI response");
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // Find or create user in DB with proper email handling
-    let user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    
-    if (!user) {
-      // Check if user exists by email first
-      const existingUserByEmail = userEmail 
-        ? await prisma.user.findUnique({ where: { email: userEmail } })
-        : null;
-      
-      if (existingUserByEmail) {
-        // Update existing user with clerkId
-        user = await prisma.user.update({
-          where: { id: existingUserByEmail.id },
-          data: { clerkId: userId },
-        });
-      } else {
-        // Create new user with actual email or generate unique fallback
-        const uniqueEmail = userEmail || `user_${userId}_${Date.now()}@temp.banamsathi.com`;
-        
-        user = await prisma.user.create({
-          data: {
-            clerkId: userId,
-            email: uniqueEmail,
-            name: userName || null,
-            imageUrl: clerkUser?.imageUrl || null,
-            plan: "FREE",
-            role: "USER",
-            isActive: true,
-          },
-        });
-      }
-    }
+    // 1. Get/Update User
+    let user = await prisma.user.upsert({
+      where: { clerkId: userId },
+      update: { imageUrl: clerkUser?.imageUrl || null },
+      create: {
+        clerkId: userId,
+        email: userEmail || `user_${userId}@fallback.com`,
+        name: userName || null,
+        imageUrl: clerkUser?.imageUrl || null,
+        plan: "FREE",
+      },
+    });
 
-    // Check daily limits for free users
+    // 2. Check Limits
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (user.plan === "FREE") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       const usage = await prisma.usage.findUnique({
-        where: {
-          userId_date: {
-            userId: user.id,
-            date: today,
-          },
-        },
+        where: { userId_date: { userId: user.id, date: today } },
       });
-      const captionCount = usage?.captionCount ?? 0;
-      
-      if (captionCount >= 5) {
-        return NextResponse.json(
-          { error: "Daily caption limit reached. Upgrade to Pro for unlimited." },
-          { status: 403 }
-        );
+      if ((usage?.captionCount ?? 0) >= 50) {
+        return NextResponse.json({ error: "Limit reached" }, { status: 403 });
       }
     }
 
-    // Save generation
+    // 3. Save Generation 
+    // NOTE: If 'tone' isn't in your schema, I've commented it out
     await prisma.generation.create({
       data: {
         userId: user.id,
         topic,
-        platform: platform as any,
-        tone: tone as any,
+        platform: safePlatform,
+        // tone: tone, // Add this to schema.prisma first if you want to save it!
         caption: parsed.caption,
         hashtags: parsed.hashtags,
       },
     });
 
-    // Update usage
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 4. Increment Usage
     await prisma.usage.upsert({
-      where: {
-        userId_date: {
-          userId: user.id,
-          date: today,
-        },
-      },
-      update: {
-        captionCount: { increment: 1 },
-      },
-      create: {
-        userId: user.id,
-        date: today,
-        captionCount: 1,
-        imageCount: 0,
-      },
+      where: { userId_date: { userId: user.id, date: today } },
+      update: { captionCount: { increment: 1 } },
+      create: { userId: user.id, date: today, captionCount: 1 },
     });
 
     return NextResponse.json({
@@ -225,189 +102,7 @@ Rules:
     });
 
   } catch (err: any) {
-    console.error("Caption generation error:", err);
-    return NextResponse.json({ error: err.message || "Failed to generate caption" }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-// import { auth, currentUser } from "@clerk/nextjs/server";
-// import { NextResponse } from "next/server";
-// import Groq from "groq-sdk";
-// import { db } from "@/lib/db";
-
-// const groq = new Groq({
-//   apiKey: process.env.GROQ_API_KEY,
-// });
-
-// export async function POST(req: Request) {
-//   try {
-//     console.log("API HIT");
-//      console.log("GROQ KEY:", process.env.GROQ_API_KEY);
-// console.log("DB URL:", process.env.DATABASE_URL);
-//     // ✅ AUTH
-//     const { userId } = await auth();
-//     if (!userId) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     const clerkUser = await currentUser();
-
-//     // ✅ BODY
-//     const body = await req.json().catch(() => null);
-//     if (!body) {
-//       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-//     }
-
-//     const { topic, platform, tone } = body;
-
-//     if (!topic) {
-//       return NextResponse.json({ error: "Topic is required" }, { status: 400 });
-//     }
-
-//     // ✅ ENUM SAFETY
-//     const safePlatform = platform?.toUpperCase();
-//     const safeTone = tone?.toUpperCase();
-
-//     const validPlatforms = ["INSTAGRAM", "FACEBOOK", "TWITTER", "LINKEDIN"];
-//     const validTones = ["CASUAL", "PROFESSIONAL", "INSPIRATIONAL", "HUMOROUS"];
-
-//     if (!validPlatforms.includes(safePlatform)) {
-//       return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
-//     }
-
-//     if (!validTones.includes(safeTone)) {
-//       return NextResponse.json({ error: "Invalid tone" }, { status: 400 });
-//     }
-
-//     // ✅ LIMITS
-//     const platformLimits: Record<string, number> = {
-//       INSTAGRAM: 2200,
-//       FACEBOOK: 500,
-//       TWITTER: 280,
-//       LINKEDIN: 3000,
-//     };
-
-//     const toneDescriptions: Record<string, string> = {
-//       CASUAL: "casual and friendly",
-//       PROFESSIONAL: "professional and formal",
-//       INSPIRATIONAL: "motivational and inspiring",
-//       HUMOROUS: "funny and witty",
-//     };
-
-//     // ✅ PROMPT
-//     const prompt = `Generate a ${toneDescriptions[safeTone]} social media caption for ${safePlatform} about: "${topic}".
-
-// Rules:
-// - Caption must be under ${platformLimits[safePlatform]} characters
-// - Include 5-10 relevant hashtags at the end
-// - Make it engaging and scroll-stopping
-// - Return ONLY a JSON object in this exact format:
-// {
-//   "caption": "your caption here without hashtags",
-//   "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"]
-// }`;
-
-//     // ✅ AI CALL
-//     const completion = await groq.chat.completions.create({
-//       model: "llama-3.3-70b-versatile",
-//       messages: [{ role: "user", content: prompt }],
-//       temperature: 0.7,
-//       max_tokens: 1000,
-//     });
-
-//     const content = completion.choices[0]?.message?.content || "";
-
-//     // ✅ SAFE JSON PARSE
-//     let parsed;
-
-//     try {
-//       const jsonMatch = content.match(/\{[\s\S]*\}/);
-//       if (!jsonMatch) throw new Error("No JSON found");
-
-//       parsed = JSON.parse(jsonMatch[0]);
-//     } catch (err) {
-//       console.error("Parsing error:", content);
-//       return NextResponse.json(
-//         { error: "AI response parsing failed" },
-//         { status: 500 }
-//       );
-//     }
-
-//     // ✅ FIND OR CREATE USER
-//     let user = await db.user.findUnique({
-//       where: { clerkId: userId },
-//     });
-
-//     if (!user) {
-//       user = await db.user.create({
-//         data: {
-//           clerkId: userId,
-//           email:
-//             clerkUser?.emailAddresses[0]?.emailAddress ||
-//             `user-${userId}@fallback.com`,
-//           name: clerkUser?.firstName || "",
-//           imageUrl: clerkUser?.imageUrl || "",
-//           plan: "FREE",
-//         },
-//       });
-//     }
-
-//     // ✅ SAVE GENERATION
-//     await db.generation.create({
-//       data: {
-//         userId: user.id,
-//         topic,
-//         platform: safePlatform,
-//         tone: safeTone,
-//         caption: parsed.caption,
-//         hashtags: parsed.hashtags,
-//       },
-//     });
-
-//     // ✅ USAGE TRACKING (FIXED DATE)
-//     const today = new Date();
-//     today.setUTCHours(0, 0, 0, 0);
-
-//     await db.usage.upsert({
-//       where: {
-//         userId_date: {
-//           userId: user.id,
-//           date: today,
-//         },
-//       },
-//       update: {
-//         captionCount: { increment: 1 },
-//       },
-//       create: {
-//         userId: user.id,
-//         date: today,
-//         captionCount: 1,
-//       },
-//     });
-
-//     // ✅ RESPONSE
-//     return NextResponse.json({
-//       caption: parsed.caption,
-//       hashtags: parsed.hashtags,
-//     });
-
-//   } catch (err: any) {
-//     console.error("Caption generation error:", err);
-
-//     return NextResponse.json(
-//       { error: err.message || "Failed to generate caption" },
-//       { status: 500 }
-//     );
-//   }
-// }

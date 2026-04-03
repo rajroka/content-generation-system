@@ -1,37 +1,42 @@
+import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getUserByClerkId } from "@/lib/user";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkId } = await auth();
+
+    if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      include: {
-        socialAccounts: true,
-      },
-    });
+    const user = await getUserByClerkId(clerkId);
 
-    // Always return an array, even if no user or no accounts
-    if (!user || !user.socialAccounts) {
+    if (!user) {
       return NextResponse.json([]);
     }
 
-    const connections = user.socialAccounts.map(account => ({
-      platform: account.platform,
-      accountName: account.accountName,
-      isActive: account.isActive,
-      connectedAt: account.createdAt.toISOString(),
+    const connections = await prisma.socialAccount.findMany({
+      where: { userId: user.id },
+      select: {
+        platform: true,
+        accountName: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    const formattedConnections = connections.map(conn => ({
+      platform: conn.platform,
+      accountName: conn.accountName,
+      isActive: conn.isActive,
+      connectedAt: conn.createdAt.toISOString(),
     }));
 
-    return NextResponse.json(connections);
+    return NextResponse.json(formattedConnections);
   } catch (error) {
-    console.error("Failed to fetch connections:", error);
-    // Return empty array on error instead of error object
-    return NextResponse.json([]);
+    console.error("Error fetching connections:", error);
+    return NextResponse.json([], { status: 500 });
   }
 }
