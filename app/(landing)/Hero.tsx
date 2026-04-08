@@ -181,12 +181,12 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-10">
-          <Button asChild size="lg" className="shadow-[0_0_32px_rgba(91,110,245,0.35)]">
+          <Button  size="lg" className="shadow-[0_0_32px_rgba(91,110,245,0.35)]">
             <Link href="/sign-up" className="flex items-center px-4 py-2  justify-center">
               Start for free <ArrowRight className="ml-2 w-4 h-4" />
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="flex items-center px-4 py-2  justify-center">
+          <Button  variant="outline" size="lg" className="flex items-center px-4 py-2  justify-center">
             <Link href="/pricing">View pricing</Link>
           </Button>
         </div>
@@ -300,7 +300,7 @@ export default function LandingPage() {
                 </ul>
 
                 <Button
-                  asChild
+                
                   variant={plan.popular ? "default" : "outline"}
                   className={`w-full ${plan.popular ? "shadow-[0_0_24px_rgba(91,110,245,0.3)]" : ""}`}
                 >
@@ -350,26 +350,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      {/* <section className="relative text-center px-4 py-28 overflow-hidden">
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-175 h-100 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(91,110,245,0.15),transparent_70%)]" />
-        <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 relative">
-          Ready to create better content?
-        </h2>
-        <p className="text-muted-foreground max-w-md mx-auto mb-9 relative">
-          Join creators who use BanamSathi to generate content faster and smarter.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center relative">
-          <Button asChild size="lg" className="shadow-[0_0_32px_rgba(91,110,245,0.35)]">
-            <Link href="/sign-up">
-              Get started free <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/pricing">View pricing</Link>
-          </Button>
-        </div>
-      </section> */}
+     
     </div>
   );
 }
