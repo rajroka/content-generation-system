@@ -11,7 +11,7 @@ import { ModeToggle } from "./ModeToggle";
 const navLinks = [
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How it works" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 export function Navbar() {
@@ -41,7 +41,7 @@ export function Navbar() {
           <ModeToggle />
           {isSignedIn ? (
             <>
-              <Button asChild className="flex items-center px-4 py-2  justify-center">
+              <Button  className="flex items-center px-4 py-2  justify-center">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
               <UserButton afterSignOutUrl="/" />
@@ -53,7 +53,7 @@ export function Navbar() {
                   Sign in
                 </Button>
               </SignInButton>
-              <Button asChild size="sm" className="flex items-center px-4 py-2  justify-center">
+              <Button  size="sm" className="flex items-center px-4 py-2  justify-center">
                 <Link href="/sign-up">Get started</Link>
               </Button>
             </>
