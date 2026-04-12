@@ -23,16 +23,14 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/generate",  label: "Generate",  icon: Sparkles },
-  { href: "/calendar",  label: "Calendar",  icon: CalendarDays },
-  { href: "/history",   label: "History",   icon: History },
-  { href: "/platforms", label: "Platforms", icon: Link2 },
-  { href: "/analytics", label: "Analytics", icon: BarChart2 },
-  { href: "/settings",  label: "Settings",  icon: Settings },
+  { href: "/dashboard",              label: "Dashboard",   icon: LayoutDashboard },
+  { href: "/generate",     label: "Generate",    icon: Sparkles },
+  { href: "/calendar",     label: "Calendar",    icon: CalendarDays },
+  { href: "/history",      label: "History",     icon: History },
+  { href: "/platforms",  label: "Connections", icon: Link2 },
+  { href: "/analytics",    label: "Analytics",   icon: BarChart2 },
+  { href: "/settings",     label: "Settings",    icon: Settings },
 ];
-
-const USER_PLAN = "FREE"; // "FREE" | "PRO"
 
 const SIDEBAR_KEY = "banam_sidebar_collapsed";
 
@@ -40,11 +38,18 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userPlan, setUserPlan] = useState<"FREE" | "PRO">("FREE");
 
-  // Persist collapsed state
   useEffect(() => {
     const stored = localStorage.getItem(SIDEBAR_KEY);
     if (stored !== null) setCollapsed(stored === "true");
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/user/plan")
+      .then((r) => r.json())
+      .then((d) => setUserPlan(d.plan ?? "FREE"))
+      .catch(() => {});
   }, []);
 
   const toggleCollapsed = () => {
@@ -71,19 +76,13 @@ export function Sidebar() {
           isCollapsed ? "w-[68px]" : "w-64"
         )}
       >
-        {/* Collapse toggle button — desktop only */}
         {!isMobile && (
           <button
             onClick={toggleCollapsed}
-            className={cn(
-              "absolute -right-3 top-[72px] z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/40 transition-all"
-            )}
+            className="absolute -right-3 top-[72px] z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/40 transition-all"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed
-              ? <ChevronRight className="w-3.5 h-3.5" />
-              : <ChevronLeft  className="w-3.5 h-3.5" />
-            }
+            {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
           </button>
         )}
 
@@ -96,7 +95,6 @@ export function Sidebar() {
         >
           {!isCollapsed && <Logo size="sm" />}
           {isCollapsed && (
-            // Mini logo mark when collapsed — shows just the icon portion
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
@@ -113,14 +111,9 @@ export function Sidebar() {
         </div>
 
         {/* Create New Post CTA */}
-        <div
-          className={cn(
-            "shrink-0 transition-all duration-300",
-            isCollapsed ? "px-2.5 py-4" : "px-4 py-4"
-          )}
-        >
+        <div className={cn("shrink-0 transition-all duration-300", isCollapsed ? "px-2.5 py-4" : "px-4 py-4")}>
           <Link
-            href="/generate"
+            href="/dashboard/generate"
             className={cn(
               "flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all hover:shadow-md hover:shadow-primary/20 active:scale-95",
               isCollapsed ? "p-2.5" : "text-sm px-4 py-2.5"
@@ -135,8 +128,7 @@ export function Sidebar() {
         <nav className="flex-1 px-2 flex flex-col gap-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
             return (
               <Link
@@ -158,8 +150,6 @@ export function Sidebar() {
                   )}
                 />
                 {!isCollapsed && <span>{item.label}</span>}
-
-                {/* Tooltip on collapsed */}
                 {isCollapsed && (
                   <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
                     {item.label}
@@ -171,13 +161,8 @@ export function Sidebar() {
         </nav>
 
         {/* Upgrade Banner — FREE users only */}
-        {USER_PLAN === "FREE" && (
-          <div
-            className={cn(
-              "shrink-0 transition-all duration-300",
-              isCollapsed ? "px-2.5 py-3" : "px-4 py-3"
-            )}
-          >
+        {userPlan === "FREE" && (
+          <div className={cn("shrink-0 transition-all duration-300", isCollapsed ? "px-2.5 py-3" : "px-4 py-3")}>
             <Link
               href="/pricing"
               title={isCollapsed ? "Upgrade to Pro" : undefined}
@@ -212,9 +197,7 @@ export function Sidebar() {
           )}
         >
           <UserButton afterSignOutUrl="/" />
-          {!isCollapsed && (
-            <span className="text-sm text-gray-500 font-medium truncate">My Account</span>
-          )}
+          {!isCollapsed && <span className="text-sm text-gray-500 font-medium truncate">My Account</span>}
         </div>
       </aside>
     );
@@ -222,7 +205,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-40 p-2 rounded-xl bg-white text-gray-700 shadow-md border border-gray-100"
@@ -231,7 +213,6 @@ export function Sidebar() {
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
@@ -239,7 +220,6 @@ export function Sidebar() {
         />
       )}
 
-      {/* Mobile sidebar — always full width, slides in from left */}
       <div
         className={cn(
           "lg:hidden fixed top-0 left-0 z-50 h-full transition-transform duration-300 ease-in-out",
@@ -249,7 +229,6 @@ export function Sidebar() {
         <SidebarContent isMobile />
       </div>
 
-      {/* Desktop sidebar — collapsible */}
       <div className="hidden lg:flex h-screen shrink-0">
         <SidebarContent />
       </div>

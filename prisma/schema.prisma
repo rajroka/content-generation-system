@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 enum Plan {
@@ -42,17 +43,16 @@ enum SocialPlatform {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  clerkId     String   @unique
-  email       String   @unique
-  name        String?
-  imageUrl    String?
-  plan        Plan     @default(FREE)
-  role        Role     @default(USER)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id             String          @id @default(cuid())
+  clerkId        String          @unique
+  email          String          @unique
+  name           String?
+  imageUrl       String?
+  plan           Plan            @default(FREE)
+  role           Role            @default(USER)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   usage          Usage[]
   generations    Generation[]
   scheduledPosts ScheduledPost[]
@@ -60,53 +60,54 @@ model User {
 }
 
 model Generation {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic      String
-  platform   Platform
-  caption    String   @db.Text
-  hashtags   String[]
-  imageUrl   String?
-  imageKitId String?
-  isFlagged  Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic         String
+  platform      Platform
+  caption       String         @db.Text
+  hashtags      String[]
+  imageUrl      String?
+  imageKitId    String?
+  isFlagged     Boolean        @default(false)
+  isDeleted     Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   scheduledPost ScheduledPost?
 }
 
 model ScheduledPost {
-  id           String         @id @default(cuid())
-  userId       String
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  generationId String?        @unique
-  generation   Generation?    @relation(fields: [generationId], references: [id], onDelete: SetNull)
-  caption      String         @db.Text
-  hashtags     String[]
-  imageUrl     String?
-  platforms    Platform[]
-  scheduledFor DateTime
-  status       ScheduleStatus @default(SCHEDULED)
-  publishedAt  DateTime?
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generationId  String?        @unique
+  generation    Generation?    @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  caption       String         @db.Text
+  hashtags      String[]
+  imageUrl      String?
+  platforms     Platform[]
+  scheduledFor  DateTime?
+  status        ScheduleStatus @default(SCHEDULED)
+  publishedAt   DateTime?
   failureReason String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@index([userId, scheduledFor])
   @@index([status, scheduledFor])
 }
 
 model Usage {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime @default(now()) @db.Date
-  captionCount Int      @default(0)
-  imageCount   Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime @default(now()) @db.Date
+  captionCount  Int      @default(0)
+  imageCount    Int      @default(0)
+  postCount     Int      @default(0)
+  scheduleCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([userId, date])
 }
@@ -127,8 +128,8 @@ model SocialAccount {
   accessToken  String         @db.Text
   refreshToken String?        @db.Text
   expiresAt    DateTime?
-  accountId    String?        // Platform-specific user ID
-  accountName  String?        // Platform username/name
+  accountId    String? // Platform-specific user ID
+  accountName  String? // Platform username/name
   isActive     Boolean        @default(true)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt

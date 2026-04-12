@@ -1,29 +1,25 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { SocialPlatform } from "@/lib/generated/prisma";
 
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) {
+    if (!userId)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const { platform } = await req.json();
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
-    });
-
-    if (!user) {
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
 
     await prisma.socialAccount.delete({
       where: {
         userId_platform: {
-          userId: user.id,
-          platform: platform,
+          userId:   user.id,
+          platform: platform.toUpperCase() as SocialPlatform,
         },
       },
     });
