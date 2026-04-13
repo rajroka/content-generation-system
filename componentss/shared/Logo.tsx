@@ -23,14 +23,14 @@ export function Logo({ className, size = "md" }: LogoProps) {
     <Link href="/" className={cn("flex items-center gap-2", className)}>
       <div
         className={cn(
-          "rounded-xl bg-primary flex items-center justify-center font-bold text-white",
+          "rounded-xl bg-[#00687A] flex items-center  justify-center font-bold text-white",
           sizes[size]
         )}
       >
-        BS
+        PS
       </div>
       <span className={cn("font-semibold text-foreground", textSizes[size])}>
-        BanamSathi
+        PostSathi
       </span>
     </Link>
   );

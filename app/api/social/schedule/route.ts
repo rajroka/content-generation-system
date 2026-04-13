@@ -7,7 +7,16 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { caption, hashtags, platforms, scheduledFor, imageUrl, isDraft } = await req.json();
+    // 1. ADD "imageUrls" TO THIS DESTRUCTURING LIST
+    const { 
+      caption, 
+      hashtags, 
+      platforms, 
+      scheduledFor, 
+      imageUrl, 
+      imageUrls, // <--- Added this
+      isDraft 
+    } = await req.json();
 
     if (!caption?.trim())
       return NextResponse.json({ error: "Caption is required" }, { status: 400 });
@@ -30,7 +39,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Enforce schedule limit for FREE users (5/day) — not applied to drafts
     if (!isDraft && user.plan === "FREE") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -60,14 +68,16 @@ export async function POST(req: Request) {
         hashtags:     hashtags || [],
         platforms,
         scheduledFor: isDraft ? null : new Date(scheduledFor),
-        imageUrl:     imageUrl || null,
+        // Logic: Use first item of imageUrls, or fallback to single imageUrl
+        imageUrl:     imageUrls?.[0] || imageUrl || null,  
+        imageUrls:    imageUrls || (imageUrl ? [imageUrl] : []),
         status:       isDraft ? "DRAFT" : "SCHEDULED",
       },
     });
 
     return NextResponse.json({ success: true, postId: post.id });
   } catch (err: any) {
-    console.error(err);
+    console.error("Schedule API Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

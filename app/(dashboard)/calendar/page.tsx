@@ -1,28 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import { format, isSameDay } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import { 
+  format, 
+  startOfWeek, 
+  addDays, 
+  isSameDay, 
+  parseISO 
+} from "date-fns";
 import {
-  Instagram, Facebook, Twitter, Linkedin,
-  Calendar as CalendarIcon, Clock, Plus, MoreVertical, ChevronRight, Eye,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  Link as LinkIcon,
+  FileText,
+  CheckCircle2,
+  BarChart3,
+  Moon,
+  Sun,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 
-const platforms = [
-  { value: "INSTAGRAM", label: "Instagram", icon: <Instagram className="w-4 h-4" />, color: "text-pink-500" },
-  { value: "FACEBOOK",  label: "Facebook",  icon: <Facebook  className="w-4 h-4" />, color: "text-blue-600" },
-  { value: "TWITTER",   label: "Twitter",   icon: <Twitter   className="w-4 h-4" />, color: "text-sky-400"  },
-  { value: "LINKEDIN",  label: "LinkedIn",  icon: <Linkedin  className="w-4 h-4" />, color: "text-blue-700" },
-];
-
-export default function CalendarPage() {
-  const [selectedDate, setSelectedDate]   = useState<Date | undefined>(new Date());
+export default function ContentCalendar() {
+  const { setTheme, theme } = useTheme();
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
-  const [isLoading, setIsLoading]         = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
 
   useEffect(() => {
     fetch("/api/social/scheduled")
@@ -32,144 +45,161 @@ export default function CalendarPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const postsForSelectedDay = scheduledPosts.filter((post) =>
-    selectedDate ? isSameDay(new Date(post.scheduledFor), selectedDate) : false
-  );
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
+  }, [currentWeekStart]);
+
+  const getPostsForDay = (date: Date) => {
+    return scheduledPosts.filter((post) => {
+      if (!post || !post.scheduledFor) return false;
+      try {
+        return isSameDay(parseISO(post.scheduledFor), date);
+      } catch (e) {
+        return false;
+      }
+    });
+  };
+
+  const stats = {
+    scheduled: scheduledPosts.length,
+    drafts: 5,
+    published: 12,
+    total: 30
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 transition-colors duration-300">
+      <div className="max-w-[1600px] mx-auto">
+        
+        {/* Header Section */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Content Calendar</h1>
             <p className="text-muted-foreground text-sm mt-1">Visualize and manage your content pipeline.</p>
           </div>
-          <Link href="/dashboard/generate">
-            <Button className="gap-2 shadow-sm">
-              <Plus className="w-4 h-4" /> New Post
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Calendar Picker */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="border-none shadow-md bg-card/50 backdrop-blur">
-              <CardContent className="p-4 flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="rounded-md border-none"
-                  modifiers={{
-                    hasPost: (date) => scheduledPosts.some((p) => isSameDay(new Date(p.scheduledFor), date)),
-                  }}
-                  modifiersStyles={{
-                    hasPost: { fontWeight: "bold", textDecoration: "underline", color: "hsl(var(--primary))" },
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="bg-primary/5 border-primary/10">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Total Scheduled</span>
-                  <span className="text-xs font-bold text-primary">{scheduledPosts.length} posts</span>
-                </div>
-                <div className="h-2 w-full bg-primary/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary transition-all" style={{ width: `${Math.min((scheduledPosts.length / 30) * 100, 100)}%` }} />
-                </div>
-              </CardContent>
-            </Card>
+            <Link href="/generate">
+              <Button className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg gap-2 shadow-sm">
+                <Plus className="w-4 h-4" /> New Post
+              </Button>
+            </Link>
           </div>
+        </header>
 
-          {/* Agenda */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <h3 className="font-semibold flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-primary" />
-                {selectedDate ? format(selectedDate, "eeee, MMMM do") : "Select a day"}
-              </h3>
-              <Badge variant="outline">{postsForSelectedDay.length} Posts</Badge>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          
+          {/* Main Calendar Grid */}
+          <div className="xl:col-span-9 space-y-4">
+            
+            {/* Week Navigation */}
+            <div className="flex items-center justify-between bg-card border rounded-t-xl p-3 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-sm">
+                <span className="p-1.5 bg-muted rounded-md"><CalendarIcon className="w-4 h-4" /></span>
+                {format(weekDays[0], "MMMM do")} - {format(weekDays[6], "MMMM do, yyyy")}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}>Today</Button>
+                <div className="flex border rounded-md">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, -7))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-32 bg-muted/50 animate-pulse rounded-xl" />
-                ))}
-              </div>
-            ) : postsForSelectedDay.length > 0 ? (
-              <div className="space-y-4">
-                {postsForSelectedDay.map((post) => (
-                  <Card key={post.id} className="group hover:border-primary/40 transition-all shadow-sm">
-                    <CardContent className="p-0">
-                      <div className="flex flex-col md:flex-row">
-                        {post.imageUrl && (
-                          <div className="md:w-48 h-32 md:h-auto relative overflow-hidden bg-muted">
-                            <img src={post.imageUrl} alt="Thumbnail" className="object-cover w-full h-full" />
-                          </div>
-                        )}
-                        <div className="flex-1 p-5 space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex gap-2 flex-wrap">
-                              {post.platforms.map((platCode: string) => {
-                                const plat = platforms.find((p) => p.value === platCode);
-                                return (
-                                  <Badge key={platCode} variant="secondary" className="gap-1.5 px-2 py-1">
-                                    <span className={plat?.color}>{plat?.icon}</span>
-                                    <span className="text-[10px] font-medium">{plat?.label}</span>
-                                  </Badge>
-                                );
-                              })}
-                            </div>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                <MoreVertical className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-foreground/80 line-clamp-2 italic leading-relaxed">"{post.caption}"</p>
-                          <div className="flex items-center justify-between pt-3 border-t border-dashed">
-                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                              <Clock className="w-3.5 h-3.5" />
-                              {format(new Date(post.scheduledFor), "h:mm a")}
-                            </span>
-                            <Link href={`/dashboard/generate?postId=${post.id}`}>
-                              <Button variant="link" size="sm" className="h-auto p-0 text-primary text-xs gap-1">
-                                Edit Details <ChevronRight className="w-3 h-3" />
-                              </Button>
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-xl bg-card/30">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <CalendarIcon className="w-6 h-6 text-muted-foreground" />
+            {/* The Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-7 border-x border-b rounded-b-xl bg-card overflow-hidden shadow-sm">
+              {weekDays.map((day, idx) => (
+                <div key={idx} className={`min-h-[600px] border-r last:border-r-0 flex flex-col ${isSameDay(day, new Date()) ? 'bg-primary/5' : ''}`}>
+                  <div className="p-3 text-center border-b bg-muted/30">
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wider">
+                      {format(day, "EEE")}
+                    </span>
+                  </div>
+
+                  <div className="p-2 flex flex-col gap-2 flex-grow overflow-y-auto">
+                    {isLoading ? (
+                       <div className="h-16 bg-muted animate-pulse rounded-md" />
+                    ) : (
+                      getPostsForDay(day).map((post, pIdx) => (
+                        <PostCard key={pIdx} post={post} />
+                      ))
+                    )}
+                  </div>
                 </div>
-                <h4 className="font-medium text-muted-foreground">No content scheduled</h4>
-                <p className="text-xs text-muted-foreground/60 mb-6 mt-1">Keep your feed active with a new post.</p>
-                <Link href="/dashboard/generate">
-                  <Button variant="outline" size="sm">
-                    Create for {selectedDate && format(selectedDate, "MMM do")}
-                  </Button>
-                </Link>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
+
+          {/* Right Sidebar */}
+          <aside className="xl:col-span-3 space-y-4">
+            <Card className="bg-teal-900/10 border-teal-500/20 dark:bg-teal-900/20">
+              <CardContent className="p-6">
+                <p className="text-sm font-medium text-teal-700 dark:text-teal-400 mb-1">Total Scheduled</p>
+                <h3 className="text-2xl font-bold mb-4">{stats.scheduled} posts</h3>
+                <Progress value={(stats.scheduled / stats.total) * 100} className="h-2 bg-teal-200 dark:bg-teal-900" />
+                <div className="flex justify-between mt-2 text-[10px] text-muted-foreground uppercase font-bold">
+                  <span>0%</span>
+                  <span>{Math.round((stats.scheduled/stats.total)*100)}%</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <StatMiniCard icon={<FileText className="text-blue-500 w-4 h-4" />} label="Drafts" count={stats.drafts} />
+            <StatMiniCard icon={<CheckCircle2 className="text-green-500 w-4 h-4" />} label="Published" count={stats.published} />
+            <StatMiniCard icon={<BarChart3 className="text-purple-500 w-4 h-4" />} label="Statistics" count={10} />
+          </aside>
+
         </div>
       </div>
     </div>
+  );
+}
+
+function PostCard({ post }: { post: any }) {
+  const isDraft = post.status?.toLowerCase() === 'draft';
+  
+  return (
+    <Card className={`${isDraft ? 'bg-teal-600 text-white' : 'bg-slate-900 text-white dark:bg-slate-800'} border-none shadow-sm overflow-hidden group cursor-pointer hover:ring-2 ring-primary/50 transition-all`}>
+      <CardContent className="p-3 space-y-2">
+        <div className="flex justify-between items-start gap-1">
+          <h4 className="text-[11px] font-bold leading-tight line-clamp-2">
+            {post.title || post.caption || "AI Precision Draft"}
+          </h4>
+          <MoreVertical className="w-3 h-3 opacity-50 flex-shrink-0" />
+        </div>
+        
+        <Badge variant="secondary" className="bg-white/20 text-[9px] hover:bg-white/30 text-inherit border-none py-0 px-1.5 h-4">
+          {post.status?.toUpperCase() || "DRAFT"}
+        </Badge>
+
+        <div className="flex items-center justify-between pt-1 border-t border-white/10">
+          <LinkIcon className="w-2.5 h-2.5 opacity-70" />
+          <span className="text-[9px] opacity-70 font-mono">
+            {post.scheduledFor ? format(parseISO(post.scheduledFor), "HH:mm") : "--:--"}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatMiniCard({ icon, label, count }: { icon: React.ReactNode, label: string, count: number }) {
+  return (
+    <Card className="hover:bg-muted/50 transition-colors cursor-pointer border shadow-sm">
+      <CardContent className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-background rounded-lg border shadow-sm">{icon}</div>
+          <span className="font-medium text-sm text-muted-foreground">{label}:</span>
+        </div>
+        <span className="font-bold text-lg">{count}</span>
+      </CardContent>
+    </Card>
   );
 }

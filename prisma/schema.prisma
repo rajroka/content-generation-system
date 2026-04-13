@@ -85,6 +85,7 @@ model ScheduledPost {
   caption       String         @db.Text
   hashtags      String[]
   imageUrl      String?
+  imageUrls     String[]       // ← add this
   platforms     Platform[]
   scheduledFor  DateTime?
   status        ScheduleStatus @default(SCHEDULED)

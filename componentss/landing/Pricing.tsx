@@ -1,84 +1,158 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
-    desc: "For creators just getting started.",
-    features: ["5 captions per day", "10 hashtag sets per month", "DALL-E image generation (3/day)", "Content history (last 7 days)", "Basic tone control"],
-    cta: "Get started free",
+    label: "Starter",
+    displayName: "FREE",
+    price: null,
+    period: null,
+    features: [
+      "1 platform connected",
+      "5 posts per month",
+      "10 captions per day",
+      "AI basic generator",
+    ],
+    cta: "Get Started",
     popular: false,
     href: "/sign-up",
   },
   {
-    name: "Pro",
-    price: "$12",
-    desc: "For creators serious about growth.",
-    features: ["Unlimited captions", "Unlimited hashtag sets", "DALL-E image generation (20/day)", "Background removal", "Full content history", "Advanced tone & style control", "Fine-tuned model access", "Priority support"],
-    cta: "Start Pro",
+    label: "Professional",
+    price: "12",
+    period: "/mo",
+    features: [
+      "All platforms connected",
+      "Unlimited captions & posts",
+      "Unlimited scheduled posts",
+      "Advanced AI analytics",
+      "Priority support",
+    ],
+    cta: "Try Pro Free",
     popular: true,
     href: "/sign-up?plan=pro",
-  },
-  {
-    name: "Team",
-    price: "$29",
-    desc: "For agencies and content teams.",
-    features: ["Everything in Pro", "Up to 5 team members", "Shared content workspace", "API access", "Custom brand voice training", "Analytics dashboard", "Dedicated account manager"],
-    cta: "Contact us",
-    popular: false,
-    href: "/contact",
   },
 ];
 
 export function Pricing() {
   return (
-    <div className="bg-muted/20 border-y border-border/50 w-full">
-      <section id="pricing" className="max-w-6xl mx-auto px-4 py-24">
-        <p className="text-xs font-semibold tracking-[0.12em] uppercase text-primary mb-3">Pricing</p>
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">Simple, honest pricing</h2>
-        <p className="text-muted-foreground mb-12 max-w-lg">Start free. Scale when you need to. No hidden fees.</p>
+    <section
+      id="pricing"
+      className="w-full py-24 px-4"
+      style={{ background: "hsl(200 25% 94%)" }}
+    >
+      <div className="max-w-3xl mx-auto">
+        <p
+          className="text-xs font-semibold tracking-[0.14em] uppercase mb-3"
+          style={{ color: "#169B7F" }}
+        >
+          Pricing
+        </p>
+        <h2
+          className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3"
+          style={{ color: "#0A2E2E" }}
+        >
+          Straightforward pricing
+        </h2>
+        <p className="text-sm mb-14" style={{ color: "#0A2E2E99" }}>
+          Start free. Upgrade when you need to. No hidden fees.
+        </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
           {plans.map((plan) => (
             <div
-              key={plan.name}
-              className={`relative flex flex-col gap-6 rounded-2xl border p-8 transition-all duration-300 hover:-translate-y-1 ${
-                plan.popular ? "border-primary bg-linear-to-b from-primary/5 to-card shadow-[0_0_40px_rgba(91,110,245,0.15)]" : "border-border/50 bg-card"
-              }`}
+              key={plan.label}
+              className="relative flex flex-col gap-6 rounded-2xl p-8 transition-all duration-200"
+              style={
+                plan.popular
+                  ? {
+                      background: "#ffffff",
+                      border: "2px solid #169B7F",
+                      boxShadow: "0 4px 32px rgba(22,155,127,0.10)",
+                    }
+                  : {
+                      background: "hsl(200 20% 88%)",
+                      border: "1px solid hsl(200 15% 82%)",
+                    }
+              }
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[0.65rem] font-bold tracking-widest uppercase px-4 py-1 rounded-full">
-                  Most Popular
-                </div>
+                <span
+                  className="absolute top-4 right-4 text-[0.6rem] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md"
+                  style={{ background: "#169B7F", color: "#ffffff" }}
+                >
+                  Popular
+                </span>
               )}
+
               <div>
-                <p className="text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-2">{plan.name}</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm">/ mo</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{plan.desc}</p>
+                <p
+                  className="text-[0.65rem] font-semibold tracking-[0.15em] uppercase mb-2"
+                  style={{ color: "#169B7F" }}
+                >
+                  {plan.label}
+                </p>
+
+                {plan.price ? (
+                  <div className="flex items-baseline gap-0.5">
+                    <span
+                      className="text-4xl font-extrabold tracking-tight"
+                      style={{ color: "#0A2E2E" }}
+                    >
+                      ${plan.price}
+                    </span>
+                    <span
+                      className="text-sm ml-0.5"
+                      style={{ color: "#0A2E2E80" }}
+                    >
+                      {plan.period}
+                    </span>
+                  </div>
+                ) : (
+                  <p
+                    className="text-4xl font-extrabold tracking-tight"
+                    style={{ color: "#0A2E2E" }}
+                  >
+                    FREE
+                  </p>
+                )}
               </div>
-              <hr className="border-border/50" />
-              <ul className="flex flex-col gap-2.5 flex-1">
+
+              <ul className="flex flex-col gap-3">
                 {plan.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <li
+                    key={feat}
+                    className="flex items-center gap-2.5 text-sm"
+                    style={{ color: "#0A2E2ECC" }}
+                  >
+                    <CheckCircle2
+                      className="w-[17px] h-[17px] shrink-0"
+                      style={{ color: "#169B7F" }}
+                    />
                     {feat}
                   </li>
                 ))}
               </ul>
-              <Button variant={plan.popular ? "default" : "outline"} className={`w-full ${plan.popular ? "shadow-[0_0_24px_rgba(91,110,245,0.3)]" : ""}`} asChild>
-                <Link href={plan.href}>
-                  {plan.cta} {plan.popular && <ArrowRight className="ml-1.5 w-4 h-4" />}
-                </Link>
-              </Button>
+
+              <Link
+                href={plan.href}
+                className="w-full rounded-xl py-2.5 text-sm font-semibold text-center transition-opacity duration-150 hover:opacity-90"
+                style={
+                  plan.popular
+                    ? { background: "#169B7F", color: "#ffffff" }
+                    : {
+                        background: "transparent",
+                        border: "1.5px solid #0A2E2E40",
+                        color: "#0A2E2E",
+                      }
+                }
+              >
+                {plan.cta}
+              </Link>
             </div>
           ))}
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

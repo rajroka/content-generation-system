@@ -1,316 +1,158 @@
-"use client";
+import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 
-import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Check, Zap, Sparkles, Infinity, Crown } from "lucide-react";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+const plans = [
+  {
+    label: "Starter",
+    displayName: "FREE",
+    price: null,
+    period: null,
+    features: [
+      "1 platform connected",
+      "5 posts per month",
+      "10 captions per day",
+      "AI basic generator",
+    ],
+    cta: "Get Started",
+    popular: false,
+    href: "/sign-up",
+  },
+  {
+    label: "Professional",
+    price: "12",
+    period: "/mo",
+    features: [
+      "All platforms connected",
+      "Unlimited captions & posts",
+      "Unlimited scheduled posts",
+      "Advanced AI analytics",
+      "Priority support",
+    ],
+    cta: "Try Pro Free",
+    popular: true,
+    href: "/sign-up?plan=pro",
+  },
+];
 
-const plans = {
-  monthly: [
-    {
-      name: "Free",
-      price: 0,
-      description: "Perfect for getting started",
-      features: [
-        "5 captions per day",
-        "3 images per day",
-        "Instagram only",
-        "Basic tones (Casual, Inspirational)",
-        "Content history (last 5 posts)",
-      ],
-      cta: "Current plan",
-      popular: false,
-      priceId: null,
-    },
-    {
-      name: "Pro",
-      price: 9.99,
-      description: "For serious content creators",
-      features: [
-        "Unlimited captions",
-        "Unlimited images",
-        "All platforms (Instagram, Facebook, Twitter, LinkedIn)",
-        "All tones (Professional, Casual, Inspirational, Humorous)",
-        "Full content history",
-        "Priority support",
-        "Advanced image editing",
-      ],
-      cta: "Upgrade to Pro",
-      popular: true,
-      priceId: "price_pro_monthly", // You'll get this from Stripe
-    },
-    {
-      name: "Enterprise",
-      price: 49.99,
-      description: "For teams and agencies",
-      features: [
-        "Everything in Pro",
-        "Team accounts (up to 5 users)",
-        "API access",
-        "Custom branding",
-        "Dedicated support",
-        "Analytics dashboard",
-      ],
-      cta: "Contact sales",
-      popular: false,
-      priceId: null,
-    },
-  ],
-  yearly: [
-    {
-      name: "Free",
-      price: 0,
-      description: "Perfect for getting started",
-      features: [
-        "5 captions per day",
-        "3 images per day",
-        "Instagram only",
-        "Basic tones (Casual, Inspirational)",
-        "Content history (last 5 posts)",
-      ],
-      cta: "Current plan",
-      popular: false,
-      priceId: null,
-    },
-    {
-      name: "Pro",
-      price: 99.99,
-      description: "Save 16% with yearly billing",
-      features: [
-        "Unlimited captions",
-        "Unlimited images",
-        "All platforms",
-        "All tones",
-        "Full content history",
-        "Priority support",
-        "Advanced image editing",
-      ],
-      cta: "Upgrade to Pro",
-      popular: true,
-      priceId: "price_pro_yearly", // You'll get this from Stripe
-    },
-    {
-      name: "Enterprise",
-      price: 499.99,
-      description: "For teams and agencies",
-      features: [
-        "Everything in Pro",
-        "Team accounts (up to 5 users)",
-        "API access",
-        "Custom branding",
-        "Dedicated support",
-        "Analytics dashboard",
-      ],
-      cta: "Contact sales",
-      popular: false,
-      priceId: null,
-    },
-  ],
-};
-
-export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
-  const [loading, setLoading] = useState<string | null>(null);
-  const { isSignedIn, user } = useUser();
-  const router = useRouter();
-
-  const currentPlans = plans[billingCycle];
-
-  const handleUpgrade = async (planName: string, priceId: string | null) => {
-    if (!isSignedIn) {
-      toast.error("Please sign in to upgrade");
-      router.push("/sign-in");
-      return;
-    }
-
-    if (planName === "Enterprise") {
-      toast.info("Contact sales@banamsathi.com for enterprise plans");
-      return;
-    }
-
-    if (planName === "Free") {
-      toast.info("You're already on the free plan");
-      return;
-    }
-
-    if (!priceId) {
-      toast.error("Something went wrong. Please try again.");
-      return;
-    }
-
-    setLoading(planName);
-
-    try {
-      const response = await fetch("/api/stripe/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, userId: user?.id }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create checkout session");
-      }
-
-      // Redirect to Stripe checkout
-      window.location.href = data.url;
-    } catch (error: any) {
-      console.error("Upgrade error:", error);
-      toast.error(error.message || "Failed to start checkout process");
-    } finally {
-      setLoading(null);
-    }
-  };
-
+export function Pricing() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Choose your plan</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Start free, upgrade when you need more. Cancel anytime.
-          </p>
-        </div>
+    <section
+      id="pricing"
+      className="w-full py-24 px-4"
+      style={{ background: "hsl(200 25% 94%)" }}
+    >
+      <div className="max-w-3xl mx-auto">
+        <p
+          className="text-xs font-semibold tracking-[0.14em] uppercase mb-3"
+          style={{ color: "#169B7F" }}
+        >
+          Pricing
+        </p>
+        <h2
+          className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3"
+          style={{ color: "#0A2E2E" }}
+        >
+          Straightforward pricing
+        </h2>
+        <p className="text-sm mb-14" style={{ color: "#0A2E2E99" }}>
+          Start free. Upgrade when you need to. No hidden fees.
+        </p>
 
-        {/* Billing toggle */}
-        <div className="flex items-center justify-center gap-3 mb-12">
-          <Label
-            htmlFor="monthly"
-            className={`text-sm cursor-pointer ${
-              billingCycle === "monthly" ? "text-foreground font-semibold" : "text-muted-foreground"
-            }`}
-          >
-            Monthly
-          </Label>
-          <Switch
-            id="billing-toggle"
-            checked={billingCycle === "yearly"}
-            onCheckedChange={(checked) => setBillingCycle(checked ? "yearly" : "monthly")}
-          />
-          <Label
-            htmlFor="yearly"
-            className={`text-sm cursor-pointer ${
-              billingCycle === "yearly" ? "text-foreground font-semibold" : "text-muted-foreground"
-            }`}
-          >
-            Yearly
-            <Badge variant="secondary" className="ml-2 text-xs">
-              Save 16%
-            </Badge>
-          </Label>
-        </div>
-
-        {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {currentPlans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={`relative overflow-hidden transition-all hover:shadow-lg ${
-                plan.popular ? "border-primary shadow-lg scale-105 md:scale-105" : ""
-              }`}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+          {plans.map((plan) => (
+            <div
+              key={plan.label}
+              className="relative flex flex-col gap-6 rounded-2xl p-8 transition-all duration-200"
+              style={
+                plan.popular
+                  ? {
+                      background: "#ffffff",
+                      border: "2px solid #169B7F",
+                      boxShadow: "0 4px 32px rgba(22,155,127,0.10)",
+                    }
+                  : {
+                      background: "hsl(200 20% 88%)",
+                      border: "1px solid hsl(200 15% 82%)",
+                    }
+              }
             >
               {plan.popular && (
-                <div className="absolute top-0 right-0">
-                  <Badge className="rounded-tl-none rounded-br-lg rounded-tr-none rounded-bl-lg bg-primary text-white px-3 py-1">
-                    Most Popular
-                  </Badge>
-                </div>
+                <span
+                  className="absolute top-4 right-4 text-[0.6rem] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md"
+                  style={{ background: "#169B7F", color: "#ffffff" }}
+                >
+                  Popular
+                </span>
               )}
 
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <div className="mt-4">
-                  <span className="text-4xl font-bold">${plan.price}</span>
-                  {plan.price > 0 && (
-                    <span className="text-muted-foreground">
-                      /{billingCycle === "monthly" ? "month" : "year"}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-              </CardHeader>
-
-              <CardContent className="flex flex-col gap-6">
-                <ul className="space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span className="text-muted-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button
-                  onClick={() => handleUpgrade(plan.name, plan.priceId)}
-                  disabled={loading === plan.name || (plan.name === "Free" && true)}
-                  className={`w-full ${
-                    plan.popular && plan.name !== "Free"
-                      ? "bg-primary hover:bg-primary/90"
-                      : plan.name === "Free"
-                      ? "bg-muted text-muted-foreground cursor-not-allowed"
-                      : ""
-                  }`}
-                  variant={plan.name === "Free" ? "outline" : "default"}
+              <div>
+                <p
+                  className="text-[0.65rem] font-semibold tracking-[0.15em] uppercase mb-2"
+                  style={{ color: "#169B7F" }}
                 >
-                  {loading === plan.name ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    plan.cta
-                  )}
-                </Button>
+                  {plan.label}
+                </p>
 
-                {plan.name === "Pro" && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    Secure payment powered by Stripe
+                {plan.price ? (
+                  <div className="flex items-baseline gap-0.5">
+                    <span
+                      className="text-4xl font-extrabold tracking-tight"
+                      style={{ color: "#0A2E2E" }}
+                    >
+                      ${plan.price}
+                    </span>
+                    <span
+                      className="text-sm ml-0.5"
+                      style={{ color: "#0A2E2E80" }}
+                    >
+                      {plan.period}
+                    </span>
+                  </div>
+                ) : (
+                  <p
+                    className="text-4xl font-extrabold tracking-tight"
+                    style={{ color: "#0A2E2E" }}
+                  >
+                    FREE
                   </p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+
+              <ul className="flex flex-col gap-3">
+                {plan.features.map((feat) => (
+                  <li
+                    key={feat}
+                    className="flex items-center gap-2.5 text-sm"
+                    style={{ color: "#0A2E2ECC" }}
+                  >
+                    <CheckCircle2
+                      className="w-[17px] h-[17px] shrink-0"
+                      style={{ color: "#169B7F" }}
+                    />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href={plan.href}
+                className="w-full rounded-xl py-2.5 text-sm font-semibold text-center transition-opacity duration-150 hover:opacity-90"
+                style={
+                  plan.popular
+                    ? { background: "#169B7F", color: "#ffffff" }
+                    : {
+                        background: "transparent",
+                        border: "1.5px solid #0A2E2E40",
+                        color: "#0A2E2E",
+                      }
+                }
+              >
+                {plan.cta}
+              </Link>
+            </div>
           ))}
         </div>
-
-        {/* FAQ Section */}
-        <div className="mt-20 text-center">
-          <h2 className="text-2xl font-bold mb-8">Frequently Asked Questions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto text-left">
-            <div>
-              <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
-              <p className="text-sm text-muted-foreground">
-                Yes, you can cancel your subscription at any time. No questions asked.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">What happens when I upgrade?</h3>
-              <p className="text-sm text-muted-foreground">
-                Your limits are instantly increased. No downtime, no waiting.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Do you offer refunds?</h3>
-              <p className="text-sm text-muted-foreground">
-                We offer a 14-day money-back guarantee if you're not satisfied.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Can I switch between monthly and yearly?</h3>
-              <p className="text-sm text-muted-foreground">
-                Yes, you can change your billing cycle anytime from your account settings.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+    </section>
   );
 }

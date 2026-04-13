@@ -1,5 +1,5 @@
 import { Navbar } from "@/componentss/shared/Navbar";
-import { Footer } from "@/componentss/shared/Footer";
+import { Footer } from "@/componentss/landing/Footer";
 export default function LandingLayout({
   children,
 }: {

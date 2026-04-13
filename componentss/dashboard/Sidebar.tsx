@@ -1,237 +1,127 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
-import { Logo } from "@/componentss/shared/Logo";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
-  Sparkles,
-  History,
-  Settings,
-  CalendarDays,
-  BarChart2,
-  Link2,
-  Zap,
-  X,
-  Menu,
+  PenLine,
+  Calendar,
+  Clock,
+  Globe,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   Plus,
+  Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard",              label: "Dashboard",   icon: LayoutDashboard },
-  { href: "/generate",     label: "Generate",    icon: Sparkles },
-  { href: "/calendar",     label: "Calendar",    icon: CalendarDays },
-  { href: "/history",      label: "History",     icon: History },
-  { href: "/platforms",  label: "Connections", icon: Link2 },
-  { href: "/analytics",    label: "Analytics",   icon: BarChart2 },
-  { href: "/settings",     label: "Settings",    icon: Settings },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/generate", label: "Create Content", icon: PenLine },
+  { href: "/calendar", label: "Schedule", icon: Calendar },
+  { href: "/history", label: "Library", icon: Clock },
+  { href: "/platforms", label: "Connections", icon: Globe },
+  { href: "/analytics", label: "Insights", icon: BarChart3 },
 ];
-
-const SIDEBAR_KEY = "banam_sidebar_collapsed";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [userPlan, setUserPlan] = useState<"FREE" | "PRO">("FREE");
 
   useEffect(() => {
-    const stored = localStorage.getItem(SIDEBAR_KEY);
-    if (stored !== null) setCollapsed(stored === "true");
+    const stored = localStorage.getItem("sidebar_collapsed");
+    if (stored) setCollapsed(stored === "true");
   }, []);
 
-  useEffect(() => {
-    fetch("/api/user/plan")
-      .then((r) => r.json())
-      .then((d) => setUserPlan(d.plan ?? "FREE"))
-      .catch(() => {});
-  }, []);
-
-  const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      localStorage.setItem(SIDEBAR_KEY, String(!prev));
-      return !prev;
-    });
-  };
-
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [mobileOpen]);
-
-  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => {
-    const isCollapsed = isMobile ? false : collapsed;
-
-    return (
-      <aside
-        className={cn(
-          "h-full bg-white flex flex-col border-r border-gray-100 relative transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-[68px]" : "w-64"
-        )}
-      >
-        {!isMobile && (
-          <button
-            onClick={toggleCollapsed}
-            className="absolute -right-3 top-[72px] z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/40 transition-all"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-          </button>
-        )}
-
-        {/* Logo */}
-        <div
-          className={cn(
-            "flex items-center shrink-0 h-[68px] border-b border-gray-100 transition-all duration-300",
-            isCollapsed ? "px-0 justify-center" : "px-5 justify-between"
-          )}
-        >
-          {!isCollapsed && <Logo size="sm" />}
-          {isCollapsed && (
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-          )}
-          {isMobile && (
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Close sidebar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {/* Create New Post CTA */}
-        <div className={cn("shrink-0 transition-all duration-300", isCollapsed ? "px-2.5 py-4" : "px-4 py-4")}>
-          <Link
-            href="/dashboard/generate"
-            className={cn(
-              "flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl transition-all hover:shadow-md hover:shadow-primary/20 active:scale-95",
-              isCollapsed ? "p-2.5" : "text-sm px-4 py-2.5"
-            )}
-          >
-            <Plus className="w-4 h-4 shrink-0" />
-            {!isCollapsed && <span>Create New Post</span>}
-          </Link>
-        </div>
-
-        {/* Nav Items */}
-        <nav className="flex-1 px-2 flex flex-col gap-0.5 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={isCollapsed ? item.label : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl text-sm font-medium transition-all group relative",
-                  isCollapsed ? "px-0 py-2.5 justify-center" : "px-3 py-2.5",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "w-5 h-5 shrink-0 transition-colors",
-                    isActive ? "text-primary" : "text-gray-400 group-hover:text-gray-700"
-                  )}
-                />
-                {!isCollapsed && <span>{item.label}</span>}
-                {isCollapsed && (
-                  <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                    {item.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Upgrade Banner — FREE users only */}
-        {userPlan === "FREE" && (
-          <div className={cn("shrink-0 transition-all duration-300", isCollapsed ? "px-2.5 py-3" : "px-4 py-3")}>
-            <Link
-              href="/pricing"
-              title={isCollapsed ? "Upgrade to Pro" : undefined}
-              className={cn(
-                "flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-all group relative",
-                isCollapsed ? "justify-center p-2.5" : "px-3 py-2.5"
-              )}
-            >
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Zap className="w-3.5 h-3.5 text-primary" />
-              </div>
-              {!isCollapsed && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-800">Upgrade to Pro</p>
-                  <p className="text-[10px] text-gray-400">Unlock all features</p>
-                </div>
-              )}
-              {isCollapsed && (
-                <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
-                  Upgrade to Pro
-                </span>
-              )}
-            </Link>
-          </div>
-        )}
-
-        {/* User Account */}
-        <div
-          className={cn(
-            "shrink-0 border-t border-gray-100 transition-all duration-300",
-            isCollapsed ? "px-2.5 py-4 flex justify-center" : "px-4 py-4 flex items-center gap-3"
-          )}
-        >
-          <UserButton afterSignOutUrl="/" />
-          {!isCollapsed && <span className="text-sm text-gray-500 font-medium truncate">My Account</span>}
-        </div>
-      </aside>
-    );
+  const toggle = () => {
+    setCollapsed(!collapsed);
+    localStorage.setItem("sidebar_collapsed", String(!collapsed));
   };
 
   return (
-    <>
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 rounded-xl bg-white text-gray-700 shadow-md border border-gray-100"
-        aria-label="Open menu"
+    <aside className={cn(
+      "h-screen bg-white border-r border-gray-100 flex flex-col transition-all duration-300 relative",
+      collapsed ? "w-16" : "w-60"
+    )}>
+      {/* Small Toggle Button */}
+      <button 
+        onClick={toggle}
+        className="absolute -right-3 top-8 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-[#0d7c8a] shadow-sm z-50"
       >
-        <Menu className="w-5 h-5" />
+        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      <div
-        className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full transition-transform duration-300 ease-in-out",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <SidebarContent isMobile />
+      {/* Brand Logo */}
+      <div className={cn("h-16 flex items-center px-4 shrink-0", collapsed && "justify-center")}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-[#0d7c8a] rounded-lg flex items-center justify-center shrink-0">
+             <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
+          </div>
+          {!collapsed && <span className="font-bold text-lg text-[#1e3a3d] tracking-tight">PostSathi</span>}
+        </div>
       </div>
 
-      <div className="hidden lg:flex h-screen shrink-0">
-        <SidebarContent />
+      {/* Compact New Post Button */}
+      <div className="px-3 mb-4">
+        <Link href="/generate" className={cn(
+          "flex items-center justify-center gap-2 w-full bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-[13px] font-semibold rounded-lg py-2 transition-all",
+          collapsed && "w-10 h-10 mx-auto p-0"
+        )}>
+          <Plus size={16} />
+          {!collapsed && <span>New Post</span>}
+        </Link>
       </div>
-    </>
+
+      {/* Navigation Spacing Managed */}
+      <nav className="flex-1 px-2 space-y-0.5">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link key={item.href} href={item.href} className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all group",
+              isActive ? "bg-[#e2f2f4] text-[#0d7c8a]" : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
+              collapsed && "justify-center"
+            )}>
+              <item.icon size={18} className={cn("shrink-0", isActive ? "text-[#0d7c8a]" : "text-gray-400 group-hover:text-gray-600")} />
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Profile & Bottom Settings Area */}
+      <div className="mt-auto p-3 border-t border-gray-100 bg-gray-50/50">
+        <Link href="/settings" className={cn(
+          "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium text-gray-500 hover:text-[#0d7c8a] transition-colors mb-2",
+          collapsed && "justify-center"
+        )}>
+          <Settings size={18} />
+          {!collapsed && <span>Settings</span>}
+        </Link>
+
+        <div className={cn(
+          "flex items-center gap-3 p-2 bg-white border border-gray-100 rounded-xl shadow-sm",
+          collapsed && "justify-center border-none bg-transparent shadow-none px-0"
+        )}>
+          <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="text-[12px] font-bold text-[#1e3a3d] truncate leading-none mb-1">
+                {user?.firstName || "Member"}
+              </span>
+              <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider">
+                <ShieldCheck size={10} />
+                <span>Pro Member</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </aside>
   );
 }
