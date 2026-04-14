@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 export async function POST(req: Request) {
   try {
@@ -37,31 +38,39 @@ export async function POST(req: Request) {
       where: { clerkId: userId },
       update: {},
       create: {
-        clerkId:  userId,
-        email:    clerkUser?.emailAddresses[0]?.emailAddress || `user_${userId}@fallback.com`,
-        name:     `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || null,
+        clerkId: userId,
+        email: clerkUser?.emailAddresses[0]?.emailAddress || `user_${userId}@fallback.com`,
+        name: `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || null,
         imageUrl: clerkUser?.imageUrl || null,
-        plan:     "FREE",
+        plan: "FREE",
       },
     });
 
+    // FREE plan: 15 scheduled posts per month (not drafts)
     if (!isDraft && user.plan === "FREE") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const monthStart = startOfMonth(new Date());
+      const monthEnd = endOfMonth(new Date());
 
-      const usage = await prisma.usage.findUnique({
-        where: { userId_date: { userId: user.id, date: today } },
+      const monthlyScheduleCount = await prisma.scheduledPost.count({
+        where: {
+          userId: user.id,
+          status: { in: ["SCHEDULED", "PUBLISHED"] },
+          createdAt: { gte: monthStart, lte: monthEnd },
+        },
       });
 
-      if ((usage?.scheduleCount ?? 0) >= 5) {
+      if (monthlyScheduleCount >= 15) {
         return NextResponse.json(
-          { error: "Daily schedule limit reached (5/day). Upgrade to Pro for unlimited." },
+          { error: "Monthly schedule limit reached (15/month). Upgrade to Pro for unlimited." },
           { status: 403 }
         );
       }
 
+      // Track in Usage for dashboard display
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       await prisma.usage.upsert({
-        where:  { userId_date: { userId: user.id, date: today } },
+        where: { userId_date: { userId: user.id, date: today } },
         update: { scheduleCount: { increment: 1 } },
         create: { userId: user.id, date: today, scheduleCount: 1 },
       });
@@ -69,14 +78,14 @@ export async function POST(req: Request) {
 
     const post = await prisma.scheduledPost.create({
       data: {
-        userId:       user.id,
-        caption:      hasCaption ? caption.trim() : null,
-        hashtags:     hashtags || [],
+        userId: user.id,
+        caption: hasCaption ? caption.trim() : null,
+        hashtags: hashtags || [],
         platforms,
         scheduledFor: isDraft ? null : new Date(scheduledFor),
-        imageUrl:     imageUrls?.[0] || imageUrl || null,
-        imageUrls:    imageUrls || (imageUrl ? [imageUrl] : []),
-        status:       isDraft ? "DRAFT" : "SCHEDULED",
+        imageUrl: imageUrls?.[0] || imageUrl || null,
+        imageUrls: imageUrls || (imageUrl ? [imageUrl] : []),
+        status: isDraft ? "DRAFT" : "SCHEDULED",
       },
     });
 

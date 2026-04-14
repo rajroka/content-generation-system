@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/pricing",
+  "/api/webhooks/stripe", // Stripe Webhook must be public
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
@@ -13,23 +14,34 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims } = await auth();
 
-  // Admin route protection
+  // 1. If it's a public route, let it pass immediately
+  // This is crucial for the Stripe Webhook to work perfectly
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
+  }
+
+  // 2. Protect all other routes (Force login)
+  if (!userId) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  // 3. Admin route protection logic
   if (isAdminRoute(req)) {
-    if (!userId) {
-      return NextResponse.redirect(new URL("/sign-in", req.url));
-    }
     const role = (sessionClaims?.metadata as { role?: string })?.role;
     if (role !== "admin") {
+      // Redirect non-admins to dashboard
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 
-  // Protected routes
-  if (!isPublicRoute(req) && !userId) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
-  }
+  return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    // Skip Next.js internals and all static files
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
 };

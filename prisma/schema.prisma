@@ -42,21 +42,25 @@ enum SocialPlatform {
   YOUTUBE
 }
 
+
+
 model User {
-  id             String          @id @default(cuid())
-  clerkId        String          @unique
-  email          String          @unique
-  name           String?
-  imageUrl       String?
-  plan           Plan            @default(FREE)
-  role           Role            @default(USER)
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  usage          Usage[]
-  generations    Generation[]
-  scheduledPosts ScheduledPost[]
-  socialAccounts SocialAccount[]
+  id                   String          @id @default(cuid())
+  clerkId              String          @unique
+  email                String          @unique
+  name                 String?
+  imageUrl             String?
+  plan                 Plan            @default(FREE)
+  role                 Role            @default(USER)
+  isActive             Boolean         @default(true)
+  stripeCustomerId     String?         @unique  // ← add
+  stripeSubscriptionId String?         @unique  // ← add
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  usage                Usage[]
+  generations          Generation[]
+  scheduledPosts       ScheduledPost[]
+  socialAccounts       SocialAccount[]
 }
 
 model Generation {
@@ -82,10 +86,10 @@ model ScheduledPost {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   generationId  String?        @unique
   generation    Generation?    @relation(fields: [generationId], references: [id], onDelete: SetNull)
-  caption       String         @db.Text
-  hashtags      String[]
+  caption       String?        @db.Text   // ← was required, now optional
+  hashtags      String[]                  // ← already optional (empty array is fine)
   imageUrl      String?
-  imageUrls     String[]       // ← add this
+  imageUrls     String[]
   platforms     Platform[]
   scheduledFor  DateTime?
   status        ScheduleStatus @default(SCHEDULED)
