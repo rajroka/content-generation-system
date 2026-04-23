@@ -20,12 +20,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/generate", label: "Create Content", icon: PenLine },
-  { href: "/calendar", label: "Schedule", icon: Calendar },
-  { href: "/history", label: "Library", icon: Clock },
-  { href: "/platforms", label: "Connections", icon: Globe },
-  { href: "/analytics", label: "Insights", icon: BarChart3 },
+  { href: "/user/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/user/generate", label: "Create Content", icon: PenLine },
+  { href: "/user/calendar", label: "Schedule", icon: Calendar },
+  { href: "/user/history", label: "Library", icon: Clock },
+  { href: "/user/platforms", label: "Connections", icon: Globe },
+  { href: "/user/analytics", label: "Insights", icon: BarChart3 },
 ];
 
 export function Sidebar() {
@@ -68,7 +68,7 @@ export function Sidebar() {
 
       {/* Compact New Post Button */}
       <div className="px-3 mb-4">
-        <Link href="/generate" className={cn(
+        <Link href="/user/generate" className={cn(
           "flex items-center justify-center gap-2 w-full bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-[13px] font-semibold rounded-lg py-2 transition-all",
           collapsed && "w-10 h-10 mx-auto p-0"
         )}>
@@ -96,7 +96,7 @@ export function Sidebar() {
 
       {/* Profile & Bottom Settings Area */}
       <div className="mt-auto p-3 border-t border-gray-100 bg-gray-50/50">
-        <Link href="/settings" className={cn(
+        <Link href="/user/settings" className={cn(
           "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium text-gray-500 hover:text-[#0d7c8a] transition-colors mb-2",
           collapsed && "justify-center"
         )}>

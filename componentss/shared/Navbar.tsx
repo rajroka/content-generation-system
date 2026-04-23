@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "./ModeToggle";
 
@@ -15,8 +15,22 @@ const navLinks = [
 ];
 
 export function Navbar() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user, isLoaded } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      // Check for admin role in Clerk publicMetadata
+      const role = (user.publicMetadata as { role?: string })?.role;
+      setIsAdmin(role === "admin");
+    }
+  }, [isSignedIn, user]);
+
+  const dashboardUrl = isAdmin ? "/admin" : "/user/dashboard";
+
+  // Prevent "flicker" by checking Clerk's built-in isLoaded state
+  if (!isLoaded) return null; 
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#0b1c30]/10 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(0,104,122,0.04)]">
@@ -53,10 +67,13 @@ export function Navbar() {
           {isSignedIn ? (
             <>
               <Button 
+                asChild
                 className="bg-[#00687a] hover:bg-[#00424f] text-white font-semibold tracking-tight rounded-xl px-5 transition-all"
                 style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
-                <Link href="/dashboard">Dashboard</Link>
+                <Link href={dashboardUrl}>
+                  {isAdmin ? "Admin Panel" : "Dashboard"}
+                </Link>
               </Button>
               <UserButton afterSignOutUrl="/" />
             </>
@@ -73,6 +90,7 @@ export function Navbar() {
                 </Button>
               </SignInButton>
               <Button
+                asChild
                 size="sm"
                 className="bg-[#00687a] hover:bg-[#00424f] text-white font-bold tracking-tight rounded-xl px-5 active:scale-95 transition-transform"
                 style={{ fontFamily: 'Epilogue, sans-serif' }}
@@ -110,21 +128,30 @@ export function Navbar() {
             {link.label}
           </Link>
         ))}
-        <div className="flex items-center gap-4 pt-4 border-t border-[#0b1c30]/5">
-          <ModeToggle />
+        <div className="flex flex-col gap-4 pt-4 border-t border-[#0b1c30]/5">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-[#3d494c]">Theme</span>
+            <ModeToggle />
+          </div>
           {isSignedIn ? (
             <Button 
+              asChild
               className="bg-[#00687a] text-white font-semibold rounded-xl px-5 w-full"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href={dashboardUrl} onClick={() => setMobileOpen(false)}>
+                {isAdmin ? "Admin Panel" : "Dashboard"}
+              </Link>
             </Button>
           ) : (
             <Button 
+              asChild
               className="bg-[#00687a] text-white font-bold rounded-xl px-5 w-full"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
-              <Link href="/sign-up">Get started</Link>
+              <Link href="/sign-up" onClick={() => setMobileOpen(false)}>
+                Get started
+              </Link>
             </Button>
           )}
         </div>

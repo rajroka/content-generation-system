@@ -1,47 +1,69 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+// 1. Define route categories
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/pricing",
-  "/api/webhooks/stripe", // Stripe Webhook must be public
+  "/api/webhooks/stripe",
+  "/api/webhooks/clerk",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
 
-  // 1. If it's a public route, let it pass immediately
-  // This is crucial for the Stripe Webhook to work perfectly
+  // 2. Handle Public Routes
   if (isPublicRoute(req)) {
+    if (userId && (req.nextUrl.pathname.startsWith('/sign-in') || req.nextUrl.pathname.startsWith('/sign-up'))) {
+      const client = await clerkClient();
+      const user = await client.users.getUser(userId);
+      // Accessing publicMetadata directly to avoid undefined issues
+      const role = user.publicMetadata?.role;
+      
+      const targetPath = role === "admin" ? "/admin" : "/user/dashboard";
+      return NextResponse.redirect(new URL(targetPath, req.url));
+    }
     return NextResponse.next();
   }
 
-  // 2. Protect all other routes (Force login)
+  // 3. Force login for protected routes
   if (!userId) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
+    const signInUrl = new URL("/sign-in", req.url);
+    signInUrl.searchParams.set("redirect_url", req.url);
+    return NextResponse.redirect(signInUrl);
   }
 
-  // 3. Admin route protection logic
+  // 4. Admin-only route protection
   if (isAdminRoute(req)) {
-    const role = (sessionClaims?.metadata as { role?: string })?.role;
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    
+    // Direct extraction
+    const role = user.publicMetadata?.role;
+
+    console.log("--- Middleware Security Check ---");
+    console.log("User ID:", userId);
+    console.log("Metadata Role:", role);
+
     if (role !== "admin") {
-      // Redirect non-admins to dashboard
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      console.log("Access Denied: Redirecting to user dashboard");
+      return NextResponse.redirect(new URL("/user/dashboard", req.url));
     }
+    
+    return NextResponse.next();
   }
 
+  // 5. Allow access to other authenticated routes (e.g., /user/dashboard)
   return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };

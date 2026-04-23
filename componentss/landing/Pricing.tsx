@@ -81,7 +81,7 @@ export function Pricing({ currentPlan }: PricingProps) {
 
             let ctaHref: string;
             if (isCurrentPlan && plan.planKey === "FREE") {
-              ctaHref = "/dashboard";
+              ctaHref = "/user/dashboard";
             } else if (isCurrentPlan && plan.planKey === "PRO") {
               ctaHref = "/api/billing-portal";
             } else if (plan.planKey === "PRO") {
@@ -89,7 +89,7 @@ export function Pricing({ currentPlan }: PricingProps) {
                 ? "/api/checkout"
                 : "/sign-up?redirect_url=/pricing";
             } else {
-              ctaHref = isLoggedIn ? "/dashboard" : plan.href;
+              ctaHref = isLoggedIn ? "/user/dashboard" : plan.href;
             }
 
             return (

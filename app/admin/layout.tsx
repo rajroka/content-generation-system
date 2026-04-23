@@ -1,28 +1,26 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/componentss/admin/AdminSidebar";
 import { AdminNavbar } from "@/componentss/admin/AdminNavbar";
-import prisma from "@/lib/prisma";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
   
   if (!userId) redirect("/sign-in");
   
-  // Check if user is admin
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  if (role !== "admin") redirect("/dashboard");
+  // FETCH FRESH DATA (Do not rely on sessionClaims here)
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const role = user.publicMetadata?.role;
   
-  // Get user from database
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  });
-  
-  if (!user || user.role !== "ADMIN") redirect("/dashboard");
+  if (role !== "admin") {
+    console.log(`Unauthorized admin access attempt by user ${userId} with role ${role}`);
+    redirect("/user/dashboard");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">

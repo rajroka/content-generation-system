@@ -8,7 +8,7 @@ export async function GET() {
     const { userId, sessionClaims } = await auth();
     
     // Verify admin
-    const role = (sessionClaims?.metadata as { role?: string })?.role;
+    const role = (sessionClaims?.publicMetadata as { role?: string })?.role;
     if (role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

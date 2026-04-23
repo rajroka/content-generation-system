@@ -13,7 +13,7 @@ export default function AuthButtons() {
         </SignInButton>
       </SignedOut>
       <SignedIn>
-        <Link href="/dashboard" className="text-white/80 hover:text-white text-sm mr-2">
+        <Link href="/user/dashboard" className="text-white/80 hover:text-white text-sm mr-2">
           Dashboard
         </Link>
         <UserButton />

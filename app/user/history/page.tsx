@@ -46,7 +46,7 @@ export default async function HistoryPage({
         {query && (
           <p className="text-sm text-primary mt-1">
             Showing results for: <strong>"{query}"</strong>{" "}
-            <Link href="/dashboard/history" className="underline text-muted-foreground">Clear</Link>
+            <Link href="/user/history" className="underline text-muted-foreground">Clear</Link>
           </p>
         )}
       </div>
@@ -63,7 +63,7 @@ export default async function HistoryPage({
               : "Start generating captions and images. They'll all be saved here automatically."}
           </p>
           <Button asChild>
-            <Link href="/dashboard/generate">
+            <Link href="/user/generate">
               <Sparkles className="w-4 h-4 mr-2" />
               Generate your first post
             </Link>

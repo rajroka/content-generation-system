@@ -104,7 +104,7 @@ export function AdminSidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-white/10">
         <Link
-          href="/dashboard"
+          href="/user/dashboard"
           className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
         >
           <LayoutDashboard className="w-4 h-4" />
