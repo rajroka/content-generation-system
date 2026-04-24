@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreVertical, Eye, Crown, Ban, Mail } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 interface User {
   id: string;
@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger>
                         <Button variant="ghost" size="icon">
                           <MoreVertical className="w-4 h-4" />
                         </Button>

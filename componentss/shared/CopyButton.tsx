@@ -44,7 +44,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);

@@ -36,7 +36,7 @@ Visually stunning and shareable.`;
     quality: "standard",
   });
 
-  const temporaryUrl = response.data[0]?.url;
+  const temporaryUrl = response?.data?.[0]?.url;
   if (!temporaryUrl) throw new Error("No image returned from OpenAI");
 
   // DALL-E URLs expire — download and store permanently in ImageKit

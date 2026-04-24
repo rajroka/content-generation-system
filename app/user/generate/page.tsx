@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
 // ── Brand SVG Icons ──────────────────────────────────────────────────────────

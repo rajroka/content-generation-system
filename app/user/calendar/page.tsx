@@ -21,15 +21,11 @@ import {
   FileText,
   CheckCircle2,
   BarChart3,
-  Moon,
-  Sun,
   Calendar as CalendarIcon
 } from "lucide-react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 
 export default function ContentCalendar() {
-  const { setTheme, theme } = useTheme();
   const [scheduledPosts, setScheduledPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -78,10 +74,7 @@ export default function ContentCalendar() {
             <p className="text-muted-foreground text-sm mt-1">Visualize and manage your content pipeline.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Link href="/generate">
+            <Link href="/user/generate">
               <Button className="bg-teal-600 hover:bg-teal-700 text-white rounded-lg gap-2 shadow-sm">
                 <Plus className="w-4 h-4" /> New Post
               </Button>

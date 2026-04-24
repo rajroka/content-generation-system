@@ -62,12 +62,10 @@ export default async function HistoryPage({
               ? "Try a different search term."
               : "Start generating captions and images. They'll all be saved here automatically."}
           </p>
-          <Button asChild>
-            <Link href="/user/generate">
+          <Link href="/user/generate" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors">
               <Sparkles className="w-4 h-4 mr-2" />
               Generate your first post
-            </Link>
-          </Button>
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -38,8 +38,6 @@ export default async function DashboardPage() {
       ])
     : [0, 0, 0, 0, 0];
 
-  // const plan = user?.plan ?? "FREE";
-
   const stats = [
     { title: "Captions", value: captionsToday, icon: <PenLine size={16} className="text-[#0d7c8a]" /> },
     { title: "Images", value: imagesToday, icon: <ImageIcon size={16} className="text-[#0d7c8a]" /> },
@@ -48,10 +46,10 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto bg-[#fcfcfc] min-h-screen">
+    <div className="p-6 max-w-6xl mx-auto min-h-screen">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#1e3a3d]">Welcome, {clerkUser?.firstName} 👋</h1>
-        <p className="text-[12px] text-gray-500">You have <span className="text-[#0d7c8a] font-bold">{scheduledCount} posts</span> currently in queue.</p>
+        <h1 className="text-xl font-bold text-foreground">Welcome, {clerkUser?.firstName} 👋</h1>
+        <p className="text-[12px] text-muted-foreground">You have <span className="text-[#0d7c8a] font-bold">{scheduledCount} posts</span> currently in queue.</p>
       </div>
 
       {/* Stats Grid */}
@@ -59,10 +57,10 @@ export default async function DashboardPage() {
         {stats.map((stat) => (
           <Card key={stat.title} className="border-none shadow-sm rounded-xl">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 bg-gray-50 rounded-lg">{stat.icon}</div>
+              <div className="p-2 bg-muted rounded-lg">{stat.icon}</div>
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{stat.title}</p>
-                <p className="text-xl font-bold text-[#1e3a3d]">{stat.value}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.title}</p>
+                <p className="text-xl font-bold text-foreground">{stat.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -76,7 +74,7 @@ export default async function DashboardPage() {
             <span className="bg-[#0d7c8a] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Update v2.4</span>
             <h2 className="text-2xl font-bold mt-4 mb-2 max-w-xs leading-tight">Create high-impact content in seconds.</h2>
             <p className="text-[12px] text-gray-400 max-w-xs mb-6">Optimized algorithms for maximum reach across Instagram and LinkedIn.</p>
-            <Link href="/generate">
+            <Link href="/user/generate">
               <Button className="bg-[#0d7c8a] hover:bg-[#0b6a75] text-white font-bold h-9 px-6 rounded-lg text-xs">
                 Generate Now <ArrowRight className="ml-2 w-3 h-3" />
               </Button>
@@ -87,15 +85,15 @@ export default async function DashboardPage() {
         {/* Right Side Widgets */}
         <div className="space-y-4">
           <Card className="border-none shadow-sm rounded-xl p-5">
-            <h3 className="text-xs font-bold text-[#1e3a3d] mb-5">Usage</h3>
+            <h3 className="text-xs font-bold text-foreground mb-5">Usage</h3>
             <div className="space-y-5">
               {/* Captions — daily */}
               <div>
-                <div className="flex justify-between text-[10px] font-bold mb-1.5 text-gray-400 uppercase">
+                <div className="flex justify-between text-[10px] font-bold mb-1.5 text-muted-foreground uppercase">
                   <span>Captions Today</span>
-                  <span className="text-[#1e3a3d]">{captionsToday} / {plan === "FREE" ? 10 : "∞"}</span>
+                  <span className="text-foreground">{captionsToday} / {plan === "FREE" ? 10 : "∞"}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#0d7c8a]"
                     style={{ width: plan === "FREE" ? `${Math.min((captionsToday / 10) * 100, 100)}%` : "100%" }}
@@ -104,11 +102,11 @@ export default async function DashboardPage() {
               </div>
               {/* Schedules — monthly */}
               <div>
-                <div className="flex justify-between text-[10px] font-bold mb-1.5 text-gray-400 uppercase">
+                <div className="flex justify-between text-[10px] font-bold mb-1.5 text-muted-foreground uppercase">
                   <span>Schedules This Month</span>
-                  <span className="text-[#1e3a3d]">{monthlyScheduleCount} / {plan === "FREE" ? 15 : "∞"}</span>
+                  <span className="text-foreground">{monthlyScheduleCount} / {plan === "FREE" ? 15 : "∞"}</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-cyan-400"
                     style={{ width: plan === "FREE" ? `${Math.min((monthlyScheduleCount / 15) * 100, 100)}%` : "100%" }}
@@ -118,62 +116,28 @@ export default async function DashboardPage() {
             </div>
           </Card>
 
-         
-
-
-
-
-
-
-
-
-          
-           
-
-           {plan === "PRO" ? (
-      <h1>Welcome to Pro Dashboard!</h1>
-    ) : (
-       <Card className="border-none shadow-sm rounded-xl bg-[#e2f2f4] p-5">
+          {plan === "PRO" ? (
+            <Card className="border-none shadow-sm rounded-xl bg-[#0d7c8a]/10 p-5">
               <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center mb-3 text-white">
-             <Zap size={16} fill="white" />            </div>
-              <h3 className="text-xs font-bold text-[#1e3a3d] mb-1">Go Unlimited</h3>
-             <p className="text-[11px] text-[#0d7c8a]/80 mb-4">Unlimited captions, unlimited scheduled posts every month.</p>
-             <Link href="/pricing" className="text-[11px] font-bold text-[#0d7c8a] flex items-center hover:underline">
-               Upgrade Now <ArrowRight size={12} className="ml-1" />
-            </Link>
-           </Card>
-    )}
-
-
-
-
-
-
-
-
-
-
-
+                <Zap size={16} fill="white" />
+              </div>
+              <h3 className="text-xs font-bold text-foreground mb-1">Pro Plan Active</h3>
+              <p className="text-[11px] text-muted-foreground mb-4">Enjoy unlimited captions and scheduled posts every month.</p>
+            </Card>
+          ) : (
+            <Card className="border-none shadow-sm rounded-xl bg-[#0d7c8a]/10 p-5">
+              <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center mb-3 text-white">
+                <Zap size={16} fill="white" />
+              </div>
+              <h3 className="text-xs font-bold text-foreground mb-1">Go Unlimited</h3>
+              <p className="text-[11px] text-muted-foreground mb-4">Unlimited captions, unlimited scheduled posts every month.</p>
+              <Link href="/pricing" className="text-[11px] font-bold text-[#0d7c8a] flex items-center hover:underline">
+                Upgrade Now <ArrowRight size={12} className="ml-1" />
+              </Link>
+            </Card>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-//  {plan === "FREE" && (
-//             <Card className="border-none shadow-sm rounded-xl bg-[#e2f2f4] p-5">
-//               <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center mb-3 text-white">
-//                 <Zap size={16} fill="white" />
-//               </div>
-//               <h3 className="text-xs font-bold text-[#1e3a3d] mb-1">Go Unlimited</h3>
-//               <p className="text-[11px] text-[#0d7c8a]/80 mb-4">Unlimited captions, unlimited scheduled posts every month.</p>
-//               <Link href="/pricing" className="text-[11px] font-bold text-[#0d7c8a] flex items-center hover:underline">
-//                 Upgrade Now <ArrowRight size={12} className="ml-1" />
-//               </Link>
-//             </Card>
-//           )}

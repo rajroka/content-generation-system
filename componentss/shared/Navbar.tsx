@@ -33,14 +33,14 @@ export function Navbar() {
   if (!isLoaded) return null; 
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#0b1c30]/10 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(0,104,122,0.04)]">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(0,104,122,0.04)] transition-colors">
       <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2 group">
           <span className="w-2 h-2 rounded-full bg-[#06b6d4] animate-pulse" />
           <span 
-            className="font-bold text-lg tracking-tight text-[#0b1c30]" 
+            className="font-bold text-lg tracking-tight text-foreground" 
             style={{ fontFamily: 'Epilogue, sans-serif' }}
           >
             PostSathi
@@ -53,7 +53,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="font-semibold text-sm tracking-tight text-[#3d494c] hover:text-[#06b6d4] transition-colors duration-200"
+              className="font-semibold text-sm tracking-tight text-muted-foreground hover:text-[#06b6d4] transition-colors duration-200"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               {link.label}
@@ -66,15 +66,13 @@ export function Navbar() {
           <ModeToggle />
           {isSignedIn ? (
             <>
-              <Button 
-                asChild
-                className="bg-[#00687a] hover:bg-[#00424f] text-white font-semibold tracking-tight rounded-xl px-5 transition-all"
+              <Link
+                href={dashboardUrl}
+                className="inline-flex items-center justify-center h-8 bg-[#00687a] hover:bg-[#00424f] text-white font-semibold tracking-tight rounded-xl px-5 transition-all text-sm"
                 style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
-                <Link href={dashboardUrl}>
-                  {isAdmin ? "Admin Panel" : "Dashboard"}
-                </Link>
-              </Button>
+                {isAdmin ? "Admin Panel" : "Dashboard"}
+              </Link>
               <UserButton afterSignOutUrl="/" />
             </>
           ) : (
@@ -83,27 +81,26 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-[#0b1c30] hover:bg-[#eff4ff] font-semibold tracking-tight px-5"
+                  className="text-foreground hover:bg-muted font-semibold tracking-tight px-5"
                   style={{ fontFamily: 'Epilogue, sans-serif' }}
                 >
                   Sign in
                 </Button>
               </SignInButton>
-              <Button
-                asChild
-                size="sm"
-                className="bg-[#00687a] hover:bg-[#00424f] text-white font-bold tracking-tight rounded-xl px-5 active:scale-95 transition-transform"
+              <Link
+                href="/sign-up"
+                className="inline-flex items-center justify-center h-7 bg-[#00687a] hover:bg-[#00424f] text-white font-bold tracking-tight rounded-xl px-5 active:scale-95 transition-transform text-[0.8rem]"
                 style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
-                <Link href="/sign-up">Get started</Link>
-              </Button>
+                Get started
+              </Link>
             </>
           )}
         </div>
 
         {/* Mobile Toggle */}
         <button 
-          className="md:hidden text-[#0b1c30]" 
+          className="md:hidden text-foreground" 
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -113,7 +110,7 @@ export function Navbar() {
       {/* Mobile Menu */}
       <div
         className={cn(
-          "md:hidden border-t border-[#0b1c30]/10 bg-white/95 backdrop-blur-xl px-8 py-6 flex flex-col gap-5 transition-all duration-300",
+          "md:hidden border-t border-border bg-background/95 backdrop-blur-xl px-8 py-6 flex flex-col gap-5 transition-all duration-300",
           mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none hidden"
         )}
       >
@@ -121,38 +118,36 @@ export function Navbar() {
           <Link
             key={link.href}
             href={link.href}
-            className="font-semibold text-sm tracking-tight text-[#3d494c] hover:text-[#06b6d4]"
+            className="font-semibold text-sm tracking-tight text-muted-foreground hover:text-[#06b6d4]"
             style={{ fontFamily: 'Epilogue, sans-serif' }}
             onClick={() => setMobileOpen(false)}
           >
             {link.label}
           </Link>
         ))}
-        <div className="flex flex-col gap-4 pt-4 border-t border-[#0b1c30]/5">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-[#3d494c]">Theme</span>
+          <div className="flex flex-col gap-4 pt-4 border-t border-border">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-muted-foreground">Theme</span>
             <ModeToggle />
           </div>
           {isSignedIn ? (
-            <Button 
-              asChild
-              className="bg-[#00687a] text-white font-semibold rounded-xl px-5 w-full"
+            <Link
+              href={dashboardUrl}
+              onClick={() => setMobileOpen(false)}
+              className="inline-flex items-center justify-center h-8 bg-[#00687a] text-white font-semibold rounded-xl px-5 w-full text-sm"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
-              <Link href={dashboardUrl} onClick={() => setMobileOpen(false)}>
-                {isAdmin ? "Admin Panel" : "Dashboard"}
-              </Link>
-            </Button>
+              {isAdmin ? "Admin Panel" : "Dashboard"}
+            </Link>
           ) : (
-            <Button 
-              asChild
-              className="bg-[#00687a] text-white font-bold rounded-xl px-5 w-full"
+            <Link
+              href="/sign-up"
+              onClick={() => setMobileOpen(false)}
+              className="inline-flex items-center justify-center h-8 bg-[#00687a] text-white font-bold rounded-xl px-5 w-full text-sm"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
-              <Link href="/sign-up" onClick={() => setMobileOpen(false)}>
-                Get started
-              </Link>
-            </Button>
+              Get started
+            </Link>
           )}
         </div>
       </div>

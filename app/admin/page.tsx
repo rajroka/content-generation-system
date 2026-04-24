@@ -102,29 +102,29 @@ export default async function AdminOverview() {
   });
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className="p-6 max-w-6xl mx-auto min-h-screen">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
+        <p className="text-[12px] text-muted-foreground mt-1">
           Overview of platform activity and metrics
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.description}
-              </p>
+          <Card key={stat.title} className="border-none shadow-sm rounded-xl">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-muted rounded-lg">
+                <stat.icon size={16} className="text-[#0d7c8a]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.title}</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-xl font-bold text-foreground">{stat.value}</p>
+                  <span className="text-[10px] text-muted-foreground">{stat.trend}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -132,63 +132,56 @@ export default async function AdminOverview() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Joined {new Date(user.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-1 rounded-full bg-muted">
+        <Card className="border-none shadow-sm rounded-xl p-5">
+          <h3 className="text-xs font-bold text-foreground mb-5">Recent Users</h3>
+          <div className="space-y-4">
+            {recentUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm text-foreground">{user.email}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Joined {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                       {user.plan}
                     </span>
                     {user.generations.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {user.generations.length} posts
-                      </span>
-                    )}
-                  </div>
+                      <span className="text-[11px] text-muted-foreground">
+                      {user.generations.length} posts
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
+              </div>
+            ))}
+          </div>
         </Card>
 
         {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentGenerations.map((gen) => (
-                <div key={gen.id} className="flex items-start gap-3 text-sm">
-                  <Activity className="w-4 h-4 text-muted-foreground mt-0.5" />
-                  <div className="flex-1">
-                    <p className="font-medium">{gen.user?.email || "Unknown"}</p>
-                    <p className="text-muted-foreground text-xs">
-                      Generated {gen.platform.toLowerCase()} content: {gen.topic.slice(0, 50)}
-                      {gen.topic.length > 50 ? "..." : ""}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(gen.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  {gen.isFlagged && (
-                    <span className="text-xs text-red-500">⚠️ Flagged</span>
-                  )}
+        <Card className="border-none shadow-sm rounded-xl p-5">
+          <h3 className="text-xs font-bold text-foreground mb-5">Recent Activity</h3>
+          <div className="space-y-3">
+            {recentGenerations.map((gen) => (
+              <div key={gen.id} className="flex items-start gap-3 text-sm">
+                <Activity className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-foreground truncate">{gen.user?.email || "Unknown"}</p>
+                  <p className="text-muted-foreground text-[11px] truncate">
+                    Generated {gen.platform.toLowerCase()} content: {gen.topic}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {new Date(gen.createdAt).toLocaleString()}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
+                {gen.isFlagged && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500 shrink-0">
+                    Flagged
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
     </div>
