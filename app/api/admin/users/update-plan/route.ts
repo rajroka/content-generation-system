@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -23,4 +25,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to update plan" }, { status: 500 });
   }
 }
+
 

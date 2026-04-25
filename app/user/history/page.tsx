@@ -3,7 +3,6 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { History, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { CopyButton } from "@/componentss/shared/CopyButton";

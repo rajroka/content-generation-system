@@ -1,6 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 export async function POST(req: Request) {
   try {
@@ -45,21 +48,29 @@ export async function POST(req: Request) {
       },
     });
 
+    // FREE plan: 15 scheduled posts per month (not drafts)
     if (!isDraft && user.plan === "FREE") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const monthStart = startOfMonth(new Date());
+      const monthEnd = endOfMonth(new Date());
 
-      const usage = await prisma.usage.findUnique({
-        where: { userId_date: { userId: user.id, date: today } },
+      const monthlyScheduleCount = await prisma.scheduledPost.count({
+        where: {
+          userId: user.id,
+          status: { in: ["SCHEDULED", "PUBLISHED"] },
+          createdAt: { gte: monthStart, lte: monthEnd },
+        },
       });
 
-      if ((usage?.scheduleCount ?? 0) >= 5) {
+      if (monthlyScheduleCount >= 15) {
         return NextResponse.json(
-          { error: "Daily schedule limit reached (5/day). Upgrade to Pro for unlimited." },
+          { error: "Monthly schedule limit reached (15/month). Upgrade to Pro for unlimited." },
           { status: 403 }
         );
       }
 
+      // Track in Usage table for dashboard display
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       await prisma.usage.upsert({
         where:  { userId_date: { userId: user.id, date: today } },
         update: { scheduleCount: { increment: 1 } },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser, UserButton } from "@clerk/nextjs";
-import { Search, Menu, LayoutDashboard, ShieldCheck, Shield } from "lucide-react";
+import { Search, Menu, ShieldCheck, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export function AdminNavbar() {
     <header className="h-14 bg-background flex items-center px-4 md:px-6 gap-4 border-b border-border sticky top-0 z-40 transition-colors">
       <div className="md:hidden">
         <Sheet>
-          <SheetTrigger asChild>
+          <SheetTrigger>
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
@@ -52,13 +52,8 @@ export function AdminNavbar() {
                 })}
               </nav>
 
-              {/* Profile & Bottom Settings Area */}
-              <div className="mt-auto p-3 border-t border-border bg-muted/30 space-y-1">
-                <Link href="/user/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium text-muted-foreground hover:text-[#0d7c8a] transition-colors mb-2">
-                  <LayoutDashboard size={18} className="shrink-0" />
-                  <span>Back to App</span>
-                </Link>
-
+              {/* Profile */}
+              <div className="mt-auto p-3 border-t border-border bg-muted/30">
                 <div className="flex items-center gap-3 p-2 bg-background border border-border rounded-xl shadow-sm">
                   <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
                   <div className="flex flex-col min-w-0">

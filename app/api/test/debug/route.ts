@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -84,3 +86,4 @@ export async function GET(req: Request) {
     );
   }
 }
+

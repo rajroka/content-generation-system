@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
@@ -58,3 +60,4 @@ export async function POST(req: Request) {
 
   return new Response("Webhook received", { status: 200 });
 }
+

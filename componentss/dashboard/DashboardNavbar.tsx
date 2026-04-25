@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../shared/ThemeToggle";
 
-export function DashboardNavbar() {
+export function DashboardNavbar({ plan = "FREE" }: { plan?: string }) {
   const { user } = useUser();
   const pathname = usePathname();
 
@@ -19,7 +19,7 @@ export function DashboardNavbar() {
     <header className="h-14 bg-background flex items-center px-4 md:px-6 gap-4 border-b border-border sticky top-0 z-40 transition-colors">
       <div className="md:hidden">
         <Sheet>
-          <SheetTrigger asChild>
+          <SheetTrigger>
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="w-5 h-5 text-muted-foreground" />
             </Button>
@@ -65,13 +65,15 @@ export function DashboardNavbar() {
                 <div className="flex items-center gap-3 p-2 bg-background border border-border rounded-xl shadow-sm">
                   <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[12px] font-bold text-foreground truncate leading-none mb-1">
+                    <span className="text-[12px] font-bold text-foreground truncate leading-none">
                       {user?.firstName || "Member"}
                     </span>
-                    <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider">
-                      <ShieldCheck size={10} />
-                      <span>Pro Member</span>
-                    </div>
+                    {plan === "PRO" && (
+                      <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider mt-1">
+                        <ShieldCheck size={10} />
+                        <span>Pro User</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

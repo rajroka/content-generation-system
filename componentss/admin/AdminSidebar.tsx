@@ -7,13 +7,9 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
-  FileText,
-  Image,
   BarChart3,
   CreditCard,
   Shield,
-  Activity,
-  Flag,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -79,18 +75,13 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-border bg-muted/30 space-y-1">
-        <Link
-          href="/user/dashboard"
-          className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium text-muted-foreground hover:text-[#0d7c8a] transition-colors",
-            collapsed && "justify-center"
-          )}
-        >
-          <LayoutDashboard size={18} className="shrink-0" />
-          {!collapsed && <span>Back to App</span>}
-        </Link>
+      {/* Footer — admin-only branding */}
+      <div className="p-3 border-t border-border bg-muted/30">
+        {!collapsed && (
+          <p className="text-[10px] text-muted-foreground text-center font-medium uppercase tracking-wider">
+            Admin Panel
+          </p>
+        )}
       </div>
     </aside>
   );

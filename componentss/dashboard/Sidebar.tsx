@@ -27,7 +27,7 @@ export const navItems = [
   { href: "/user/analytics", label: "Insights", icon: BarChart3 },
 ];
 
-export function Sidebar() {
+export function Sidebar({ plan = "FREE" }: { plan?: string }) {
   const pathname = usePathname();
   const { user } = useUser();
   const [collapsed, setCollapsed] = useState(false);
@@ -102,13 +102,15 @@ export function Sidebar() {
           <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-[12px] font-bold text-foreground truncate leading-none mb-1">
+              <span className="text-[12px] font-bold text-foreground truncate leading-none">
                 {user?.firstName || "Member"}
               </span>
-              <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider">
-                <ShieldCheck size={10} />
-                <span>Pro Member</span>
-              </div>
+              {plan === "PRO" && (
+                <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider mt-1">
+                  <ShieldCheck size={10} />
+                  <span>Pro User</span>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -7,11 +7,34 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/pricing",
+  "/auth/redirect",
   "/api/webhooks/stripe",
   "/api/webhooks/clerk",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+
+async function checkAndPromoteAdmin(userId: string) {
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  let role = user.publicMetadata?.role;
+
+  const primaryEmailObj = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId);
+  const primaryEmail = primaryEmailObj?.emailAddress?.toLowerCase();
+  const adminEmails = (process.env.ADMIN_EMAIL || "").split(",").map(e => e.trim().toLowerCase());
+
+  if (primaryEmail && (adminEmails.includes(primaryEmail) || primaryEmail.startsWith("admin"))) {
+    if (role !== "admin") {
+      console.log(`Auto-promoting ${primaryEmail} to admin...`);
+      await client.users.updateUserMetadata(userId, {
+        publicMetadata: { role: "admin" }
+      });
+      role = "admin";
+    }
+  }
+
+  return { role, primaryEmail };
+}
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
@@ -19,11 +42,7 @@ export default clerkMiddleware(async (auth, req) => {
   // 2. Handle Public Routes
   if (isPublicRoute(req)) {
     if (userId && (req.nextUrl.pathname.startsWith('/sign-in') || req.nextUrl.pathname.startsWith('/sign-up'))) {
-      const client = await clerkClient();
-      const user = await client.users.getUser(userId);
-      // Accessing publicMetadata directly to avoid undefined issues
-      const role = user.publicMetadata?.role;
-      
+      const { role } = await checkAndPromoteAdmin(userId);
       const targetPath = role === "admin" ? "/admin" : "/user/dashboard";
       return NextResponse.redirect(new URL(targetPath, req.url));
     }
@@ -39,14 +58,11 @@ export default clerkMiddleware(async (auth, req) => {
 
   // 4. Admin-only route protection
   if (isAdminRoute(req)) {
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    
-    // Direct extraction
-    const role = user.publicMetadata?.role;
+    const { role, primaryEmail } = await checkAndPromoteAdmin(userId);
 
     console.log("--- Middleware Security Check ---");
     console.log("User ID:", userId);
+    console.log("Email:", primaryEmail);
     console.log("Metadata Role:", role);
 
     if (role !== "admin") {

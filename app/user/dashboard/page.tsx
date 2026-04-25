@@ -5,18 +5,38 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PenLine, ImageIcon, History, Calendar, ArrowRight, Zap } from "lucide-react";
+import { PenLine, ImageIcon, History, Calendar, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
+import { UpgradeNotifier } from "@/componentss/dashboard/UpgradeNotifier";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
+  const params = await searchParams;
+  const upgraded = params.upgraded === "true";
+
   const clerkUser = await currentUser();
   
-  const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-  const plan = user?.plan ?? "FREE";
+  let user = await prisma.user.findUnique({ where: { clerkId: userId } });
+  let plan = user?.plan ?? "FREE";
+
+  // Force DB update if we returned from a successful Stripe checkout
+  // This makes the plan upgrade permanent instantly, bypassing webhook delays
+  if (upgraded && user && plan !== "PRO") {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { plan: "PRO" },
+    });
+    plan = "PRO";
+  }
+
+  const displayPlan = plan; // No longer need displayPlan as a separate variable since DB is forcefully synced
   const today = startOfDay(new Date());
   const todayEnd = endOfDay(new Date());
   const monthStart = startOfMonth(new Date());
@@ -47,6 +67,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto min-h-screen">
+      <UpgradeNotifier upgraded={upgraded} />
+      
       <div className="mb-6">
         <h1 className="text-xl font-bold text-foreground">Welcome, {clerkUser?.firstName} 👋</h1>
         <p className="text-[12px] text-muted-foreground">You have <span className="text-[#0d7c8a] font-bold">{scheduledCount} posts</span> currently in queue.</p>
@@ -91,12 +113,12 @@ export default async function DashboardPage() {
               <div>
                 <div className="flex justify-between text-[10px] font-bold mb-1.5 text-muted-foreground uppercase">
                   <span>Captions Today</span>
-                  <span className="text-foreground">{captionsToday} / {plan === "FREE" ? 10 : "∞"}</span>
+                  <span className="text-foreground">{captionsToday} / {displayPlan === "FREE" ? 10 : "∞"}</span>
                 </div>
                 <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#0d7c8a]"
-                    style={{ width: plan === "FREE" ? `${Math.min((captionsToday / 10) * 100, 100)}%` : "100%" }}
+                    style={{ width: displayPlan === "FREE" ? `${Math.min((captionsToday / 10) * 100, 100)}%` : "100%" }}
                   />
                 </div>
               </div>
@@ -104,19 +126,19 @@ export default async function DashboardPage() {
               <div>
                 <div className="flex justify-between text-[10px] font-bold mb-1.5 text-muted-foreground uppercase">
                   <span>Schedules This Month</span>
-                  <span className="text-foreground">{monthlyScheduleCount} / {plan === "FREE" ? 15 : "∞"}</span>
+                  <span className="text-foreground">{monthlyScheduleCount} / {displayPlan === "FREE" ? 15 : "∞"}</span>
                 </div>
                 <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-cyan-400"
-                    style={{ width: plan === "FREE" ? `${Math.min((monthlyScheduleCount / 15) * 100, 100)}%` : "100%" }}
+                    style={{ width: displayPlan === "FREE" ? `${Math.min((monthlyScheduleCount / 15) * 100, 100)}%` : "100%" }}
                   />
                 </div>
               </div>
             </div>
           </Card>
 
-          {plan === "PRO" ? (
+          {displayPlan === "PRO" ? (
             <Card className="border-none shadow-sm rounded-xl bg-[#0d7c8a]/10 p-5">
               <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center mb-3 text-white">
                 <Zap size={16} fill="white" />
