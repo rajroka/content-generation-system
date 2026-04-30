@@ -3,10 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   FileText,
-  Image,
   TrendingUp,
   DollarSign,
-  AlertTriangle,
   Activity,
 } from "lucide-react";
 
@@ -15,15 +13,11 @@ export default async function AdminOverview() {
   const [
     totalUsers,
     totalGenerations,
-    totalImages,
-    flaggedContent,
     proUsers,
     todayGenerations,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.generation.count(),
-    prisma.generation.count({ where: { imageUrl: { not: null } } }),
-    prisma.generation.count({ where: { isFlagged: true } }),
     prisma.user.count({ where: { plan: "PRO" } }),
     prisma.generation.count({
       where: {
@@ -49,28 +43,7 @@ export default async function AdminOverview() {
       description: `${todayGenerations} today`,
       trend: "+8%",
     },
-    {
-      title: "Images Created",
-      value: totalImages,
-      icon: Image,
-      description: "Total images generated",
-      trend: "+15%",
-    },
-    {
-      title: "Pro Conversion",
-      value: `${((proUsers / totalUsers) * 100).toFixed(1)}%`,
-      icon: TrendingUp,
-      description: `${proUsers} paying users`,
-      trend: "+5%",
-    },
-    {
-      title: "Flagged Content",
-      value: flaggedContent,
-      icon: AlertTriangle,
-      description: "Needs review",
-      trend: flaggedContent > 10 ? "+3" : "0",
-      trendUp: false,
-    },
+    
     {
       title: "Monthly Revenue",
       value: `$${(proUsers * 9.99).toFixed(0)}`,
@@ -102,27 +75,27 @@ export default async function AdminOverview() {
   });
 
   return (
-    <div className="p-6 max-w-6xl mx-auto min-h-screen">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Admin Dashboard</h1>
-        <p className="text-[12px] text-muted-foreground mt-1">
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">
           Overview of platform activity and metrics
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (
-          <Card key={stat.title} className="border-none shadow-sm rounded-xl">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
-                <stat.icon size={16} className="text-[#0d7c8a]" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.title}</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-xl font-bold text-foreground">{stat.value}</p>
-                  <span className="text-[10px] text-muted-foreground">{stat.trend}</span>
+          <Card key={stat.title} className="border-none shadow-sm rounded-lg">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <stat.icon size={20} className="text-[#0d7c8a]" />
                 </div>
               </div>
             </CardContent>
@@ -132,56 +105,64 @@ export default async function AdminOverview() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Users */}
-        <Card className="border-none shadow-sm rounded-xl p-5">
-          <h3 className="text-xs font-bold text-foreground mb-5">Recent Users</h3>
-          <div className="space-y-4">
-            {recentUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm text-foreground">{user.email}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Joined {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                  <div>
+                    <p className="font-medium text-sm">{user.email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Joined {new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
                       {user.plan}
                     </span>
                     {user.generations.length > 0 && (
-                      <span className="text-[11px] text-muted-foreground">
-                      {user.generations.length} posts
-                    </span>
-                  )}
+                      <span className="text-xs text-muted-foreground">
+                        {user.generations.length} posts
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
 
         {/* Recent Activity */}
-        <Card className="border-none shadow-sm rounded-xl p-5">
-          <h3 className="text-xs font-bold text-foreground mb-5">Recent Activity</h3>
-          <div className="space-y-3">
-            {recentGenerations.map((gen) => (
-              <div key={gen.id} className="flex items-start gap-3 text-sm">
-                <Activity className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-foreground truncate">{gen.user?.email || "Unknown"}</p>
-                  <p className="text-muted-foreground text-[11px] truncate">
-                    Generated {gen.platform.toLowerCase()} content: {gen.topic}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {new Date(gen.createdAt).toLocaleString()}
-                  </p>
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentGenerations.map((gen) => (
+                <div key={gen.id} className="flex items-start gap-3 border-b pb-4 last:border-0">
+                  <Activity className="w-4 h-4 text-muted-foreground mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{gen.user?.email || "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      Generated {gen.platform.toLowerCase()} content: {gen.topic}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(gen.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  {gen.isFlagged && (
+                    <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-50 text-red-600 shrink-0">
+                      Flagged
+                    </span>
+                  )}
                 </div>
-                {gen.isFlagged && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-500 shrink-0">
-                    Flagged
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

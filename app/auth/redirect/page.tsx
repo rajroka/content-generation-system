@@ -29,10 +29,13 @@ export default async function AuthRedirectPage() {
     });
     role = "user";
   }
+  console.log(`[auth/redirect] User ${userId} has role: ${role}`);
 
   if (role === "admin") {
     redirect("/admin");
+  
   } else {
     redirect("/user/dashboard");
+    
   }
 }

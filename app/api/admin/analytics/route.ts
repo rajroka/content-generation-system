@@ -1,14 +1,22 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const { userId, sessionClaims } = await auth();
+    const { userId } = await auth();
     
-    const role = (sessionClaims?.publicMetadata as { role?: string })?.role;
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Verify admin role
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const role = user.publicMetadata?.role;
+    
     if (role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -17,30 +25,73 @@ export async function GET() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Daily generations
-    const dailyGenerations = await prisma.$queryRaw`
-      SELECT DATE(created_at) as date, COUNT(*) as count
-      FROM "Generation"
-      WHERE created_at >= ${thirtyDaysAgo}
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `;
+    // Daily generations - fetch all and process in JS
+    const generationsData = await prisma.generation.findMany({
+      where: {
+        createdAt: {
+          gte: thirtyDaysAgo,
+        },
+      },
+      select: {
+        createdAt: true,
+        platform: true,
+      },
+    });
+
+    // Group by date
+    const dailyGenerations: { date: string; count: number }[] = [];
+    const dateMap: { [key: string]: number } = {};
+    
+    generationsData.forEach((gen) => {
+      const date = gen.createdAt.toISOString().split("T")[0];
+      dateMap[date] = (dateMap[date] || 0) + 1;
+    });
+
+    Object.entries(dateMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([date, count]) => {
+        dailyGenerations.push({ date, count });
+      });
 
     // Platform distribution
-    const platformDistribution = await prisma.$queryRaw`
-      SELECT platform, COUNT(*) as count
-      FROM "Generation"
-      GROUP BY platform
-    `;
+    const platformMap: { [key: string]: number } = {};
+    generationsData.forEach((gen) => {
+      const platform = gen.platform;
+      platformMap[platform] = (platformMap[platform] || 0) + 1;
+    });
 
-    // User growth
-    const userGrowth = await prisma.$queryRaw`
-      SELECT DATE(created_at) as date, COUNT(*) as users
-      FROM "User"
-      WHERE created_at >= ${thirtyDaysAgo}
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `;
+    const platformDistribution = Object.entries(platformMap).map(
+      ([platform, count]) => ({
+        platform,
+        count,
+      })
+    );
+
+    // User growth for last 30 days
+    const usersData = await prisma.user.findMany({
+      where: {
+        createdAt: {
+          gte: thirtyDaysAgo,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
+    });
+
+    const userGrowth: { date: string; users: number }[] = [];
+    const userDateMap: { [key: string]: number } = {};
+    
+    usersData.forEach((user) => {
+      const date = user.createdAt.toISOString().split("T")[0];
+      userDateMap[date] = (userDateMap[date] || 0) + 1;
+    });
+
+    Object.entries(userDateMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([date, users]) => {
+        userGrowth.push({ date, users });
+      });
 
     // Total stats
     const [totalUsers, totalGenerations, totalImages, proUsers] = await Promise.all([
@@ -68,6 +119,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+    console.error("Analytics error:", error);
     return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
   }
 }

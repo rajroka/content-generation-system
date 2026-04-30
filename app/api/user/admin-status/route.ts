@@ -1,17 +1,19 @@
 export const dynamic = "force-dynamic";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const { userId, sessionClaims } = await auth();
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json({ isAdmin: false }, { status: 401 });
     }
 
-    const role = (sessionClaims?.publicMetadata as { role?: string })?.role;
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const role = user.publicMetadata?.role;
 
     return NextResponse.json({
       isAdmin: role === "admin",
