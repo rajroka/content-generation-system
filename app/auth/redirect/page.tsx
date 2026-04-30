@@ -21,26 +21,13 @@ export default async function AuthRedirectPage() {
 
   let role = user.publicMetadata?.role as string | undefined;
 
-  // Auto-promote if email matches ADMIN_EMAIL env var
-  const primaryEmailObj = user.emailAddresses.find(
-    (e) => e.id === user.primaryEmailAddressId
-  );
-  const primaryEmail = primaryEmailObj?.emailAddress?.toLowerCase();
-  const adminEmails = (process.env.ADMIN_EMAIL || "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-
-  const isAdminEmail =
-    primaryEmail &&
-    (adminEmails.includes(primaryEmail) || primaryEmail.startsWith("admin"));
-
-  if (isAdminEmail && role !== "admin") {
-    console.log(`[auth/redirect] Auto-promoting ${primaryEmail} to admin`);
+  // If role is not set, default them to "user"
+  if (!role) {
+    console.log(`[auth/redirect] Role not set for user ${userId}. Defaulting to "user".`);
     await client.users.updateUserMetadata(userId, {
-      publicMetadata: { role: "admin" },
+      publicMetadata: { role: "user" },
     });
-    role = "admin";
+    role = "user";
   }
 
   if (role === "admin") {

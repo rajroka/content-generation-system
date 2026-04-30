@@ -51,9 +51,15 @@ export default function AdminUsersPage() {
     try {
       const response = await fetch("/api/admin/users");
       const data = await response.json();
-      setUsers(data);
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else {
+        console.error("API did not return an array of users:", data);
+        setUsers([]);
+      }
     } catch (error) {
       toast.error("Failed to fetch users");
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -97,9 +103,10 @@ export default function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(
+  const safeUsers = Array.isArray(users) ? users : [];
+  const filteredUsers = safeUsers.filter(
     (user) =>
-      user.email.toLowerCase().includes(search.toLowerCase()) ||
+      user.email?.toLowerCase().includes(search.toLowerCase()) ||
       user.name?.toLowerCase().includes(search.toLowerCase())
   );
 
