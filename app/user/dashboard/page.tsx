@@ -1,11 +1,9 @@
-// export const revalidate = 0; // This forces the dashboard to fetch fresh data on every load
-export const dynamic = "force-dynamic";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PenLine, ImageIcon, History, Calendar, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { PenLine, ImageIcon, History, Calendar, ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 import { UpgradeNotifier } from "@/componentss/dashboard/UpgradeNotifier";
@@ -27,7 +25,6 @@ export default async function DashboardPage({
   let plan = user?.plan ?? "FREE";
 
   // Force DB update if we returned from a successful Stripe checkout
-  // This makes the plan upgrade permanent instantly, bypassing webhook delays
   if (upgraded && user && plan !== "PRO") {
     user = await prisma.user.update({
       where: { id: user.id },
@@ -36,7 +33,7 @@ export default async function DashboardPage({
     plan = "PRO";
   }
 
-  const displayPlan = plan; // No longer need displayPlan as a separate variable since DB is forcefully synced
+  const displayPlan = plan;
   const today = startOfDay(new Date());
   const todayEnd = endOfDay(new Date());
   const monthStart = startOfMonth(new Date());
@@ -59,30 +56,57 @@ export default async function DashboardPage({
     : [0, 0, 0, 0, 0];
 
   const stats = [
-    { title: "Captions", value: captionsToday, icon: <PenLine size={16} className="text-[#0d7c8a]" /> },
-    { title: "Images", value: imagesToday, icon: <ImageIcon size={16} className="text-[#0d7c8a]" /> },
-    { title: "Total", value: totalGenerations, icon: <History size={16} className="text-[#0d7c8a]" /> },
-    { title: "Scheduled", value: scheduledCount, icon: <Calendar size={16} className="text-[#0d7c8a]" /> },
+    {
+      title: "Captions Today",
+      value: captionsToday,
+      icon: PenLine,
+      description: `${displayPlan === "FREE" ? captionsToday + " / 10" : "Unlimited"}`,
+    },
+    {
+      title: "Images Today",
+      value: imagesToday,
+      icon: ImageIcon,
+      description: `${displayPlan === "FREE" ? "Limited" : "Unlimited"}`,
+    },
+    {
+      title: "Total Generated",
+      value: totalGenerations,
+      icon: History,
+      description: "All time",
+    },
+    {
+      title: "Scheduled Posts",
+      value: scheduledCount,
+      icon: Calendar,
+      description: "In queue",
+    },
   ];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto min-h-screen">
+    <div className="p-6">
       <UpgradeNotifier upgraded={upgraded} />
       
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Welcome, {clerkUser?.firstName} 👋</h1>
-        <p className="text-[12px] text-muted-foreground">You have <span className="text-[#0d7c8a] font-bold">{scheduledCount} posts</span> currently in queue.</p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Welcome, {clerkUser?.firstName} 👋</h1>
+        <p className="text-muted-foreground mt-1">
+          You have {scheduledCount} posts currently in queue
+        </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
-          <Card key={stat.title} className="border-none shadow-sm rounded-xl">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">{stat.icon}</div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.title}</p>
-                <p className="text-xl font-bold text-foreground">{stat.value}</p>
+          <Card key={stat.title} className="border-none shadow-sm rounded-lg">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <stat.icon size={20} className="text-[#0d7c8a]" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -91,31 +115,33 @@ export default async function DashboardPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hero Card */}
-        <div className="lg:col-span-2 rounded-2xl bg-[#0a192f] p-8 text-white relative overflow-hidden flex flex-col justify-center min-h-[300px]">
+        <div className="lg:col-span-2 rounded-lg bg-[#0a192f] p-8 text-white relative overflow-hidden flex flex-col justify-center min-h-[300px]">
           <div className="relative z-10">
-            <span className="bg-[#0d7c8a] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Update v2.4</span>
-            <h2 className="text-2xl font-bold mt-4 mb-2 max-w-xs leading-tight">Create high-impact content in seconds.</h2>
-            <p className="text-[12px] text-gray-400 max-w-xs mb-6">Optimized algorithms for maximum reach across Instagram and LinkedIn.</p>
+            <span className="bg-[#0d7c8a] text-white text-xs font-bold px-3 py-1 rounded-full">Generate Content</span>
+            <h2 className="text-2xl font-bold mt-4 mb-2 max-w-xs leading-tight">Create high-impact content in seconds</h2>
+            <p className="text-sm text-gray-400 max-w-xs mb-6">Optimized algorithms for maximum reach across Instagram and LinkedIn</p>
             <Link href="/user/generate">
-              <Button className="bg-[#0d7c8a] hover:bg-[#0b6a75] text-white font-bold h-9 px-6 rounded-lg text-xs">
-                Generate Now <ArrowRight className="ml-2 w-3 h-3" />
+              <Button className="bg-[#0d7c8a] hover:bg-[#0b6a75] text-white font-bold h-9 px-6 rounded-lg text-sm">
+                Generate Now <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Right Side Widgets */}
-        <div className="space-y-4">
-          <Card className="border-none shadow-sm rounded-xl p-5">
-            <h3 className="text-xs font-bold text-foreground mb-5">Usage</h3>
+        {/* Usage Widget */}
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-lg">Usage</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-5">
               {/* Captions — daily */}
               <div>
-                <div className="flex justify-between text-[10px] font-bold mb-1.5 text-muted-foreground uppercase">
+                <div className="flex justify-between text-xs font-medium mb-2 text-muted-foreground">
                   <span>Captions Today</span>
                   <span className="text-foreground">{captionsToday} / {displayPlan === "FREE" ? 10 : "∞"}</span>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#0d7c8a]"
                     style={{ width: displayPlan === "FREE" ? `${Math.min((captionsToday / 10) * 100, 100)}%` : "100%" }}
@@ -124,41 +150,48 @@ export default async function DashboardPage({
               </div>
               {/* Schedules — monthly */}
               <div>
-                <div className="flex justify-between text-[10px] font-bold mb-1.5 text-muted-foreground uppercase">
+                <div className="flex justify-between text-xs font-medium mb-2 text-muted-foreground">
                   <span>Schedules This Month</span>
                   <span className="text-foreground">{monthlyScheduleCount} / {displayPlan === "FREE" ? 15 : "∞"}</span>
                 </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-cyan-400"
                     style={{ width: displayPlan === "FREE" ? `${Math.min((monthlyScheduleCount / 15) * 100, 100)}%` : "100%" }}
                   />
                 </div>
               </div>
-            </div>
-          </Card>
 
-          {displayPlan === "PRO" ? (
-            <Card className="border-none shadow-sm rounded-xl bg-[#0d7c8a]/10 p-5">
-              <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center mb-3 text-white">
-                <Zap size={16} fill="white" />
+              {/* Plan Status */}
+              <div className="pt-4 border-t">
+                {displayPlan === "PRO" ? (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center text-white shrink-0">
+                      <Zap size={16} fill="white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">Pro Plan Active</p>
+                      <p className="text-xs text-muted-foreground mt-1">Enjoy unlimited access to all features</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center text-white shrink-0">
+                      <Zap size={16} fill="white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">Go Unlimited</p>
+                      <p className="text-xs text-muted-foreground mt-1">Unlock unlimited captions and schedules</p>
+                      <Link href="/pricing" className="text-xs font-bold text-[#0d7c8a] flex items-center hover:underline mt-2">
+                        Upgrade Now <ArrowRight size={12} className="ml-1" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
-              <h3 className="text-xs font-bold text-foreground mb-1">Pro Plan Active</h3>
-              <p className="text-[11px] text-muted-foreground mb-4">Enjoy unlimited captions and scheduled posts every month.</p>
-            </Card>
-          ) : (
-            <Card className="border-none shadow-sm rounded-xl bg-[#0d7c8a]/10 p-5">
-              <div className="w-8 h-8 bg-[#0d7c8a] rounded-lg flex items-center justify-center mb-3 text-white">
-                <Zap size={16} fill="white" />
-              </div>
-              <h3 className="text-xs font-bold text-foreground mb-1">Go Unlimited</h3>
-              <p className="text-[11px] text-muted-foreground mb-4">Unlimited captions, unlimited scheduled posts every month.</p>
-              <Link href="/pricing" className="text-[11px] font-bold text-[#0d7c8a] flex items-center hover:underline">
-                Upgrade Now <ArrowRight size={12} className="ml-1" />
-              </Link>
-            </Card>
-          )}
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

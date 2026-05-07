@@ -53,14 +53,18 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+    <Card className="border-none shadow-sm rounded-lg">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold text-foreground mt-2">{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          </div>
+          <div className="p-2 bg-muted rounded-lg">
+            {icon}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -115,18 +119,18 @@ export default function AnalyticsPage() {
   const totalPlatformCount = data.platformBreakdown.reduce((s, p) => s + p.count, 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 space-y-8">
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Track your content performance and usage patterns.
+        <h1 className="text-3xl font-bold">Analytics</h1>
+        <p className="text-muted-foreground mt-1">
+          Track your content performance and usage patterns
         </p>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Generations"
           value={data.totals.generations}
@@ -154,9 +158,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Generations Over Time */}
-      <Card>
+      <Card className="border-none shadow-sm rounded-lg">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Generations — Last 30 Days</CardTitle>
+          <CardTitle>Generations — Last 30 Days</CardTitle>
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -208,9 +212,9 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Weekly Usage */}
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
-            <CardTitle className="text-base">Usage — Last 7 Days</CardTitle>
+            <CardTitle>Usage — Last 7 Days</CardTitle>
           </CardHeader>
           <CardContent>
             {data.usageOverTime.every((d) => d.captions === 0 && d.schedules === 0) ? (
@@ -248,9 +252,9 @@ export default function AnalyticsPage() {
         </Card>
 
         {/* Platform Breakdown */}
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
-            <CardTitle className="text-base">Platform Breakdown</CardTitle>
+            <CardTitle>Platform Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
             {data.platformBreakdown.length === 0 ? (

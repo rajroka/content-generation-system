@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -38,14 +38,16 @@ export default async function HistoryPage({
     : [];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Content History</h1>
-        <p className="text-muted-foreground mt-1">All your generated content in one place.</p>
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Content History</h1>
+        <p className="text-muted-foreground mt-1">
+          All your generated content in one place
+        </p>
         {query && (
-          <p className="text-sm text-primary mt-1">
+          <p className="text-sm text-primary mt-2">
             Showing results for: <strong>"{query}"</strong>{" "}
-            <Link href="/user/history" className="underline text-muted-foreground">Clear</Link>
+            <Link href="/user/history" className="underline text-muted-foreground ml-2">Clear</Link>
           </p>
         )}
       </div>
@@ -69,7 +71,7 @@ export default async function HistoryPage({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {generations.map((gen) => (
-            <Card key={gen.id}>
+            <Card key={gen.id} className="border-none shadow-sm rounded-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{gen.platform}</Badge>
