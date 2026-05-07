@@ -9,15 +9,15 @@ const imagekit = new ImageKit({
   urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!,
 });
 
-const SUPPORTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/heic",
+const SUPPORTED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/quicktime",  // .mov
+  "video/webm",
+  "video/x-msvideo",  // .avi
+  "video/mpeg",
 ];
 
-const MAX_IMAGE_SIZE_MB = 20;
+const MAX_VIDEO_SIZE_MB = 100;
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,39 +28,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
+    if (!SUPPORTED_VIDEO_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Unsupported image format. Supported: JPEG, PNG, WebP, GIF, HEIC" },
+        { error: `Unsupported video format. Supported: MP4, MOV, WebM, AVI, MPEG` },
         { status: 400 }
       );
     }
 
     const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB > MAX_IMAGE_SIZE_MB) {
+    if (sizeMB > MAX_VIDEO_SIZE_MB) {
       return NextResponse.json(
-        { error: `Image too large. Maximum size is ${MAX_IMAGE_SIZE_MB}MB` },
+        { error: `Video too large. Maximum size is ${MAX_VIDEO_SIZE_MB}MB` },
         { status: 400 }
       );
     }
 
-    const ext      = file.name.split(".").pop() || "jpg";
-    const fileName = `image_${Date.now()}.${ext}`;
-    const buffer   = Buffer.from(await file.arrayBuffer());
+    const ext      = file.name.split(".").pop() || "mp4";
+    const fileName = `video_${Date.now()}.${ext}`;
+
+    const buffer = Buffer.from(await file.arrayBuffer());
 
     const response = await imagekit.upload({
-      file:              buffer,
+      file:            buffer,
       fileName,
-      folder:            "/posts",
+      folder:          "/videos",
       useUniqueFileName: true,
     });
 
     return NextResponse.json({
       url:    response.url,
       fileId: response.fileId,
-      type:   "image",
+      type:   "video",
     });
   } catch (error: any) {
-    console.error("ImageKit Upload Error:", error);
+    console.error("Video Upload Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

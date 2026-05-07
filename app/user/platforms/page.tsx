@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "react-hot-toast";
-import { Instagram, Facebook, Twitter, Youtube, Link2, Unlink, Loader2, CheckCircle2 } from "lucide-react";
+import { Instagram, Facebook, Twitter, Youtube, Link2, Unlink, Loader2, CheckCircle2, Linkedin } from "lucide-react";
 
 interface ConnectedAccount {
   platform: string;
@@ -16,9 +16,10 @@ interface ConnectedAccount {
 
 const platforms = [
   { id: "instagram", name: "Instagram", icon: Instagram, authUrl: "/api/auth/instagram", color: "text-pink-600" },
-  { id: "facebook",  name: "Facebook",  icon: Facebook,  authUrl: "/api/auth/facebook", color: "text-blue-600" },
-  { id: "twitter",   name: "Twitter/X", icon: Twitter,   authUrl: "/api/auth/twitter", color: "text-blue-400" },
-  { id: "youtube",   name: "YouTube",   icon: Youtube,   authUrl: "/api/auth/youtube", color: "text-red-600" },
+  { id: "facebook",  name: "Facebook",  icon: Facebook,  authUrl: "/api/auth/facebook",  color: "text-blue-600" },
+  { id: "twitter",   name: "Twitter/X", icon: Twitter,   authUrl: "/api/auth/twitter",   color: "text-blue-400" },
+  { id: "linkedin",  name: "LinkedIn",  icon: Linkedin,  authUrl: "/api/auth/linkedin",  color: "text-blue-700" },
+  { id: "youtube",   name: "YouTube",   icon: Youtube,   authUrl: "/api/auth/youtube",   color: "text-red-600"  },
 ];
 
 export default function ConnectionsPage() {

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check } from "lucide-react";
+import { Sparkles, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check, Send, Film, Upload } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
@@ -65,9 +65,12 @@ export default function GeneratePage() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["FACEBOOK"]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [caption, setCaption] = useState("");
-  const [mediaFiles, setMediaFiles] = useState<{ url: string; file?: File }[]>([]);
+  // mediaFiles stores both local blob preview URL and the uploaded CDN URL
+  const [mediaFiles, setMediaFiles] = useState<{ localUrl: string; cdnUrl?: string; file?: File; type: "image" | "video" }[]>([]);
   const [scheduledFor, setScheduledFor] = useState("");
   const [usage, setUsage] = useState({ captions: 2, schedules: 1, plan: "FREE" });
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -88,19 +91,107 @@ export default function GeneratePage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
+  const handlePostNow = async () => {
+    if (!caption.trim() && mediaFiles.length === 0) return toast.error("Add some content before posting!");
+    if (selectedPlatforms.length === 0) return toast.error("Select at least one platform");
+
+    // Ensure all files are uploaded to CDN first
+    const unuploaded = mediaFiles.filter((m) => !m.cdnUrl);
+    if (unuploaded.length > 0) {
+      return toast.error("Please wait for all files to finish uploading.");
+    }
+
+    setIsPosting(true);
+    try {
+      const cdnUrls = mediaFiles.map((m) => m.cdnUrl!);
+      const res = await fetch("/api/social/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caption,
+          platforms: selectedPlatforms,
+          mediaUrl:  cdnUrls[0] || null,
+          mediaUrls: cdnUrls,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to post");
+      if (data.partial) {
+        const failed = data.results.filter((r: any) => !r.success).map((r: any) => r.platform);
+        toast.success("Posted to some platforms!");
+        toast.error(`Failed on: ${failed.join(", ")}`);
+      } else {
+        toast.success("Posted successfully!");
+        setCaption("");
+        setMediaFiles([]);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  // Upload a single file to ImageKit and return the CDN URL
+  const uploadFile = async (file: File): Promise<{ cdnUrl: string; type: "image" | "video" }> => {
+    const isVideo = file.type.startsWith("video/");
+    const endpoint = isVideo ? "/api/upload/video" : "/api/upload/image";
+    const formData = new FormData();
+    formData.append("file", file);
+    const res  = await fetch(endpoint, { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return { cdnUrl: data.url, type: isVideo ? "video" : "image" };
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    const uploadToast = toast.loading(`Uploading ${files.length} file${files.length > 1 ? "s" : ""}...`);
+
+    try {
+      await Promise.all(
+        files.map(async (file) => {
+          const isVideo = file.type.startsWith("video/");
+          const localUrl = URL.createObjectURL(file);
+          const tempEntry = { localUrl, cdnUrl: undefined, file, type: isVideo ? "video" as const : "image" as const };
+          setMediaFiles((prev) => [...prev, tempEntry]);
+
+          try {
+            const { cdnUrl, type } = await uploadFile(file);
+            setMediaFiles((prev) =>
+              prev.map((m) => (m.localUrl === localUrl ? { ...m, cdnUrl, type } : m))
+            );
+          } catch (err: any) {
+            toast.error(`Failed to upload ${file.name}: ${err.message}`);
+            setMediaFiles((prev) => prev.filter((m) => m.localUrl !== localUrl));
+          }
+        })
+      );
+      toast.dismiss(uploadToast);
+      toast.success("Upload complete!");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSaveDraft = async () => {
     if (!caption.trim()) return toast.error("Write something before saving a draft!");
     setIsSaving(true);
     try {
+      const cdnUrls = mediaFiles.filter((m) => m.cdnUrl).map((m) => m.cdnUrl!);
       const res = await fetch("/api/social/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caption,
           platforms: selectedPlatforms,
-          imageUrl: mediaFiles[0]?.url || null,
-          imageUrls: mediaFiles.map((m) => m.url),
-          isDraft: true,
+          imageUrl:  cdnUrls[0] || null,
+          imageUrls: cdnUrls,
+          isDraft:   true,
         }),
       });
       const data = await res.json();
@@ -122,16 +213,17 @@ export default function GeneratePage() {
 
     setIsScheduling(true);
     try {
+      const cdnUrls = mediaFiles.filter((m) => m.cdnUrl).map((m) => m.cdnUrl!);
       const res = await fetch("/api/social/schedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           caption,
-          platforms: selectedPlatforms,
+          platforms:    selectedPlatforms,
           scheduledFor: selectedDate.toISOString(),
-          imageUrl: mediaFiles[0]?.url || null,
-          imageUrls: mediaFiles.map((m) => m.url),
-          isDraft: false,
+          imageUrl:     cdnUrls[0] || null,
+          imageUrls:    cdnUrls,
+          isDraft:      false,
         }),
       });
       const data = await res.json();
@@ -175,8 +267,11 @@ export default function GeneratePage() {
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
 
-  const removeMedia = (idx: number) =>
+  const removeMedia = (idx: number) => {
+    const m = mediaFiles[idx];
+    if (m?.localUrl?.startsWith("blob:")) URL.revokeObjectURL(m.localUrl);
     setMediaFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -190,7 +285,7 @@ export default function GeneratePage() {
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Generate & Compose</h1>
             <p className="text-muted-foreground text-sm">Design your next viral post with AI.</p>
           </div>
-          <div className="flex items-center w-full md:w-auto gap-4">
+          <div className="flex items-center w-full md:w-auto gap-3">
             <div className="hidden sm:flex flex-col items-end text-xs font-medium text-muted-foreground">
               <span>{usage.captions}/10 captions — {usage.schedules}/5 schedules</span>
               <div className="w-32 h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
@@ -198,13 +293,22 @@ export default function GeneratePage() {
               </div>
             </div>
             <Button
-              style={{ backgroundColor: "#0D7C8A" }}
-              className="hover:opacity-90 text-white font-bold rounded-lg px-6 ml-auto md:ml-0 shadow-lg shadow-[#0D7C8A]/20"
+              variant="outline"
+              className="font-bold rounded-lg px-5 ml-auto md:ml-0"
               onClick={handleSaveDraft}
               disabled={isSaving}
             >
               {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Save Draft
+            </Button>
+            <Button
+              style={{ backgroundColor: "#0D7C8A" }}
+              className="hover:opacity-90 text-white font-bold rounded-lg px-6 shadow-lg shadow-[#0D7C8A]/20 flex items-center gap-2"
+              onClick={handlePostNow}
+              disabled={isPosting}
+            >
+              {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Post Now
             </Button>
           </div>
         </header>
@@ -277,13 +381,14 @@ export default function GeneratePage() {
               </div>
             </div>
 
-            {/* Media Upload — multi-image */}
+            {/* Media Upload — images & videos */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
                 <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Media Assets</Label>
                 {mediaFiles.length > 0 && (
                   <span className="text-[10px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
                     {mediaFiles.length} file{mediaFiles.length > 1 ? "s" : ""}
+                    {isUploading && " · uploading..."}
                   </span>
                 )}
               </div>
@@ -297,14 +402,26 @@ export default function GeneratePage() {
                       activePreviewIndex === i ? "border-[#0D7C8A] scale-105" : "border-transparent"
                     )}
                   >
-                    <Image src={media.url} alt="Upload" fill className="object-cover" />
+                    {media.type === "video" ? (
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+                        <Film className="w-6 h-6 text-white/70" />
+                      </div>
+                    ) : (
+                      <Image src={media.localUrl} alt="Upload" fill className="object-cover" />
+                    )}
+                    {/* Upload progress overlay */}
+                    {!media.cdnUrl && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      </div>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); removeMedia(i); }}
                       className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
                     >
                       <X className="w-3 h-3" />
                     </button>
-                    {activePreviewIndex === i && (
+                    {activePreviewIndex === i && media.cdnUrl && (
                       <div className="absolute bottom-1 left-1 bg-[#0D7C8A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                         Preview
                       </div>
@@ -313,7 +430,8 @@ export default function GeneratePage() {
                 ))}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-xl border-2 border-dashed border-muted hover:border-[#0D7C8A] hover:bg-[#0D7C8A]/5 transition-all flex flex-col items-center justify-center gap-1"
+                  disabled={isUploading}
+                  className="aspect-square rounded-xl border-2 border-dashed border-muted hover:border-[#0D7C8A] hover:bg-[#0D7C8A]/5 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50"
                 >
                   <Plus className="w-5 h-5 text-muted-foreground" />
                   <span className="text-[10px] font-bold uppercase text-muted-foreground">Add</span>
@@ -322,22 +440,19 @@ export default function GeneratePage() {
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
                   hidden
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    files.forEach((file) =>
-                      setMediaFiles((prev) => [...prev, { url: URL.createObjectURL(file), file }])
-                    );
-                    e.target.value = "";
-                  }}
+                  onChange={handleFileChange}
                 />
               </div>
               {mediaFiles.length > 1 && (
                 <p className="text-[11px] text-muted-foreground">
-                  Click a thumbnail to switch the preview. All {mediaFiles.length} images will be saved.
+                  Click a thumbnail to switch the preview. All {mediaFiles.length} files will be saved.
                 </p>
               )}
+              <p className="text-[10px] text-muted-foreground">
+                Supports images (JPEG, PNG, WebP, GIF) and videos (MP4, MOV, WebM) · Max 20MB images / 100MB videos
+              </p>
             </div>
 
             {/* Schedule */}
@@ -395,18 +510,33 @@ export default function GeneratePage() {
                     </p>
                   </div>
 
-                  {/* Image Preview — with thumbnail strip for multi-image */}
+                  {/* Media Preview */}
                   {mediaFiles.length > 0 ? (
                     <div className="w-full">
                       <div className="relative w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
-                        <img
-                          src={mediaFiles[activePreviewIndex]?.url}
-                          alt="Preview"
-                          className="w-full h-auto max-h-[320px] object-contain"
-                        />
+                        {mediaFiles[activePreviewIndex]?.type === "video" ? (
+                          <video
+                            src={mediaFiles[activePreviewIndex]?.localUrl}
+                            className="w-full max-h-[320px] object-contain"
+                            controls
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={mediaFiles[activePreviewIndex]?.localUrl}
+                            alt="Preview"
+                            className="w-full h-auto max-h-[320px] object-contain"
+                          />
+                        )}
                         {mediaFiles.length > 1 && (
                           <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                             {activePreviewIndex + 1}/{mediaFiles.length}
+                          </div>
+                        )}
+                        {!mediaFiles[activePreviewIndex]?.cdnUrl && (
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
+                            <Loader2 className="w-5 h-5 text-white animate-spin" />
+                            <span className="text-white text-xs font-medium">Uploading...</span>
                           </div>
                         )}
                       </div>
@@ -418,11 +548,15 @@ export default function GeneratePage() {
                               key={i}
                               onClick={() => setActivePreviewIndex(i)}
                               className={cn(
-                                "relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all",
+                                "relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all flex items-center justify-center bg-zinc-200 dark:bg-zinc-700",
                                 activePreviewIndex === i ? "border-[#0D7C8A]" : "border-transparent opacity-60 hover:opacity-100"
                               )}
                             >
-                              <img src={m.url} alt="" className="w-full h-full object-cover" />
+                              {m.type === "video" ? (
+                                <Film className="w-5 h-5 text-zinc-500" />
+                              ) : (
+                                <img src={m.localUrl} alt="" className="w-full h-full object-cover" />
+                              )}
                             </button>
                           ))}
                         </div>
