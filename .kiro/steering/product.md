@@ -6,7 +6,7 @@ PostSathi is an AI-powered social media content generation and scheduling SaaS p
 
 ## Core Features
 
-- **AI Content Generation** — Groq (Llama 3) generates platform-optimized captions, titles, and hashtags. OpenAI handles image generation.
+- **AI Content Generation** — Groq (Llama 3) generates platform-optimized captions, titles, and hashtags.
 - **Multi-Platform Publishing** — Instagram, Facebook, Twitter/X, LinkedIn, YouTube via OAuth-connected accounts.
 - **Post Scheduling** — Draft, schedule, or publish immediately. Calendar view for scheduled posts.
 - **Social Account OAuth** — Users connect real social accounts (Facebook, Instagram, Twitter/X, LinkedIn) via OAuth 2.0. Tokens are stored in the `SocialAccount` table and used to call platform APIs directly.

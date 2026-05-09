@@ -113,7 +113,6 @@ Auto-generated shadcn/ui components (Button, Card, Badge, Dialog, Select, Tabs, 
 lib/
 ├── prisma.ts           # Prisma client singleton (always import from here)
 ├── groq.ts             # Groq AI helpers: generateTitles, generateCaptions, generateHashtags, generatePostingPlan
-├── openai.ts           # OpenAI client
 ├── stripe.ts           # Stripe client singleton
 ├── admin.ts            # makeUserAdmin / removeAdminRole Clerk helpers
 ├── user.ts             # getUserByClerkId helper

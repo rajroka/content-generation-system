@@ -93,20 +93,26 @@ export default function ConnectionsPage() {
     }, 800);
   };
 
-  const handleDisconnect = async (platform: string) => {
-    if (!confirm(`Are you sure you want to disconnect ${platform}?`)) return;
+  const handleDisconnect = async (platformId: string, platformName: string) => {
+    if (!confirm(`Disconnect ${platformName}?`)) return;
+    const disconnectToast = toast.loading(`Disconnecting ${platformName}...`);
     try {
       const res = await fetch("/api/social/disconnect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ platform: platform.toUpperCase() }),
+        body: JSON.stringify({ platform: platformId }),
       });
-      if (res.ok) { 
-        toast.success("Disconnected successfully"); 
-        fetchConnections(); 
+      const data = await res.json();
+      toast.dismiss(disconnectToast);
+      if (!res.ok) {
+        toast.error(data.error || "Failed to disconnect");
+        return;
       }
-    } catch { 
-      toast.error("Failed to disconnect"); 
+      toast.success(`${platformName} disconnected`);
+      fetchConnections();
+    } catch {
+      toast.dismiss(disconnectToast);
+      toast.error("Network error — please try again");
     }
   };
 
@@ -172,7 +178,7 @@ export default function ConnectionsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:bg-red-50 hover:text-red-600 text-xs font-bold w-full h-8"
-                        onClick={() => handleDisconnect(platform.id)}
+                        onClick={() => handleDisconnect(platform.id, platform.name)}
                       >
                         <Unlink className="w-3 h-3 mr-2" /> Disconnect
                       </Button>

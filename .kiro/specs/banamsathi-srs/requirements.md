@@ -2,7 +2,7 @@
 
 ## Introduction
 
-PostSathi is an AI-powered SaaS platform for social media content generation and scheduling. Users provide a topic, target platform, and tone; the system generates platform-optimized captions, hashtags, and images using Groq (Llama 3) and OpenAI. Generated content can be published immediately or scheduled to connected social accounts (Instagram, Facebook, Twitter/X, LinkedIn, YouTube) via the Zernio API. The platform enforces per-user usage limits based on subscription tier (FREE / PRO / ENTERPRISE), manages billing through Stripe, and provides an admin panel for user management, analytics, and content moderation.
+PostSathi is an AI-powered SaaS platform for social media content generation and scheduling. Users provide a topic, target platform, and tone; the system generates platform-optimized captions and hashtags using Groq (Llama 3). Generated content can be published immediately or scheduled to connected social accounts (Instagram, Facebook, Twitter/X, LinkedIn, YouTube) via the Zernio API. The platform enforces per-user usage limits based on subscription tier (FREE / PRO / ENTERPRISE), manages billing through Stripe, and provides an admin panel for user management, analytics, and content moderation.
 
 This document specifies the complete functional and non-functional requirements for PostSathi as a production SaaS system.
 
@@ -14,7 +14,6 @@ This document specifies the complete functional and non-functional requirements 
 - **User**: An authenticated individual with the USER role who accesses the dashboard and content features.
 - **Admin**: An authenticated individual with the ADMIN role who accesses the admin panel.
 - **Caption_Generator**: The subsystem responsible for producing AI-generated captions and hashtags via the Groq API.
-- **Image_Generator**: The subsystem responsible for producing AI-generated images via the OpenAI API.
 - **Scheduler**: The subsystem responsible for creating, storing, and managing scheduled and draft posts.
 - **Publisher**: The subsystem responsible for immediately publishing posts to connected social platforms via the Zernio API.
 - **Usage_Enforcer**: The subsystem responsible for tracking and enforcing per-user daily and monthly usage limits.
@@ -22,7 +21,7 @@ This document specifies the complete functional and non-functional requirements 
 - **Zernio**: The third-party API (`@zernio/node`) used for social media OAuth connection and post publishing.
 - **ImageKit**: The CDN service used for storing and serving uploaded images and videos.
 - **Stripe**: The payment processor used for subscription billing and checkout.
-- **Generation**: A single AI content generation event, producing a caption, hashtags, and optionally an image, stored in the `Generation` database model.
+- **Generation**: A single AI content generation event, producing a caption and hashtags, stored in the `Generation` database model.
 - **ScheduledPost**: A database record representing a post in DRAFT, SCHEDULED, PUBLISHED, FAILED, or CANCELLED state.
 - **SocialAccount**: A database record linking a User to a connected social media platform account via Zernio.
 - **Plan**: A subscription tier — FREE, PRO, or ENTERPRISE — that determines usage limits and feature access.
@@ -88,23 +87,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 4: AI Image Generation
-
-**User Story:** As a User, I want to generate an AI image to accompany my caption, so that my posts are visually compelling.
-
-#### Acceptance Criteria
-
-1. WHEN a User submits an image generation request with a `prompt`, THE Image_Generator SHALL return a publicly accessible image URL.
-2. THE Image_Generator SHALL use the OpenAI API (`dall-e-3` or equivalent) to generate the image.
-3. WHEN an image is successfully generated, THE System SHALL upload the image to ImageKit and store the resulting CDN_URL and `imageKitId` on the associated Generation record.
-4. WHEN an image generation request is made, THE Usage_Enforcer SHALL check the User's daily `imageCount` against the PlanLimit for the User's Plan before proceeding.
-5. WHEN an image is successfully generated, THE Usage_Enforcer SHALL increment `imageCount` in the User's Usage record for the current date.
-6. IF the OpenAI API returns an error, THEN THE Image_Generator SHALL return HTTP 500 with a descriptive error message.
-7. IF the ImageKit upload fails, THEN THE System SHALL return HTTP 500 and SHALL NOT store a partial Generation record with a broken image reference.
-
----
-
-### Requirement 5: Media Upload
+### Requirement 4: Media Upload
 
 **User Story:** As a User, I want to upload my own images and videos to attach to posts, so that I can use custom media alongside AI-generated content.
 
@@ -119,7 +102,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 6: Social Account OAuth Connection
+### Requirement 5: Social Account OAuth Connection
 
 **User Story:** As a User, I want to connect my social media accounts, so that I can publish and schedule posts directly from PostSathi.
 
@@ -136,13 +119,13 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 7: Immediate Post Publishing
+### Requirement 5: Immediate Post Publishing
 
 **User Story:** As a User, I want to publish a post immediately to one or more connected social platforms, so that I can share content in real time.
 
 #### Acceptance Criteria
 
-1. WHEN a User submits a publish request with a `caption`, `hashtags`, `imageUrl`, and one or more `platforms`, THE Publisher SHALL call `zernio.posts.createPost({ publishNow: true, platforms: [...] })` using the stored Zernio account IDs.
+1. WHEN a User submits a publish request with a `caption`, `hashtags`, and one or more `platforms`, THE Publisher SHALL call `zernio.posts.createPost({ publishNow: true, platforms: [...] })` using the stored Zernio account IDs.
 2. WHEN a post is successfully published, THE System SHALL create a ScheduledPost record with `status: PUBLISHED` and `publishedAt` set to the current timestamp.
 3. IF the Zernio API returns an error during publishing, THEN THE System SHALL create a ScheduledPost record with `status: FAILED` and store the error message in `failureReason`.
 4. IF a User attempts to publish to a Platform for which no active SocialAccount exists, THEN THE System SHALL reject the request with HTTP 400 and a descriptive error message.
@@ -151,7 +134,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 8: Post Scheduling and Drafts
+### Requirement 5: Post Scheduling and Drafts
 
 **User Story:** As a User, I want to schedule posts for a future date and time or save them as drafts, so that I can plan my content calendar in advance.
 
@@ -169,7 +152,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 9: Content Calendar
+### Requirement 5: Content Calendar
 
 **User Story:** As a User, I want to view all my scheduled and published posts in a calendar view, so that I can manage my posting schedule visually.
 
@@ -183,28 +166,28 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 10: Generation History
+### Requirement 5: Generation History
 
 **User Story:** As a User, I want to view my past AI-generated content, so that I can reuse or review previous generations.
 
 #### Acceptance Criteria
 
 1. THE System SHALL provide a history view at `/user/history` listing all Generation records for the authenticated User where `isDeleted` is `false`.
-2. THE System SHALL display the `topic`, `platform`, `caption`, `hashtags`, `imageUrl`, and `createdAt` for each Generation record.
+2. THE System SHALL display the `topic`, `platform`, `caption`, `hashtags`, and `createdAt` for each Generation record.
 3. WHEN a User copies a caption or hashtag set, THE System SHALL copy the text to the clipboard.
 4. THE System SHALL display Generation records in reverse chronological order by `createdAt`.
 5. WHEN a Generation record has `isFlagged` set to `true`, THE System SHALL display a visual indicator on that record.
 
 ---
 
-### Requirement 11: User Analytics Dashboard
+### Requirement 5: User Analytics Dashboard
 
 **User Story:** As a User, I want to see analytics about my content generation and posting activity, so that I can understand my usage patterns.
 
 #### Acceptance Criteria
 
 1. THE System SHALL provide an analytics view at `/user/analytics` displaying usage statistics for the authenticated User.
-2. THE System SHALL display the total number of captions generated, images generated, and posts published for the User.
+2. THE System SHALL display the total number of captions generated and posts published for the User.
 3. THE System SHALL display the User's current daily caption usage against the Plan limit.
 4. THE System SHALL display the User's current monthly scheduled post count against the Plan limit.
 5. THE System SHALL display a breakdown of Generation records by Platform.
@@ -212,7 +195,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 12: Usage Limit Enforcement
+### Requirement 5: Usage Limit Enforcement
 
 **User Story:** As a platform operator, I want usage limits enforced per plan tier, so that free users do not exceed their allocation and paid users receive their entitled capacity.
 
@@ -220,7 +203,6 @@ This document specifies the complete functional and non-functional requirements 
 
 1. THE Usage_Enforcer SHALL enforce the following daily caption limits: FREE plan — 10 captions per calendar day; PRO plan — unlimited; ENTERPRISE plan — unlimited.
 2. THE Usage_Enforcer SHALL enforce the following monthly scheduled post limits: FREE plan — 15 scheduled posts per calendar month; PRO plan — unlimited; ENTERPRISE plan — unlimited.
-3. THE Usage_Enforcer SHALL enforce the following connected social account limits: FREE plan — 2 accounts; PRO plan — unlimited; ENTERPRISE plan — unlimited.
 4. WHEN a User's daily usage resets at midnight UTC, THE Usage_Enforcer SHALL allow the User to generate content up to the daily limit again.
 5. THE System SHALL read plan limits from the PlanLimit database table, not from hardcoded values in application logic.
 6. WHEN a limit is reached, THE System SHALL return HTTP 429 with a message indicating the limit type and the User's current Plan.
@@ -228,7 +210,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 13: Subscription Billing
+### Requirement 5: Subscription Billing
 
 **User Story:** As a User, I want to upgrade my plan via a secure checkout, so that I can access higher usage limits and additional features.
 
@@ -246,7 +228,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 14: Admin User Management
+### Requirement 5: Admin User Management
 
 **User Story:** As an Admin, I want to view and manage all users, so that I can maintain platform health and enforce policies.
 
@@ -261,7 +243,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 15: Admin Content Moderation
+### Requirement 5: Admin Content Moderation
 
 **User Story:** As an Admin, I want to flag and delete inappropriate generated content, so that I can enforce the platform's content policy.
 
@@ -276,7 +258,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 16: Admin Analytics
+### Requirement 5: Admin Analytics
 
 **User Story:** As an Admin, I want to view platform-wide analytics, so that I can monitor growth, usage, and revenue.
 
@@ -291,7 +273,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 17: Admin Subscription Overrides
+### Requirement 5: Admin Subscription Overrides
 
 **User Story:** As an Admin, I want to manually override a user's subscription plan, so that I can handle support cases and grant special access.
 
@@ -303,7 +285,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 18: Theme and UI
+### Requirement 5: Theme and UI
 
 **User Story:** As a User, I want to switch between dark and light themes, so that I can use the application comfortably in different lighting conditions.
 
@@ -317,7 +299,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 19: API Security and Authentication
+### Requirement 5: API Security and Authentication
 
 **User Story:** As a platform operator, I want all API routes to be protected, so that only authenticated users can access their own data.
 
@@ -332,7 +314,7 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 20: Data Integrity and Cascading Deletes
+### Requirement 5: Data Integrity and Cascading Deletes
 
 **User Story:** As a platform operator, I want data integrity enforced at the database level, so that orphaned records do not accumulate.
 
@@ -346,21 +328,20 @@ This document specifies the complete functional and non-functional requirements 
 
 ---
 
-### Requirement 21: Performance and Scalability
+### Requirement 5: Performance and Scalability
 
 **User Story:** As a User, I want the application to respond quickly, so that content generation and publishing feel seamless.
 
 #### Acceptance Criteria
 
 1. WHEN a caption generation request is submitted, THE System SHALL return a response within 10 seconds under normal load conditions.
-2. WHEN an image generation request is submitted, THE System SHALL return a response within 30 seconds under normal load conditions.
 3. THE System SHALL use a Prisma client singleton with a global variable guard to prevent connection pool exhaustion during Next.js hot-reload in development.
 4. THE System SHALL use the `@prisma/adapter-pg` (`PrismaPg`) adapter for serverless-compatible database connections on Neon PostgreSQL.
 5. THE System SHALL serve all uploaded media via the ImageKit CDN to minimize origin server load.
 
 ---
 
-### Requirement 22: Environment Configuration
+### Requirement 5: Environment Configuration
 
 **User Story:** As a developer, I want all external service credentials managed via environment variables, so that secrets are never hardcoded in source code.
 

@@ -10,8 +10,7 @@
 ## AI / LLM
 
 - **Groq SDK** (`groq-sdk`) — primary text generation using `llama-3.1-8b-instant` and `llama-3.3-70b-versatile`
-- **OpenAI** (`openai`) — secondary / image generation
-- AI helpers live in `lib/groq.ts` and `lib/openai.ts`
+- AI helpers live in `lib/groq.ts`
 
 ## Database
 
@@ -99,7 +98,6 @@ DATABASE_URL
 
 # AI
 GROQ_API_KEY
-OPENAI_API_KEY
 
 # ImageKit
 NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
