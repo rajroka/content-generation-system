@@ -20,78 +20,49 @@ const html = (type: string, extra?: Record<string, string>) => {
   );
 };
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const code  = searchParams.get("code");
-  const state = searchParams.get("state");
-  const error = searchParams.get("error");
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+
+  const connected = searchParams.get("connected");
+  const accountId = searchParams.get("accountId");
+  const username  = searchParams.get("username");
+  const state     = searchParams.get("state");
+  const error     = searchParams.get("error");
 
   if (error) {
-    console.error("LinkedIn OAuth error:", error);
-    return html("SOCIAL_CONNECT_ERROR", { error });
+    console.error("Zernio LinkedIn callback error:", error);
+    const errorMessages: Record<string, string> = {
+      access_denied: "LinkedIn connection was cancelled.",
+      token_expired: "LinkedIn token expired. Please try again.",
+    };
+    return html("SOCIAL_CONNECT_ERROR", { error: errorMessages[error] || `LinkedIn connection failed: ${error}` });
   }
 
-  if (!code || !state) {
-    return html("SOCIAL_CONNECT_ERROR", { error: "missing_code_or_state" });
+  if (!connected || !accountId || !state) {
+    return html("SOCIAL_CONNECT_ERROR", { error: "missing_params" });
   }
 
-  const clerkUserId = decodeURIComponent(state);
+  const clerkUserId = state;
 
   try {
-    // Exchange code for access token
-    const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type:    "authorization_code",
-        code,
-        redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/linkedin/callback`,
-        client_id:     process.env.LINKEDIN_CLIENT_ID!,
-        client_secret: process.env.LINKEDIN_CLIENT_SECRET!,
-      }),
-    });
-
-    const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) {
-      throw new Error(tokenData.error_description || tokenData.error || "Failed to get access token");
-    }
-
-    // Fetch LinkedIn profile using OpenID Connect userinfo endpoint
-    const profileRes = await fetch("https://api.linkedin.com/v2/userinfo", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
-    });
-    const profile = await profileRes.json();
-
-    const accountName = profile.name || `${profile.given_name || ""} ${profile.family_name || ""}`.trim() || null;
-    const accountId   = profile.sub || null;
-
-    // Resolve DB user
     const dbUser = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
     if (!dbUser) throw new Error("User not found in database");
 
     await prisma.socialAccount.upsert({
-      where: {
-        userId_platform: { userId: dbUser.id, platform: "LINKEDIN" },
-      },
+      where: { userId_platform: { userId: dbUser.id, platform: "LINKEDIN" } },
       update: {
-        accessToken: tokenData.access_token,
-        ...(tokenData.expires_in && {
-          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
-        }),
         accountId,
-        accountName,
-        isActive: true,
+        accountName: username || null,
+        accessToken: accountId,
+        isActive:    true,
       },
       create: {
         userId:      dbUser.id,
         platform:    "LINKEDIN",
-        accessToken: tokenData.access_token,
-        ...(tokenData.expires_in && {
-          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
-        }),
         accountId,
-        accountName,
-        isActive: true,
+        accountName: username || null,
+        accessToken: accountId,
+        isActive:    true,
       },
     });
 

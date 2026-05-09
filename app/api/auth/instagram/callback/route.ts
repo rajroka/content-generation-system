@@ -20,78 +20,50 @@ const html = (type: string, extra?: Record<string, string>) => {
   );
 };
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const code  = searchParams.get("code");
-  const state = searchParams.get("state");
-  const error = searchParams.get("error");
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+
+  // Zernio appends these to the redirect_url on success
+  const connected  = searchParams.get("connected");   // "instagram"
+  const accountId  = searchParams.get("accountId");   // Zernio account _id
+  const username   = searchParams.get("username");
+  const state      = searchParams.get("state");        // our Clerk userId
+  const error      = searchParams.get("error");
 
   if (error) {
-    console.error("Instagram OAuth error:", error);
-    return html("SOCIAL_CONNECT_ERROR", { error });
+    console.error("Zernio Instagram callback error:", error);
+    const errorMessages: Record<string, string> = {
+      access_denied:  "Instagram connection was cancelled.",
+      token_expired:  "Instagram token expired. Please try again.",
+      no_pages:       "No Instagram Business/Creator account found. Personal accounts cannot be connected.",
+    };
+    return html("SOCIAL_CONNECT_ERROR", { error: errorMessages[error] || `Instagram connection failed: ${error}` });
   }
 
-  if (!code || !state) {
-    return html("SOCIAL_CONNECT_ERROR", { error: "missing_code_or_state" });
+  if (!connected || !accountId || !state) {
+    return html("SOCIAL_CONNECT_ERROR", { error: "missing_params" });
   }
 
-  // state = encoded Clerk userId
-  const clerkUserId = decodeURIComponent(state);
+  const clerkUserId = state;
 
   try {
-    // Exchange code for short-lived access token
-    const tokenResponse = await fetch("https://api.instagram.com/oauth/access_token", {
-      method: "POST",
-      body: new URLSearchParams({
-        client_id:     process.env.INSTAGRAM_CLIENT_ID!,
-        client_secret: process.env.INSTAGRAM_CLIENT_SECRET!,
-        grant_type:    "authorization_code",
-        redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/instagram/callback`,
-        code,
-      }),
-    });
-
-    const tokenData = await tokenResponse.json();
-    if (!tokenResponse.ok) {
-      throw new Error(tokenData.error_message || "Failed to get access token");
-    }
-
-    // Exchange short-lived token for long-lived token (60 days)
-    const longLivedRes = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_CLIENT_SECRET}&access_token=${tokenData.access_token}`
-    );
-    const longLivedData = await longLivedRes.json();
-    const finalToken = longLivedData.access_token || tokenData.access_token;
-    const expiresIn  = longLivedData.expires_in   || tokenData.expires_in;
-
-    // Fetch Instagram user info
-    const userResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${finalToken}`
-    );
-    const userData = await userResponse.json();
-
-    // Resolve DB user
     const dbUser = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
     if (!dbUser) throw new Error("User not found in database");
 
     await prisma.socialAccount.upsert({
-      where: {
-        userId_platform: { userId: dbUser.id, platform: "INSTAGRAM" },
-      },
+      where: { userId_platform: { userId: dbUser.id, platform: "INSTAGRAM" } },
       update: {
-        accessToken: finalToken,
-        expiresAt:   expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
-        accountId:   userData.id       || null,
-        accountName: userData.username || null,
+        accountId,
+        accountName: username || null,
+        accessToken: accountId, // Zernio manages the actual token; store account ID as reference
         isActive:    true,
       },
       create: {
         userId:      dbUser.id,
         platform:    "INSTAGRAM",
-        accessToken: finalToken,
-        expiresAt:   expiresIn ? new Date(Date.now() + expiresIn * 1000) : null,
-        accountId:   userData.id       || null,
-        accountName: userData.username || null,
+        accountId,
+        accountName: username || null,
+        accessToken: accountId,
         isActive:    true,
       },
     });

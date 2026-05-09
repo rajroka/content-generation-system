@@ -50,29 +50,47 @@ export default function ConnectionsPage() {
     const top  = window.screen.height / 2 - height / 2;
     const popup = window.open(authUrl, `Connect ${platformName}`, `width=${width},height=${height},left=${left},top=${top}`);
 
+    // Listen for postMessage from the callback page (works when opener is preserved)
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === "SOCIAL_CONNECTED") {
-        toast.success(`Connected ${platformName}`);
-        fetchConnections();
+      if (event.data?.type === "SOCIAL_CONNECT_ERROR") {
+        toast.error(event.data.error || `Failed to connect ${platformName}`);
         setConnecting(null);
-        popup?.close();
-      } else if (event.data.type === "SOCIAL_CONNECT_ERROR") {
-        toast.error(`Error: ${event.data.error}`);
-        setConnecting(null);
-        popup?.close();
+        clearInterval(poll);
+        window.removeEventListener("message", handleMessage);
       }
     };
-    window.addEventListener("message", handleMessage, { once: true });
-    
-    // Fallback if popup blocker or user closes window
-    const checkClosed = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(checkClosed);
-        if (connecting === platformId) {
-          setConnecting(null);
+    window.addEventListener("message", handleMessage);
+
+    // Poll until the popup closes, then refresh connections.
+    // Zernio's multi-hop OAuth redirect clears window.opener in most browsers,
+    // so we can't rely solely on postMessage — polling is the reliable fallback.
+    const poll = setInterval(async () => {
+      if (!popup || popup.closed) {
+        clearInterval(poll);
+        window.removeEventListener("message", handleMessage);
+        setConnecting(null);
+
+        // Fetch fresh connections — if a new one appeared, show success toast
+        try {
+          const res = await fetch("/api/social/connections");
+          if (res.ok) {
+            const data: ConnectedAccount[] = await res.json();
+            const wasConnected = connectedAccounts.some(
+              (a) => a.platform === platformId.toUpperCase()
+            );
+            const nowConnected = data.some(
+              (a) => a.platform === platformId.toUpperCase()
+            );
+            setConnectedAccounts(Array.isArray(data) ? data : []);
+            if (!wasConnected && nowConnected) {
+              toast.success(`${platformName} connected successfully`);
+            }
+          }
+        } catch {
+          console.error("Failed to refresh connections after popup closed");
         }
       }
-    }, 1000);
+    }, 800);
   };
 
   const handleDisconnect = async (platform: string) => {

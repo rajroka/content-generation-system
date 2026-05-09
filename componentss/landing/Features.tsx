@@ -1,328 +1,253 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, Zap, ImageIcon, Hash, FolderOpen, FlaskConical, Calendar } from "lucide-react";
+// Features section — clean bento layout, real SVG icons, no generic AI copy
+
+const teal = "#0d7c8a";
+
+// ── Custom SVG icons (crisp, recognisable) ────────────────────────────────────
+
+const IconPlatforms = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <rect x="2" y="3" width="20" height="14" rx="2" />
+    <path d="M8 21h8M12 17v4" />
+    <path d="M7 8h2M7 11h5" />
+    <circle cx="17" cy="9.5" r="2.5" />
+  </svg>
+);
+
+const IconSchedule = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M16 2v4M8 2v4M3 10h18" />
+    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+  </svg>
+);
+
+const IconCaption = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+  </svg>
+);
+
+const IconHashtag = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18" />
+  </svg>
+);
+
+const IconMedia = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <path d="M21 15l-5-5L5 21" />
+  </svg>
+);
+
+const IconAnalytics = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <path d="M18 20V10M12 20V4M6 20v-6" />
+  </svg>
+);
+
+const IconHistory = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <path d="M3 12a9 9 0 109-9 9 9 0 00-9 9" />
+    <path d="M3 3v5h5" />
+    <path d="M12 7v5l3 3" />
+  </svg>
+);
+
+// ── Icon wrapper ──────────────────────────────────────────────────────────────
+
+function IconBox({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+      style={{ background: `${teal}14`, border: `1.5px solid ${teal}28`, color: teal }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── Platform logos (inline SVG, real brand colours) ───────────────────────────
+
+const PlatformBadges = () => (
+  <div className="flex flex-wrap gap-2 mt-4">
+    {[
+      {
+        name: "Instagram",
+        color: "#E1306C",
+        svg: <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>,
+      },
+      {
+        name: "Facebook",
+        color: "#1877F2",
+        svg: <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.491 0-1.956.93-1.956 1.883v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>,
+      },
+      {
+        name: "LinkedIn",
+        color: "#0A66C2",
+        svg: <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
+      },
+      {
+        name: "X",
+        color: "#000",
+        svg: <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
+      },
+    ].map((p) => (
+      <span
+        key={p.name}
+        className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border"
+        style={{ color: p.color, borderColor: `${p.color}30`, background: `${p.color}10` }}
+      >
+        {p.svg} {p.name}
+      </span>
+    ))}
+  </div>
+);
+
+// ── Schedule mini-calendar ────────────────────────────────────────────────────
+
+const MiniCalendar = () => {
+  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  const active = [2, 4]; // Wed, Fri highlighted
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((d, i) => (
+          <div
+            key={i}
+            className="aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold transition-colors"
+            style={
+              active.includes(i)
+                ? { background: teal, color: "#fff" }
+                : { background: "rgba(0,0,0,0.04)", color: "rgba(0,0,0,0.35)" }
+            }
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+      <div
+        className="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold"
+        style={{ background: `${teal}12`, color: teal, border: `1px solid ${teal}20` }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: teal }} />
+        Best time: Wednesday 7 PM
+      </div>
+    </div>
+  );
+};
+
+// ── Card base styles ──────────────────────────────────────────────────────────
+
+const card = "bg-white dark:bg-[hsl(200_15%_13%)] border border-[hsl(200_15%_88%)] dark:border-[hsl(200_15%_20%)] rounded-2xl p-6 flex flex-col gap-3 shadow-[0_2px_16px_rgba(0,0,0,0.04)] dark:shadow-none transition-colors duration-300";
+
+// ── Small feature data ────────────────────────────────────────────────────────
+
+const small = [
+  {
+    Icon: <IconCaption />,
+    title: "AI Caption Writing",
+    desc: "Tone-matched captions for every platform — punchy for X, professional for LinkedIn, visual for Instagram.",
+  },
+  {
+    Icon: <IconHashtag />,
+    title: "Smart Hashtags",
+    desc: "A curated mix of broad, niche, and trending tags generated per post. No more copy-pasting the same 30.",
+  },
+  {
+    Icon: <IconMedia />,
+    title: "Photo & Video Upload",
+    desc: "Drag in images or videos. They're stored on a CDN and attached to your post automatically.",
+  },
+  {
+    Icon: <IconAnalytics />,
+    title: "Post Analytics",
+    desc: "Track what you've published, when, and to which platforms. Simple numbers, no dashboard overload.",
+  },
+  {
+    Icon: <IconHistory />,
+    title: "Content History",
+    desc: "Every draft, scheduled post, and published piece saved and searchable. Reuse anything in one click.",
+  },
+];
+
+// ── Main export ───────────────────────────────────────────────────────────────
 
 export function Features() {
   return (
     <section
       id="features"
-      className="w-full py-24 px-4 bg-[hsl(200_25%_94%)] dark:bg-[hsl(200_20%_9%)] transition-colors duration-300"
+      className="w-full py-20 md:py-28 px-4 bg-[hsl(200_22%_95%)] dark:bg-[hsl(200_18%_8%)] transition-colors duration-300"
     >
       <div className="max-w-6xl mx-auto">
+
         {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-xs font-semibold tracking-[0.14em] uppercase mb-3" style={{ color: "#169B7F" }}>
-            Features
+        <div className="mb-12 md:mb-14">
+          <p className="text-[11px] font-bold tracking-[0.15em] uppercase mb-3" style={{ color: teal }}>
+            What's inside
           </p>
-          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-snug text-[#0A2E2E] dark:text-[hsl(200_20%_90%)]">
-            Everything you need to post smarter.
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-snug text-foreground max-w-xl">
+            Less tab-switching.<br />More actual posting.
           </h2>
+          <p className="text-muted-foreground text-base mt-3 max-w-md leading-relaxed">
+            Everything a solo creator or small team needs to stay consistent across platforms — without the agency price tag.
+          </p>
         </div>
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Row 1 — two wide cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
 
-          {/* 1 — Multi-Platform Publishing (wide, col-span-2) */}
-          <div className="md:col-span-2 bg-white dark:bg-[hsl(200_15%_14%)] border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] rounded-2xl p-7 flex flex-col gap-4 shadow-[0_2px_20px_rgba(10,46,46,0.05)]">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#169B7F18", border: "1px solid #169B7F30" }}>
-              <Sparkles className="w-4 h-4" style={{ color: "#169B7F" }} />
-            </div>
+          {/* Multi-platform */}
+          <div className={card}>
+            <IconBox><IconPlatforms /></IconBox>
             <div>
-              <h3 className="font-bold text-base text-[#0A2E2E] dark:text-[hsl(200_20%_88%)] mb-1">Multi-Platform Publishing</h3>
-              <p className="text-sm text-[#0A2E2E80] dark:text-[hsl(200_10%_58%)] leading-relaxed max-w-sm">
-                One dashboard to rule them all. Write once, customize for each platform, and hit publish.
+              <h3 className="font-bold text-[15px] text-foreground mb-1">Publish to 4+ platforms at once</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Connect Instagram, Facebook, LinkedIn, and X. Write once, post everywhere — or customise per platform before sending.
               </p>
             </div>
-            {/* Mock dashboard preview */}
-            <div className="mt-2 rounded-xl overflow-hidden border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] bg-[#f0f4f8] dark:bg-[hsl(200_20%_11%)] p-4 flex gap-3">
-              {["Facebook", "Instagram", "LinkedIn"].map((p) => (
-                <div key={p} className="flex-1 bg-white dark:bg-[hsl(200_15%_18%)] rounded-lg p-3 flex flex-col gap-2 shadow-sm">
-                  <div className="h-2 w-2/3 rounded-full bg-[#e8eef2] dark:bg-[hsl(200_15%_25%)]" />
-                  <div className="h-2 w-full rounded-full bg-[#e8eef2] dark:bg-[hsl(200_15%_25%)]" />
-                  <div className="h-2 w-4/5 rounded-full bg-[#e8eef2] dark:bg-[hsl(200_15%_25%)]" />
-                  <p className="text-[10px] font-medium mt-1" style={{ color: "#169B7F" }}>{p}</p>
-                </div>
-              ))}
-            </div>
+            <PlatformBadges />
           </div>
 
-          {/* 2 — Smart Auto-Scheduler */}
-          <div className="bg-white dark:bg-[hsl(200_15%_14%)] border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] rounded-2xl p-7 flex flex-col gap-4 shadow-[0_2px_20px_rgba(10,46,46,0.05)]">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#169B7F18", border: "1px solid #169B7F30" }}>
-              <Calendar className="w-4 h-4" style={{ color: "#169B7F" }} />
-            </div>
+          {/* Scheduler */}
+          <div className={card}>
+            <IconBox><IconSchedule /></IconBox>
             <div>
-              <h3 className="font-bold text-base text-[#0A2E2E] dark:text-[hsl(200_20%_88%)] mb-1">Smart Auto-Scheduler</h3>
-              <p className="text-sm text-[#0A2E2E80] dark:text-[hsl(200_10%_58%)] leading-relaxed">
-                Our AI suggests the exact minute your followers are most active.
+              <h3 className="font-bold text-[15px] text-foreground mb-1">Schedule posts for the right moment</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Pick a date and time, or save as a draft and come back later. Your queue stays organised so you never miss a window.
               </p>
             </div>
-            {/* Day pills */}
-            <div className="flex gap-2 mt-auto">
-              {["MON", "TUE", "WED"].map((d, i) => (
-                <div
-                  key={d}
-                  className="flex-1 text-center py-2 rounded-lg text-xs font-semibold"
-                  style={
-                    i === 0
-                      ? { background: "#169B7F", color: "#fff" }
-                      : { background: "#f0f4f8", color: "#0A2E2E80" }
-                  }
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 3 — AI Caption Gen */}
-          <div className="bg-white dark:bg-[hsl(200_15%_14%)] border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] rounded-2xl p-7 flex flex-col gap-3 shadow-[0_2px_20px_rgba(10,46,46,0.05)]">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#169B7F18", border: "1px solid #169B7F30" }}>
-              <Zap className="w-4 h-4" style={{ color: "#169B7F" }} />
-            </div>
-            <h3 className="font-bold text-base text-[#0A2E2E] dark:text-[hsl(200_20%_88%)]">AI Caption Gen</h3>
-            <p className="text-sm text-[#0A2E2E80] dark:text-[hsl(200_10%_58%)] leading-relaxed">
-              Professional captions tailored to your brand voice using our fine-tuned model.
-            </p>
-          </div>
-
-          {/* 4 — Hashtag Suggestions */}
-          <div className="bg-white dark:bg-[hsl(200_15%_14%)] border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] rounded-2xl p-7 flex flex-col gap-3 shadow-[0_2px_20px_rgba(10,46,46,0.05)]">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#169B7F18", border: "1px solid #169B7F30" }}>
-              <Hash className="w-4 h-4" style={{ color: "#169B7F" }} />
-            </div>
-            <h3 className="font-bold text-base text-[#0A2E2E] dark:text-[hsl(200_20%_88%)]">Hashtag Suggestions</h3>
-            <p className="text-sm text-[#0A2E2E80] dark:text-[hsl(200_10%_58%)] leading-relaxed">
-              Trending and relevant tags for maximum reach — broad, niche, and Reels mix.
-            </p>
-          </div>
-
-          {/* 5 — Image Upload */}
-          <div className="bg-white dark:bg-[hsl(200_15%_14%)] border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] rounded-2xl p-7 flex flex-col gap-3 shadow-[0_2px_20px_rgba(10,46,46,0.05)]">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#169B7F18", border: "1px solid #169B7F30" }}>
-              <ImageIcon className="w-4 h-4" style={{ color: "#169B7F" }} />
-            </div>
-            <h3 className="font-bold text-base text-[#0A2E2E] dark:text-[hsl(200_20%_88%)]">Image Generation</h3>
-            <p className="text-sm text-[#0A2E2E80] dark:text-[hsl(200_10%_58%)] leading-relaxed">
-              Generate visuals with DALL-E 3 or upload your own. Direct assets library, simple drag-and-drop.
-            </p>
+            <MiniCalendar />
           </div>
 
         </div>
+
+        {/* Row 2 — 3 equal small cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          {small.slice(0, 3).map(({ Icon, title, desc }) => (
+            <div key={title} className={card}>
+              <IconBox>{Icon}</IconBox>
+              <h3 className="font-bold text-[15px] text-foreground">{title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Row 3 — 2 cards centred */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:w-2/3">
+          {small.slice(3).map(({ Icon, title, desc }) => (
+            <div key={title} className={card}>
+              <IconBox>{Icon}</IconBox>
+              <h3 className="font-bold text-[15px] text-foreground">{title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+
       </div>
     </section>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { PenLine, Calendar, Hash, FolderOpen, Cpu, Upload } from "lucide-react";
-
-// /* ─── Mini compose window illustration ─────────────────────────────── */
-// function PublishIllustration() {
-//   return (
-//     <div className="mt-4 rounded-xl overflow-hidden border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] bg-[#eef4f7] dark:bg-[hsl(200_18%_11%)] p-4 select-none">
-//       {/* Compose window */}
-//       <div className="bg-white dark:bg-[hsl(200_15%_16%)] rounded-xl border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] p-4 mb-3">
-//         {/* browser dots */}
-//         <div className="flex items-center gap-1.5 mb-3">
-//           <div className="w-2 h-2 rounded-full bg-[#ff5f57]" />
-//           <div className="w-2 h-2 rounded-full bg-[#febc2e]" />
-//           <div className="w-2 h-2 rounded-full bg-[#28c840]" />
-//         </div>
-//         {/* skeleton lines */}
-//         <div className="space-y-2">
-//           <div className="h-2.5 rounded-full bg-[#e8eef2] dark:bg-[hsl(200_15%_25%)] w-full" />
-//           <div className="h-2.5 rounded-full bg-[#e8eef2] dark:bg-[hsl(200_15%_25%)] w-4/5" />
-//           <div className="h-2.5 rounded-full bg-[#e8eef2] dark:bg-[hsl(200_15%_25%)] w-3/5" />
-//         </div>
-//         {/* image drop zone */}
-//         <div className="mt-3 h-14 rounded-lg bg-[#f0f9f8] dark:bg-[hsl(200_18%_13%)] border border-dashed border-[#169B7F40] flex items-center justify-center gap-2">
-//           <Upload className="w-3.5 h-3.5" style={{ color: "#169B7F" }} strokeWidth={1.75} />
-//           <span className="text-[11px] font-medium" style={{ color: "#169B7F" }}>Drop image here</span>
-//         </div>
-//       </div>
-
-//       {/* Publishing channel pills */}
-//       <div className="flex flex-wrap gap-2">
-//         {[
-//           { label: "Facebook", bg: "#1877F2" },
-//           { label: "Instagram", bg: "#E1306C" },
-//           { label: "LinkedIn", bg: "#0A66C2" },
-//           { label: "X / Twitter", bg: "#14171A" },
-//         ].map(({ label, bg }) => (
-//           <div
-//             key={label}
-//             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold text-white"
-//             style={{ background: bg }}
-//           >
-//             <span className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
-//             {label}
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── Scheduler illustration ────────────────────────────────────────── */
-// function SchedulerIllustration() {
-//   return (
-//     <div className="mt-auto pt-5">
-//       <div className="flex gap-1.5">
-//         {["MON", "TUE", "WED", "THU", "FRI"].map((d, i) => (
-//           <div
-//             key={d}
-//             className="flex-1 py-2 rounded-lg text-[10px] font-bold text-center"
-//             style={
-//               i === 0
-//                 ? { background: "#169B7F", color: "#fff" }
-//                 : { background: "rgba(10,46,46,0.06)", color: "rgba(10,46,46,0.45)" }
-//             }
-//           >
-//             {d}
-//           </div>
-//         ))}
-//       </div>
-//       <div className="mt-2.5 bg-[#f0f9f8] dark:bg-[hsl(200_18%_11%)] rounded-lg px-3 py-2 flex items-center gap-2 border border-[#169B7F20]">
-//         <span className="w-2 h-2 rounded-full bg-[#169B7F] animate-pulse shrink-0" />
-//         <span className="text-[11px] font-medium text-[#0A2E2E] dark:text-[hsl(200_20%_80%)]">
-//           Best time: 7:00 PM ET
-//         </span>
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── Icon box ───────────────────────────────────────────────────────── */
-// function IconBox({ Icon }: { Icon: React.ElementType }) {
-//   return (
-//     <div
-//       className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-//       style={{ background: "#169B7F14", border: "1.5px solid #169B7F30" }}
-//     >
-//       <Icon className="w-[18px] h-[18px]" style={{ color: "#169B7F" }} strokeWidth={1.75} />
-//     </div>
-//   );
-// }
-
-// /* ─── Small feature cards ────────────────────────────────────────────── */
-// const smallFeatures = [
-//   {
-//     Icon: PenLine,
-//     title: "AI Caption Gen",
-//     description:
-//       "Professional captions in seconds, tailored to your brand voice and platform tone.",
-//   },
-//   {
-//     Icon: Hash,
-//     title: "Hashtag Suggestions",
-//     description:
-//       "10–15 smart tags per post — broad, niche, and Reels mix for maximum reach.",
-//   },
-//   {
-//     Icon: Upload,
-//     title: "Image Upload",
-//     description:
-//       "Direct assets library with simple drag-and-drop. Supports all major formats.",
-//   },
-//   {
-//     Icon: FolderOpen,
-//     title: "Content History",
-//     description:
-//       "Every post saved and searchable. Reuse, remix, or repurpose anytime.",
-//   },
-//   {
-//     Icon: Cpu,
-//     title: "Fine-tuned Model",
-//     description:
-//       "Our custom Phi-2 model writes like a real content creator — not a generic AI.",
-//   },
-// ];
-
-// /* ─── Main export ────────────────────────────────────────────────────── */
-// export function Features() {
-//   const cardBase =
-//     "bg-white dark:bg-[hsl(200_15%_14%)] border border-[hsl(200_15%_87%)] dark:border-[hsl(200_15%_22%)] rounded-2xl shadow-[0_2px_24px_rgba(10,46,46,0.05)] dark:shadow-none transition-colors duration-300";
-
-//   return (
-//     <section
-//       id="features"
-//       className="w-full py-20 md:py-24 px-4 bg-[hsl(200_25%_94%)] dark:bg-[hsl(200_20%_9%)] transition-colors duration-300"
-//     >
-//       <div className="max-w-6xl mx-auto">
-//         {/* Header */}
-//         <div className="text-center mb-10 md:mb-14">
-//           <p
-//             className="text-[11px] font-bold tracking-[0.16em] uppercase mb-3"
-//             style={{ color: "#169B7F" }}
-//           >
-//             Features
-//           </p>
-//           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-snug text-[#0A2E2E] dark:text-[hsl(200_20%_90%)]">
-//             Everything you need to post smarter.
-//           </h2>
-//         </div>
-
-//         {/* Row 1 */}
-//         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-//           {/* Wide card */}
-//           <div className={`${cardBase} md:col-span-2 p-6 sm:p-7 flex flex-col`}>
-//             <IconBox Icon={PenLine} />
-//             <div className="mt-4">
-//               <h3 className="font-bold text-[15px] text-[#0A2E2E] dark:text-[hsl(200_20%_88%)] mb-1.5">
-//                 Multi-Platform Publishing
-//               </h3>
-//               <p className="text-sm text-[#0A2E2E65] dark:text-[hsl(200_10%_55%)] leading-relaxed max-w-sm">
-//                 One dashboard to rule them all. Write once, customize for each platform, and hit publish.
-//               </p>
-//             </div>
-//             <PublishIllustration />
-//           </div>
-
-//           {/* Scheduler card */}
-//           <div className={`${cardBase} p-6 sm:p-7 flex flex-col`}>
-//             <IconBox Icon={Calendar} />
-//             <div className="mt-4">
-//               <h3 className="font-bold text-[15px] text-[#0A2E2E] dark:text-[hsl(200_20%_88%)] mb-1.5">
-//                 Smart Auto-Scheduler
-//               </h3>
-//               <p className="text-sm text-[#0A2E2E65] dark:text-[hsl(200_10%_55%)] leading-relaxed">
-//                 AI analyzes your audience behaviour to suggest the exact minute your followers are most active.
-//               </p>
-//             </div>
-//             <SchedulerIllustration />
-//           </div>
-//         </div>
-
-//         {/* Row 2 — 3 equal small cards, last 2 centered on lg */}
-//         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-//           {smallFeatures.map(({ Icon, title, description }) => (
-//             <div
-//               key={title}
-//               className={`${cardBase} p-6 flex flex-col gap-3 hover:border-[#169B7F35] dark:hover:border-[#169B7F50]`}
-//             >
-//               <IconBox Icon={Icon} />
-//               <h3 className="font-bold text-[15px] text-[#0A2E2E] dark:text-[hsl(200_20%_88%)]">
-//                 {title}
-//               </h3>
-//               <p className="text-sm text-[#0A2E2E65] dark:text-[hsl(200_10%_55%)] leading-relaxed">
-//                 {description}
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </section>
-//   );
-// }

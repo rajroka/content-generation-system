@@ -8,35 +8,29 @@ import { getUserByClerkId } from "@/lib/user";
 export async function GET() {
   try {
     const { userId: clerkId } = await auth();
-
     if (!clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await getUserByClerkId(clerkId);
-
     if (!user) {
       return NextResponse.json([]);
     }
 
+    // Return connections stored in DB (populated during Zernio OAuth callback)
     const connections = await prisma.socialAccount.findMany({
-      where: { userId: user.id },
-      select: {
-        platform: true,
-        accountName: true,
-        isActive: true,
-        createdAt: true,
-      },
+      where:  { userId: user.id },
+      select: { platform: true, accountName: true, isActive: true, createdAt: true },
     });
 
-    const formattedConnections = connections.map(conn => ({
-      platform: conn.platform,
-      accountName: conn.accountName,
-      isActive: conn.isActive,
-      connectedAt: conn.createdAt.toISOString(),
-    }));
-
-    return NextResponse.json(formattedConnections);
+    return NextResponse.json(
+      connections.map((conn) => ({
+        platform:    conn.platform,
+        accountName: conn.accountName,
+        isActive:    conn.isActive,
+        connectedAt: conn.createdAt.toISOString(),
+      }))
+    );
   } catch (error) {
     console.error("Error fetching connections:", error);
     return NextResponse.json([], { status: 500 });

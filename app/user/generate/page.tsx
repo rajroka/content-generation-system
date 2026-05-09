@@ -102,6 +102,7 @@ export default function GeneratePage() {
     }
 
     setIsPosting(true);
+    const postingToast = toast.loading("Publishing your post...");
     try {
       const cdnUrls = mediaFiles.map((m) => m.cdnUrl!);
       const res = await fetch("/api/social/publish", {
@@ -115,17 +116,39 @@ export default function GeneratePage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to post");
-      if (data.partial) {
-        const failed = data.results.filter((r: any) => !r.success).map((r: any) => r.platform);
-        toast.success("Posted to some platforms!");
-        toast.error(`Failed on: ${failed.join(", ")}`);
-      } else {
-        toast.success("Posted successfully!");
+      toast.dismiss(postingToast);
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to publish");
+        return;
+      }
+
+      // Show per-platform results
+      const succeeded = (data.results as { platform: string; success: boolean }[])
+        .filter((r) => r.success)
+        .map((r) => r.platform);
+      const failed = (data.results as { platform: string; success: boolean }[])
+        .filter((r) => !r.success)
+        .map((r) => r.platform);
+
+      if (succeeded.length > 0) {
+        if (data.instagramContentType === "story") {
+          toast.success(`✅ Published to ${succeeded.join(", ")}`);
+          toast(`📖 Instagram: posted as a Story (your image was too tall for a feed post). Stories disappear after 24h.`, {
+            icon: "ℹ️",
+            duration: 6000,
+          });
+        } else {
+          toast.success(`✅ Published to ${succeeded.join(", ")}`);
+        }
         setCaption("");
         setMediaFiles([]);
       }
+      if (failed.length > 0) {
+        toast.error(`❌ Failed on: ${failed.join(", ")}`);
+      }
     } catch (err: any) {
+      toast.dismiss(postingToast);
       toast.error(err.message || "Something went wrong");
     } finally {
       setIsPosting(false);

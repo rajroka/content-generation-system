@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import zernio from "@/lib/zernio";
 
 export async function GET() {
   const { userId } = await auth();
@@ -9,15 +10,28 @@ export async function GET() {
     return NextResponse.redirect(new URL("/sign-in", process.env.NEXT_PUBLIC_APP_URL));
   }
 
-  const state = encodeURIComponent(userId);
+  try {
+    const result = await zernio.connect.getConnectUrl({
+      path:  { platform: "linkedin" },
+      query: {
+        profileId:    process.env.ZERNIO_PROFILE_ID!,
+        redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/linkedin/callback?state=${encodeURIComponent(userId)}`,
+      },
+    });
 
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id:     process.env.LINKEDIN_CLIENT_ID!,
-    redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/linkedin/callback`,
-    state,
-    scope:         "openid profile email w_member_social",
-  });
+    const authUrl = result.data?.authUrl;
+    if (!authUrl) throw new Error("No authUrl returned from Zernio");
 
-  return NextResponse.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`);
+    return NextResponse.redirect(authUrl);
+  } catch (err: any) {
+    console.error("Zernio LinkedIn connect error:", err.message);
+    const msg = err.message || "Failed to connect LinkedIn";
+    return new Response(
+      `<!DOCTYPE html><html><body><script>
+        if (window.opener) window.opener.postMessage(${JSON.stringify({ type: "SOCIAL_CONNECT_ERROR", platform: "linkedin", error: msg })}, "*");
+        window.close();
+      </script></body></html>`,
+      { headers: { "Content-Type": "text/html" } }
+    );
+  }
 }

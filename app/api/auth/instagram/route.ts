@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import zernio from "@/lib/zernio";
 
 export async function GET() {
   const { userId } = await auth();
@@ -9,17 +10,28 @@ export async function GET() {
     return NextResponse.redirect(new URL("/sign-in", process.env.NEXT_PUBLIC_APP_URL));
   }
 
-  // Encode userId into state so the callback can identify the user
-  // without relying on session cookies surviving the popup redirect.
-  const state = encodeURIComponent(userId);
+  try {
+    const result = await zernio.connect.getConnectUrl({
+      path:  { platform: "instagram" },
+      query: {
+        profileId:    process.env.ZERNIO_PROFILE_ID!,
+        redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/instagram/callback?state=${encodeURIComponent(userId)}`,
+      },
+    });
 
-  const params = new URLSearchParams({
-    client_id:     process.env.INSTAGRAM_CLIENT_ID!,
-    redirect_uri:  `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/instagram/callback`,
-    scope:         "instagram_basic,instagram_content_publish,pages_manage_posts",
-    response_type: "code",
-    state,
-  });
+    const authUrl = result.data?.authUrl;
+    if (!authUrl) throw new Error("No authUrl returned from Zernio");
 
-  return NextResponse.redirect(`https://api.instagram.com/oauth/authorize?${params.toString()}`);
+    return NextResponse.redirect(authUrl);
+  } catch (err: any) {
+    console.error("Zernio Instagram connect error:", err.message);
+    const msg = err.message || "Failed to connect Instagram";
+    return new Response(
+      `<!DOCTYPE html><html><body><script>
+        if (window.opener) window.opener.postMessage(${JSON.stringify({ type: "SOCIAL_CONNECT_ERROR", platform: "instagram", error: msg })}, "*");
+        window.close();
+      </script></body></html>`,
+      { headers: { "Content-Type": "text/html" } }
+    );
+  }
 }

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import zernio from "@/lib/zernio";
 
 export async function GET() {
   const { userId } = await auth();
@@ -9,19 +10,28 @@ export async function GET() {
     return NextResponse.redirect(new URL("/sign-in", process.env.NEXT_PUBLIC_APP_URL));
   }
 
-  // Encode userId into state (same pattern as Twitter) so the callback
-  // can identify the user without relying on session cookies surviving
-  // the cross-site redirect inside a popup window.
-  const state = encodeURIComponent(userId);
+  try {
+    const result = await zernio.connect.getConnectUrl({
+      path:  { platform: "facebook" },
+      query: {
+        profileId:    process.env.ZERNIO_PROFILE_ID!,
+        redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/facebook/callback?state=${encodeURIComponent(userId)}`,
+      },
+    });
 
-  const rootUrl = "https://www.facebook.com/v18.0/dialog/oauth";
-  const params = new URLSearchParams({
-    client_id: process.env.FACEBOOK_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/facebook/callback`,
-    scope: "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,pages_show_list,pages_manage_metadata",
-    response_type: "code",
-    state,
-  });
+    const authUrl = result.data?.authUrl;
+    if (!authUrl) throw new Error("No authUrl returned from Zernio");
 
-  return NextResponse.redirect(`${rootUrl}?${params.toString()}`);
+    return NextResponse.redirect(authUrl);
+  } catch (err: any) {
+    console.error("Zernio Facebook connect error:", err.message);
+    const msg = err.message || "Failed to connect Facebook";
+    return new Response(
+      `<!DOCTYPE html><html><body><script>
+        if (window.opener) window.opener.postMessage(${JSON.stringify({ type: "SOCIAL_CONNECT_ERROR", platform: "facebook", error: msg })}, "*");
+        window.close();
+      </script></body></html>`,
+      { headers: { "Content-Type": "text/html" } }
+    );
+  }
 }
