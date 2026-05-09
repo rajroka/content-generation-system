@@ -2,7 +2,7 @@ import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// This is BanamSathi's custom text generation API
+// This is PostSathi's custom text generation API
 // It uses Groq (Llama 3) with custom prompt engineering for each content type
 
 interface TextParams {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,10 @@ const PLATFORMS = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function GeneratePage() {
+  const { user: clerkUser } = useUser();
+  const userName  = clerkUser?.fullName || clerkUser?.firstName || "Your Brand";
+  const userImage = clerkUser?.imageUrl || null;
+
   const [topic, setTopic] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["FACEBOOK"]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -300,7 +305,7 @@ export default function GeneratePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <div className="max-w-[1400px] mx-auto p-4 md:p-8">
+      <div className="max-w-[1400px] mx-auto p-4 md:p-6">
 
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -336,10 +341,10 @@ export default function GeneratePage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* LEFT: Composer */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7 space-y-6">
 
             {/* Platform Selector */}
             <div className="space-y-4">
@@ -504,32 +509,38 @@ export default function GeneratePage() {
 
           {/* RIGHT: Live Preview */}
           <div className="lg:col-span-5">
-            <div className="sticky top-8 bg-muted/30 dark:bg-zinc-900/30 rounded-[32px] overflow-hidden border border-border/50 shadow-sm">
-              <div className="p-6 border-b bg-background/50 flex justify-between items-center">
-                <h3 className="font-bold text-[#0D7C8A]">Live Preview</h3>
+            <div className="sticky top-8 bg-muted/30 dark:bg-zinc-900/30 rounded-2xl overflow-hidden border border-border/50 shadow-sm">
+              <div className="px-4 py-3 border-b bg-background/50 flex justify-between items-center">
+                <h3 className="font-bold text-sm text-[#0D7C8A]">Live Preview</h3>
                 <Badge variant="secondary" className="text-[10px] uppercase">Dynamic View</Badge>
               </div>
 
-              <div className="flex justify-center bg-slate-100/50 dark:bg-black/20 py-8 px-4 md:px-0">
-                <Card className="w-full max-w-[380px] rounded-xl shadow-2xl border-none overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
+              <div className="p-3">
+                <Card className="w-full rounded-xl shadow-sm border overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
                   {/* Mockup Header */}
-                  <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#0D7C8A]/10 flex items-center justify-center overflow-hidden ring-1 ring-border">
-                        <Image src="https://github.com/shadcn.png" alt="User" width={40} height={40} />
+                  <div className="px-3 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#0D7C8A]/10 flex items-center justify-center overflow-hidden ring-1 ring-border shrink-0">
+                        {userImage ? (
+                          <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-bold text-[#0D7C8A]">
+                            {userName.charAt(0).toUpperCase()}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-left">
-                        <p className="text-sm font-bold leading-none">Your Brand</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">Just now • 🌍</p>
+                      <div className="text-left min-w-0">
+                        <p className="text-xs font-bold leading-none truncate">{userName}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Just now · 🌍</p>
                       </div>
                     </div>
-                    <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground shrink-0" />
                   </div>
 
                   {/* Caption */}
-                  <div className="px-4 pb-3">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {caption || "Your generated content will appear here..."}
+                  <div className="px-3 pb-2">
+                    <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground">
+                      {caption || <span className="text-muted-foreground">Your generated content will appear here...</span>}
                     </p>
                   </div>
 
@@ -540,7 +551,7 @@ export default function GeneratePage() {
                         {mediaFiles[activePreviewIndex]?.type === "video" ? (
                           <video
                             src={mediaFiles[activePreviewIndex]?.localUrl}
-                            className="w-full max-h-[320px] object-contain"
+                            className="w-full max-h-[280px] object-contain"
                             controls
                             muted
                           />
@@ -548,7 +559,7 @@ export default function GeneratePage() {
                           <img
                             src={mediaFiles[activePreviewIndex]?.localUrl}
                             alt="Preview"
-                            className="w-full h-auto max-h-[320px] object-contain"
+                            className="w-full h-auto max-h-[280px] object-contain"
                           />
                         )}
                         {mediaFiles.length > 1 && (
@@ -571,12 +582,12 @@ export default function GeneratePage() {
                               key={i}
                               onClick={() => setActivePreviewIndex(i)}
                               className={cn(
-                                "relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all flex items-center justify-center bg-zinc-200 dark:bg-zinc-700",
+                                "relative shrink-0 w-10 h-10 rounded-lg overflow-hidden border-2 transition-all flex items-center justify-center bg-zinc-200 dark:bg-zinc-700",
                                 activePreviewIndex === i ? "border-[#0D7C8A]" : "border-transparent opacity-60 hover:opacity-100"
                               )}
                             >
                               {m.type === "video" ? (
-                                <Film className="w-5 h-5 text-zinc-500" />
+                                <Film className="w-4 h-4 text-zinc-500" />
                               ) : (
                                 <img src={m.localUrl} alt="" className="w-full h-full object-cover" />
                               )}
@@ -586,27 +597,21 @@ export default function GeneratePage() {
                       )}
                     </div>
                   ) : (
-                    <div className="aspect-video bg-muted/50 flex flex-col items-center justify-center border-y border-border/50 gap-2">
-                      <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
-                      <span className="text-xs text-muted-foreground/50">Media Preview</span>
+                    <div className="aspect-video bg-muted/40 flex flex-col items-center justify-center border-y border-border/50 gap-1.5">
+                      <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
+                      <span className="text-[11px] text-muted-foreground/50">Media Preview</span>
                     </div>
                   )}
 
                   {/* Mockup Footer */}
-                  <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between text-muted-foreground">
-                    <div className="flex gap-6">
-                      <span className="text-xs font-semibold hover:text-[#0D7C8A] cursor-pointer transition-colors">Like</span>
-                      <span className="text-xs font-semibold hover:text-[#0D7C8A] cursor-pointer transition-colors">Comment</span>
+                  <div className="px-3 py-2 border-t border-border/50 flex items-center justify-between text-muted-foreground">
+                    <div className="flex gap-4">
+                      <span className="text-[11px] font-semibold hover:text-[#0D7C8A] cursor-pointer transition-colors">Like</span>
+                      <span className="text-[11px] font-semibold hover:text-[#0D7C8A] cursor-pointer transition-colors">Comment</span>
                     </div>
-                    <span className="text-xs font-semibold hover:text-[#0D7C8A] cursor-pointer">Share</span>
+                    <span className="text-[11px] font-semibold hover:text-[#0D7C8A] cursor-pointer">Share</span>
                   </div>
                 </Card>
-              </div>
-
-              <div className="p-6 text-center">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Click any thumbnail to switch the preview image.
-                </p>
               </div>
             </div>
           </div>

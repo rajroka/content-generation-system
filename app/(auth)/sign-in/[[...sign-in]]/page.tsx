@@ -7,7 +7,7 @@ export default function SignInPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold">Welcome back</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Sign in to your BanamSathi account
+            Sign in to your PostSathi account
           </p>
         </div>
         <SignIn />

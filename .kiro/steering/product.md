@@ -1,8 +1,8 @@
-# Product: BanamSathi
+# Product: PostSathi
 
 **Tagline:** Create smarter. Post faster.
 
-BanamSathi is an AI-powered social media content generation and scheduling SaaS platform. Users provide a topic, platform, and tone — the app generates captions, hashtags, and images, then lets them schedule or publish directly to connected social accounts.
+PostSathi is an AI-powered social media content generation and scheduling SaaS platform. Users provide a topic, platform, and tone — the app generates captions, hashtags, and images, then lets them schedule or publish directly to connected social accounts.
 
 ## Core Features
 

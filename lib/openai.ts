@@ -48,8 +48,8 @@ Visually stunning and shareable.`;
 
   const uploaded = await imagekit.upload({
     file: base64,
-    fileName: `banamsathi_${Date.now()}.png`,
-    folder: "/banamsathi/generated",
+    fileName: `postsathi_${Date.now()}.png`,
+    folder: "/postsathi/generated",
     tags: [platform, topic.replace(/\s+/g, "_").toLowerCase()],
   });
 

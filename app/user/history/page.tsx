@@ -38,10 +38,10 @@ export default async function HistoryPage({
     : [];
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Content History</h1>
-        <p className="text-muted-foreground mt-1">
+    <div className="p-4 sm:p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold">Content History</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           All your generated content in one place
         </p>
         {query && (
@@ -53,12 +53,12 @@ export default async function HistoryPage({
       </div>
 
       {generations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-            <History className="w-8 h-8 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
+          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+            <History className="w-7 h-7 text-muted-foreground" />
           </div>
           <h3 className="font-semibold text-lg">{query ? "No results found" : "No content yet"}</h3>
-          <p className="text-muted-foreground text-sm text-center max-w-sm">
+          <p className="text-muted-foreground text-sm max-w-sm">
             {query
               ? "Try a different search term."
               : "Start generating captions and images. They'll all be saved here automatically."}
@@ -69,18 +69,18 @@ export default async function HistoryPage({
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {generations.map((gen) => (
             <Card key={gen.id} className="border-none shadow-sm rounded-lg">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{gen.platform}</Badge>
+                  <Badge variant="secondary" className="text-xs">{gen.platform}</Badge>
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {new Date(gen.createdAt).toLocaleDateString()}
                 </span>
               </CardHeader>
-              <CardContent className="flex flex-col gap-3">
+              <CardContent className="flex flex-col gap-2.5 px-4 pb-4">
                 <p className="text-sm font-medium text-muted-foreground">{gen.topic}</p>
                 <p className="text-sm line-clamp-3">{gen.caption}</p>
                 <div className="flex flex-wrap gap-1">

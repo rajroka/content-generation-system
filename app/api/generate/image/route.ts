@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     // Placeholder image for testing
     return NextResponse.json({
-      imageUrl: "https://placehold.co/1024x1024/2563eb/ffffff?text=BanamSathi"
+      imageUrl: "https://placehold.co/1024x1024/2563eb/ffffff?text=PostSathi"
     });
 
   } catch (err: any) {

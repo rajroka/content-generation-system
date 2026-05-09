@@ -8,7 +8,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BanamSathi — Create smarter. Post faster.",
+  title: "PostSathi — Create smarter. Post faster.",
   description: "AI-powered social media content generation platform",
 };
 
@@ -28,7 +28,19 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
-            <Toaster position="top-right" />
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3500,
+                style: {
+                  borderRadius: "10px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  maxWidth: "360px",
+                },
+                success: { iconTheme: { primary: "#0d7c8a", secondary: "#fff" } },
+              }}
+            />
           </ThemeProvider>
         </body>
       </html>
