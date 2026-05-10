@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { AlertTriangle, Eye, FileText, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ interface Generation {
 }
 
 export default function AdminContentPage() {
+  const searchParams = useSearchParams();
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -59,10 +61,12 @@ export default function AdminContentPage() {
   };
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search).get("q");
-    if (query) setSearch(query);
     fetchGenerations();
   }, []);
+
+  useEffect(() => {
+    setSearch(searchParams.get("q") || "");
+  }, [searchParams]);
 
   const filteredGenerations = useMemo(() => {
     const query = search.toLowerCase();

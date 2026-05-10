@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
@@ -17,10 +18,11 @@ export default async function AdminOverview() {
     todayGenerations,
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.generation.count(),
+    prisma.generation.count({ where: { isDeleted: false } }),
     prisma.user.count({ where: { plan: "PRO" } }),
     prisma.generation.count({
       where: {
+        isDeleted: false,
         createdAt: {
           gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
@@ -67,6 +69,9 @@ export default async function AdminOverview() {
 
   // Recent generations
   const recentGenerations = await prisma.generation.findMany({
+    where: {
+      isDeleted: false,
+    },
     take: 10,
     orderBy: { createdAt: "desc" },
     include: {
@@ -86,20 +91,32 @@ export default async function AdminOverview() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (
-          <Card key={stat.title} className="border-none shadow-sm rounded-lg">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+          <Link
+            key={stat.title}
+            href={
+              stat.title === "Total Users"
+                ? "/admin/users"
+                : stat.title === "Total Generations"
+                ? "/admin/content"
+                : "/admin/subscriptions"
+            }
+            className="block"
+          >
+            <Card className="border-none shadow-sm rounded-lg transition hover:-translate-y-0.5 hover:shadow-md">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  </div>
+                  <div className="p-2 bg-muted rounded-lg">
+                    <stat.icon size={20} className="text-[#0d7c8a]" />
+                  </div>
                 </div>
-                <div className="p-2 bg-muted rounded-lg">
-                  <stat.icon size={20} className="text-[#0d7c8a]" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -112,7 +129,11 @@ export default async function AdminOverview() {
           <CardContent>
             <div className="space-y-4">
               {recentUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between border-b pb-4 last:border-0">
+                <Link
+                  key={user.id}
+                  href={`/admin/users?q=${encodeURIComponent(user.email)}`}
+                  className="flex items-center justify-between border-b pb-4 last:border-0 rounded-md transition hover:bg-muted/60"
+                >
                   <div>
                     <p className="font-medium text-sm">{user.email}</p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -129,7 +150,7 @@ export default async function AdminOverview() {
                       </span>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>
@@ -143,7 +164,11 @@ export default async function AdminOverview() {
           <CardContent>
             <div className="space-y-4">
               {recentGenerations.map((gen) => (
-                <div key={gen.id} className="flex items-start gap-3 border-b pb-4 last:border-0">
+                <Link
+                  key={gen.id}
+                  href={`/admin/content?q=${encodeURIComponent(gen.topic)}`}
+                  className="flex items-start gap-3 border-b pb-4 last:border-0 rounded-md transition hover:bg-muted/60"
+                >
                   <Activity className="w-4 h-4 text-muted-foreground mt-1 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm">{gen.user?.email || "Unknown"}</p>
@@ -159,7 +184,7 @@ export default async function AdminOverview() {
                       Flagged
                     </span>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>

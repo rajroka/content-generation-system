@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   LineChart,
@@ -18,7 +20,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Users, FileText, Image, TrendingUp, DollarSign } from "lucide-react";
+import { Users, FileText, Image, DollarSign, RefreshCw } from "lucide-react";
 
 interface AnalyticsData {
   dailyGenerations: Array<{ date: string; count: number }>;
@@ -46,18 +48,23 @@ export default function AdminAnalyticsPage() {
   }, []);
 
   const fetchAnalytics = async () => {
+    setLoading(true);
     try {
       const response = await fetch("/api/admin/analytics");
       const analyticsData = await response.json();
+      if (!response.ok) {
+        throw new Error(analyticsData?.error || "Failed to fetch analytics");
+      }
       setData(analyticsData);
     } catch (error) {
-      console.error("Failed to fetch analytics:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to fetch analytics");
+      setData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -73,40 +80,62 @@ export default function AdminAnalyticsPage() {
     );
   }
 
+  if (!data) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-16 text-center">
+            <p className="font-medium">Analytics could not be loaded</p>
+            <p className="mt-1 text-sm text-muted-foreground">Refresh the page or try again in a moment.</p>
+            <Button className="mt-4" onClick={fetchAnalytics}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const stats = [
     {
       title: "Total Users",
       value: data.totalStats.totalUsers,
       icon: Users,
-      change: "+12%",
+      description: "Registered accounts",
     },
     {
       title: "Total Generations",
       value: data.totalStats.totalGenerations,
       icon: FileText,
-      change: "+8%",
+      description: "Non-deleted generations",
     },
     {
       title: "Images Created",
       value: data.totalStats.totalImages,
       icon: Image,
-      change: "+15%",
+      description: "Generations with images",
     },
     {
       title: "Monthly Revenue",
-      value: `$${data.totalStats.monthlyRevenue}`,
+      value: `$${data.totalStats.monthlyRevenue.toFixed(0)}`,
       icon: DollarSign,
-      change: "+23%",
+      description: `${data.totalStats.proUsers} Pro users`,
     },
   ];
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Analytics</h1>
-        <p className="text-muted-foreground mt-1">
-          Platform metrics and performance insights
-        </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">
+            Platform metrics and performance insights
+          </p>
+        </div>
+        <Button variant="outline" onClick={fetchAnalytics}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -121,7 +150,7 @@ export default function AdminAnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-green-500 mt-1">{stat.change} from last month</p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -174,7 +203,7 @@ export default function AdminAnalyticsPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ platform, percent }) => `${platform}: ${(percent * 100).toFixed(0)}%`}
                     outerRadius={150}
                     fill="#8884d8"
                     dataKey="count"

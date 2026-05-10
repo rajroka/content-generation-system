@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Activity, Clock, Search, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +18,12 @@ interface ActivityLog {
 }
 
 export default function AdminActivityPage() {
+  const searchParams = useSearchParams();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search).get("q");
-    if (query) setSearch(query);
-
     const fetchLogs = async () => {
       try {
         const response = await fetch("/api/admin/activity");
@@ -45,6 +44,10 @@ export default function AdminActivityPage() {
 
     fetchLogs();
   }, []);
+
+  useEffect(() => {
+    setSearch(searchParams.get("q") || "");
+  }, [searchParams]);
 
   const filteredLogs = useMemo(() => {
     const query = search.toLowerCase();

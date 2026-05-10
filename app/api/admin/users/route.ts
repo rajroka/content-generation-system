@@ -27,10 +27,12 @@ export async function GET() {
         id: true,
         email: true,
         name: true,
+        imageUrl: true,
         plan: true,
         role: true,
         isActive: true,
         createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             generations: true,

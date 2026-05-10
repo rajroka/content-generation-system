@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { CreditCard, Crown, Search, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ interface SubscriptionData {
 }
 
 export default function AdminSubscriptionsPage() {
+  const searchParams = useSearchParams();
   const [data, setData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -68,10 +70,12 @@ export default function AdminSubscriptionsPage() {
   };
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search).get("q");
-    if (query) setSearch(query);
     fetchSubscriptions();
   }, []);
+
+  useEffect(() => {
+    setSearch(searchParams.get("q") || "");
+  }, [searchParams]);
 
   const subscriptions = data?.subscriptions || [];
   const filteredSubscriptions = useMemo(() => {

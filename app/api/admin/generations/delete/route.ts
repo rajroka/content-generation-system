@@ -23,6 +23,10 @@ export async function DELETE(req: Request) {
 
     const { id } = await req.json();
 
+    if (!id) {
+      return NextResponse.json({ error: "Invalid generation id" }, { status: 400 });
+    }
+
     await prisma.generation.update({
       where: { id },
       data: { isDeleted: true },

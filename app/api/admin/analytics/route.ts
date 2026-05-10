@@ -28,6 +28,7 @@ export async function GET() {
     // Daily generations - fetch all and process in JS
     const generationsData = await prisma.generation.findMany({
       where: {
+        isDeleted: false,
         createdAt: {
           gte: thirtyDaysAgo,
         },
@@ -38,20 +39,22 @@ export async function GET() {
       },
     });
 
-    // Group by date
-    const dailyGenerations: { date: string; count: number }[] = [];
+    // Group by date and include empty days so charts do not disappear on quiet days.
     const dateMap: { [key: string]: number } = {};
+    for (let index = 29; index >= 0; index -= 1) {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      dateMap[date.toISOString().split("T")[0]] = 0;
+    }
     
     generationsData.forEach((gen) => {
       const date = gen.createdAt.toISOString().split("T")[0];
       dateMap[date] = (dateMap[date] || 0) + 1;
     });
 
-    Object.entries(dateMap)
+    const dailyGenerations = Object.entries(dateMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .forEach(([date, count]) => {
-        dailyGenerations.push({ date, count });
-      });
+      .map(([date, count]) => ({ date, count }));
 
     // Platform distribution
     const platformMap: { [key: string]: number } = {};
@@ -79,43 +82,51 @@ export async function GET() {
       },
     });
 
-    const userGrowth: { date: string; users: number }[] = [];
     const userDateMap: { [key: string]: number } = {};
+    for (let index = 29; index >= 0; index -= 1) {
+      const date = new Date();
+      date.setDate(date.getDate() - index);
+      userDateMap[date.toISOString().split("T")[0]] = 0;
+    }
     
     usersData.forEach((user) => {
       const date = user.createdAt.toISOString().split("T")[0];
       userDateMap[date] = (userDateMap[date] || 0) + 1;
     });
 
-    Object.entries(userDateMap)
+    const userGrowth = Object.entries(userDateMap)
       .sort(([a], [b]) => a.localeCompare(b))
-      .forEach(([date, users]) => {
-        userGrowth.push({ date, users });
-      });
+      .map(([date, users]) => ({ date, users }));
 
     // Total stats
     const [totalUsers, totalGenerations, totalImages, proUsers] = await Promise.all([
       prisma.user.count(),
-      prisma.generation.count(),
-      prisma.generation.count({ where: { imageUrl: { not: null } } }),
+      prisma.generation.count({ where: { isDeleted: false } }),
+      prisma.generation.count({ where: { imageUrl: { not: null }, isDeleted: false } }),
       prisma.user.count({ where: { plan: "PRO" } }),
     ]);
+
+    const monthFormatter = new Intl.DateTimeFormat("en", { month: "short" });
+    const revenueData = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (5 - index));
+      return {
+        month: monthFormatter.format(date),
+        revenue: Number((proUsers * 12).toFixed(2)),
+      };
+    });
 
     return NextResponse.json({
       dailyGenerations,
       platformDistribution,
       userGrowth,
-      revenueData: [
-        { month: "Jan", revenue: 0 },
-        { month: "Feb", revenue: 0 },
-        { month: "Mar", revenue: proUsers * 9.99 },
-      ],
+      revenueData,
       totalStats: {
         totalUsers,
         totalGenerations,
         totalImages,
         proUsers,
-        monthlyRevenue: proUsers * 9.99,
+        monthlyRevenue: proUsers * 12,
       },
     });
   } catch (error) {

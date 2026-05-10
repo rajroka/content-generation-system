@@ -3,7 +3,7 @@
 import { useUser, UserButton } from "@clerk/nextjs";
 import { Search, Menu, ShieldCheck, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { navItems } from "./AdminSidebar";
 import Link from "next/link";
@@ -54,13 +54,15 @@ export function AdminNavbar() {
                 {navItems.map((item) => {
                   const isActive = pathname === item.href;
                   return (
-                    <Link key={item.href} href={item.href} className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all group",
-                      isActive ? "bg-[#0d7c8a]/10 text-[#0d7c8a]" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}>
-                      <item.icon size={18} className={cn("shrink-0", isActive ? "text-[#0d7c8a]" : "text-muted-foreground group-hover:text-foreground")} />
-                      <span>{item.label}</span>
-                    </Link>
+                    <SheetClose key={item.href}>
+                      <Link href={item.href} className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all group",
+                        isActive ? "bg-[#0d7c8a]/10 text-[#0d7c8a]" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}>
+                        <item.icon size={18} className={cn("shrink-0", isActive ? "text-[#0d7c8a]" : "text-muted-foreground group-hover:text-foreground")} />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SheetClose>
                   );
                 })}
               </nav>

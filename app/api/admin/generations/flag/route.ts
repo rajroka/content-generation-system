@@ -23,6 +23,10 @@ export async function POST(req: Request) {
 
     const { id, flag } = await req.json();
 
+    if (!id || typeof flag !== "boolean") {
+      return NextResponse.json({ error: "Invalid flag update" }, { status: 400 });
+    }
+
     await prisma.generation.update({
       where: { id },
       data: { isFlagged: flag },
