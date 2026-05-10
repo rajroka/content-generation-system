@@ -22,6 +22,9 @@ export async function GET() {
     }
 
     const generations = await prisma.generation.findMany({
+      where: {
+        isDeleted: false,
+      },
       include: {
         user: {
           select: {

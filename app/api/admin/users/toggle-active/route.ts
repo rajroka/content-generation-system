@@ -23,6 +23,10 @@ export async function POST(req: Request) {
 
     const { userId: targetUserId, isActive } = await req.json();
 
+    if (!targetUserId || typeof isActive !== "boolean") {
+      return NextResponse.json({ error: "Invalid user status update" }, { status: 400 });
+    }
+
     await prisma.user.update({
       where: { id: targetUserId },
       data: { isActive },

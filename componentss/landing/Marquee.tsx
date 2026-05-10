@@ -1,30 +1,32 @@
+import { CalendarClock, Hash, Image, Lock, PanelsTopLeft, PenLine, Sparkles, Wand2 } from "lucide-react";
+
 const marqueeItems = [
-  { icon: "✦", label: "AI Caption Generation" },
-  { icon: "🎨", label: "DALL-E 3 Image Creation" },
-  { icon: "⚡", label: "Instant Hashtag Sets" },
-  { icon: "🔁", label: "Background Removal" },
-  { icon: "📂", label: "Content History" },
-  { icon: "🤖", label: "Fine-tuned on Real Posts" },
-  { icon: "🌐", label: "Multi-Platform Ready" },
-  { icon: "🔒", label: "Secure & Private" },
+  { icon: PenLine, label: "AI caption writing" },
+  { icon: Wand2, label: "Image generation" },
+  { icon: Hash, label: "Hashtag sets" },
+  { icon: Image, label: "Media uploads" },
+  { icon: CalendarClock, label: "Smart scheduling" },
+  { icon: PanelsTopLeft, label: "Content history" },
+  { icon: Sparkles, label: "Platform tuning" },
+  { icon: Lock, label: "Secure workspace" },
 ];
 
 export function Marquee() {
   const doubledMarquee = [...marqueeItems, ...marqueeItems];
 
   return (
-    <div className="relative overflow-hidden border-y border-border/50 bg-muted/20">
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-linear-to-r from-background to-transparent z-10" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-linear-to-l from-background to-transparent z-10" />
+    <div className="relative overflow-hidden border-y border-slate-200 bg-white dark:border-white/10 dark:bg-slate-950">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-white to-transparent dark:from-slate-950" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-white to-transparent dark:from-slate-950" />
 
-      <div className="flex w-max animate-[marquee_28s_linear_infinite]">
-        {doubledMarquee.map((item, i) => (
+      <div className="flex w-max animate-[marquee_30s_linear_infinite]">
+        {doubledMarquee.map(({ icon: Icon, label }, i) => (
           <div
-            key={i}
-            className="flex items-center gap-2.5 px-9 py-4 text-sm text-muted-foreground border-r border-border/40 whitespace-nowrap"
+            key={`${label}-${i}`}
+            className="flex items-center gap-2.5 border-r border-slate-200 px-9 py-4 text-sm font-semibold text-slate-600 whitespace-nowrap dark:border-white/10 dark:text-slate-300"
           >
-            <span>{item.icon}</span>
-            {item.label}
+            <Icon className="h-4 w-4 text-teal-700 dark:text-teal-300" />
+            {label}
           </div>
         ))}
       </div>

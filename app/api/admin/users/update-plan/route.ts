@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+const validPlans = ["FREE", "PRO"] as const;
+
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
@@ -23,9 +25,13 @@ export async function POST(req: Request) {
 
     const { userId: targetUserId, plan } = await req.json();
 
+    if (!targetUserId || !validPlans.includes(plan)) {
+      return NextResponse.json({ error: "Invalid user or plan" }, { status: 400 });
+    }
+
     await prisma.user.update({
       where: { id: targetUserId },
-      data: { plan: plan as any },
+      data: { plan },
     });
 
     return NextResponse.json({ success: true });

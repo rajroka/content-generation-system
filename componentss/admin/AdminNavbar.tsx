@@ -7,13 +7,26 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { navItems } from "./AdminSidebar";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../shared/ThemeToggle";
+import { FormEvent, useState } from "react";
 
 export function AdminNavbar() {
   const { user } = useUser();
   const pathname = usePathname();
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = search.trim();
+    if (!query) return;
+
+    const searchableRoutes = ["/admin/users", "/admin/content", "/admin/subscriptions", "/admin/activity"];
+    const target = searchableRoutes.includes(pathname) ? pathname : "/admin/users";
+    router.push(`${target}?q=${encodeURIComponent(query)}`);
+  };
 
   return (
     <header className="h-14 bg-background flex items-center px-4 md:px-6 gap-4 border-b border-border sticky top-0 z-40 transition-colors">
@@ -72,13 +85,15 @@ export function AdminNavbar() {
         </Sheet>
       </div>
 
-      <div className="relative flex-1 max-w-sm hidden sm:flex">
+      <form onSubmit={handleSearch} className="relative flex-1 max-w-sm hidden sm:flex">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search users, content, reports..."
           className="pl-9 h-9 bg-muted border-none text-xs rounded-lg focus-visible:ring-1 focus-visible:ring-[#0d7c8a]"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
         />
-      </div>
+      </form>
 
       <div className="flex items-center gap-4 ml-auto">
         <ThemeToggle />

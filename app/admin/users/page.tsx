@@ -44,6 +44,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    const query = new URLSearchParams(window.location.search).get("q");
+    if (query) setSearch(query);
     fetchUsers();
   }, []);
 

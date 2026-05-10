@@ -1,225 +1,170 @@
 "use client";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
-const platforms = [
-  {
-    name: "Instagram",
-    color: "#E1306C",
-    bg: "#fce4ec",
-    darkBg: "#3d1a24",
-    svg: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-      </svg>
-    ),
-  },
-  {
-    name: "LinkedIn",
-    color: "#0A66C2",
-    bg: "#e3f0fb",
-    darkBg: "#0d2340",
-    svg: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-      </svg>
-    ),
-  },
-  {
-    name: "Facebook",
-    color: "#1877F2",
-    bg: "#e7f0fd",
-    darkBg: "#0d1f3c",
-    svg: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-        <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.514c-1.491 0-1.956.93-1.956 1.883v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
-      </svg>
-    ),
-  },
-  {
-    name: "X",
-    color: "#000000",
-    bg: "#f0f0f0",
-    darkBg: "#1a1a1a",
-    svg: (
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    ),
-  },
+import Link from "next/link";
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  ImagePlus,
+  Instagram,
+  Linkedin,
+  Play,
+  Send,
+  Sparkles,
+  Twitter,
+} from "lucide-react";
+
+const metrics = [
+  { value: "4+", label: "social channels" },
+  { value: "10s", label: "caption drafts" },
+  { value: "24/7", label: "scheduled queue" },
 ];
 
-const stats = [
-  { value: "4+", label: "Platforms" },
-  { value: "10s", label: "To generate" },
-  { value: "Free", label: "To start" },
+const queue = [
+  { platform: "Instagram", time: "Today 7:30 PM", color: "bg-pink-500" },
+  { platform: "LinkedIn", time: "Tomorrow 9:00 AM", color: "bg-blue-600" },
+  { platform: "X", time: "Friday 12:15 PM", color: "bg-zinc-950 dark:bg-white" },
 ];
 
 export function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center bg-background overflow-hidden px-5 sm:px-8 md:px-12 lg:px-16 py-24 lg:py-0 transition-colors duration-300">
+    <section className="relative isolate overflow-hidden bg-[hsl(194_54%_96%)] text-slate-950 dark:bg-[hsl(222_47%_7%)] dark:text-white">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(120deg,rgba(13,124,138,0.16),transparent_36%),radial-gradient(circle_at_80%_10%,rgba(245,158,11,0.18),transparent_28%)]" />
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-background to-transparent" />
 
-      {/* Dot grid background */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.07]"
-        style={{
-          backgroundImage: `radial-gradient(circle, #0d9488 1px, transparent 1px)`,
-          backgroundSize: "32px 32px",
-        }}
-      />
-
-      {/* Radial glow top-right */}
-      <div className="pointer-events-none absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-[#0d9488] opacity-[0.06] dark:opacity-[0.08] blur-[120px]" />
-
-      <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12 items-center">
-
-        {/* ── LEFT ── */}
-        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-
-          {/* Eyebrow pill */}
-          <div className="inline-flex items-center gap-2 bg-[#0d9488]/10 border border-[#0d9488]/20 text-[#0d7c8a] dark:text-[#2dd4bf] text-xs font-semibold px-3.5 py-1.5 rounded-full mb-7 tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0d9488] animate-pulse" />
-            AI-powered content, published instantly
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl grid-cols-1 items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:py-20">
+        <div className="max-w-2xl">
+          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-teal-700/20 bg-white/70 px-3 py-1.5 text-xs font-semibold text-teal-800 shadow-sm backdrop-blur dark:border-teal-300/20 dark:bg-white/10 dark:text-teal-200">
+            <Sparkles className="h-3.5 w-3.5" />
+            Content planning for creators and small teams
           </div>
 
-          {/* Headline */}
-          <h1 className="text-[clamp(2.6rem,6.5vw,5rem)] font-black leading-[1.05] tracking-tight text-foreground mb-5">
-            Your content,{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-[#0d9488]">everywhere</span>
-              <span
-                className="absolute bottom-1 left-0 w-full h-[6px] rounded-full opacity-30"
-                style={{ background: "#0d9488" }}
-              />
-            </span>
-            {" "}at once.
+          <h1 className="max-w-3xl text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl dark:text-white">
+            Create once.
+            <span className="block text-teal-700 dark:text-teal-300">Post everywhere.</span>
           </h1>
 
-          {/* Sub */}
-          <p className="text-muted-foreground text-base md:text-[17px] leading-relaxed max-w-[440px] mb-9">
-            Write a topic. Pick your platforms. Get a polished caption, hashtags, and visuals — then post or schedule in one click.
+          <p className="mt-6 max-w-xl text-base leading-8 text-slate-700 sm:text-lg dark:text-slate-300">
+            PostSathi turns one idea into polished captions, hashtags, media-ready drafts, and scheduled posts for Instagram, Facebook, LinkedIn, and X.
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-10">
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/sign-up"
-              className="inline-flex items-center justify-center gap-2 bg-[#0d7c8a] hover:bg-[#0b6b78] text-white font-bold px-7 h-12 rounded-xl text-sm transition-all shadow-lg shadow-[#0d9488]/20 active:scale-95"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-teal-700 px-6 text-sm font-bold text-white shadow-lg shadow-teal-900/15 transition hover:bg-teal-800 active:scale-[0.98]"
             >
-              Start for free <ArrowRight className="w-4 h-4" />
+              Start creating
+              <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center border border-border hover:border-[#0d9488]/40 hover:bg-[#0d9488]/5 text-foreground font-semibold px-7 h-12 rounded-xl text-sm transition-all"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/70 px-6 text-sm font-bold text-slate-950 transition hover:border-teal-700/40 hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
             >
-              Sign in
+              <Play className="h-4 w-4" />
+              Open dashboard
             </Link>
           </div>
 
-          {/* Stats row */}
-          <div className="flex items-center gap-6 sm:gap-8">
-            {stats.map((s, i) => (
-              <div key={s.label} className="flex items-center gap-6 sm:gap-8">
-                <div className="text-center lg:text-left">
-                  <p className="text-xl font-black text-foreground leading-none">{s.value}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{s.label}</p>
-                </div>
-                {i < stats.length - 1 && (
-                  <div className="w-px h-8 bg-border" />
-                )}
+          <div className="mt-10 grid max-w-lg grid-cols-3 divide-x divide-slate-300/70 overflow-hidden rounded-lg border border-slate-300/70 bg-white/60 text-center shadow-sm backdrop-blur dark:divide-white/10 dark:border-white/10 dark:bg-white/5">
+            {metrics.map((item) => (
+              <div key={item.label} className="px-4 py-4">
+                <p className="text-2xl font-black text-slate-950 dark:text-white">{item.value}</p>
+                <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-400">{item.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── RIGHT — App mockup ── */}
-        <div className="relative flex justify-center lg:justify-end">
-
-          {/* Glow behind card */}
-          <div className="pointer-events-none absolute inset-0 -z-10 blur-3xl opacity-20 dark:opacity-15 bg-[radial-gradient(ellipse_at_center,#0d9488_0%,transparent_65%)]" />
-
-          <div className="w-full max-w-[460px] rounded-2xl border border-border bg-card shadow-[0_32px_80px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_80px_rgba(0,0,0,0.4)] overflow-hidden">
-
-            {/* Browser bar */}
-            <div className="flex items-center gap-1.5 px-4 py-3 bg-muted/60 border-b border-border">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-              <div className="ml-3 flex-1 h-5 bg-background/80 rounded-md text-[10px] text-muted-foreground flex items-center px-2.5 font-mono">
-                app.contentai.io/generate
+        <div className="relative">
+          <div className="absolute -inset-6 -z-10 rounded-[2rem] bg-white/35 blur-3xl dark:bg-teal-400/10" />
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/12 dark:border-white/10 dark:bg-slate-950">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/5">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              </div>
+              <div className="rounded-md bg-white px-3 py-1 text-[11px] font-semibold text-slate-500 shadow-sm dark:bg-slate-900 dark:text-slate-400">
+                postsathi.app/generate
               </div>
             </div>
 
-            <div className="p-5 space-y-4">
-
-              {/* Topic input */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Topic</p>
-                <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-xl px-3.5 py-2.5">
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-2 bg-muted rounded-full w-3/4" />
+            <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="border-b border-slate-200 p-5 dark:border-white/10 lg:border-b-0 lg:border-r">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">New Campaign</p>
+                    <h2 className="mt-2 text-xl font-black text-slate-950 dark:text-white">Spring product launch</h2>
                   </div>
-                  <div className="shrink-0 bg-[#0d7c8a] text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3">
-                      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
-                    </svg>
-                    Generate
+                  <div className="rounded-lg bg-teal-700 p-2 text-white">
+                    <Sparkles className="h-5 w-5" />
                   </div>
                 </div>
-              </div>
 
-              {/* Platform pills */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Publish to</p>
-                <div className="flex flex-wrap gap-2">
-                  {platforms.map((p) => (
+                <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+                  <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">
+                    Launch our new content kit with a confident, useful tone. Mention templates, fast scheduling, and one workflow for every platform.
+                  </p>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {[
+                    { icon: Instagram, label: "Instagram", active: true },
+                    { icon: Linkedin, label: "LinkedIn", active: true },
+                    { icon: Twitter, label: "X", active: true },
+                    { icon: ImagePlus, label: "Add media", active: false },
+                  ].map(({ icon: Icon, label, active }) => (
                     <div
-                      key={p.name}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border"
-                      style={{
-                        color: p.color,
-                        borderColor: `${p.color}30`,
-                        backgroundColor: `${p.color}12`,
-                      }}
+                      key={label}
+                      className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
                     >
-                      <span style={{ color: p.color }}>{p.svg}</span>
-                      {p.name}
+                      <span className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-teal-700 dark:text-teal-300" />
+                        {label}
+                      </span>
+                      {active && <Check className="h-4 w-4 text-emerald-500" />}
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-5 rounded-lg bg-slate-950 p-4 text-white dark:bg-white dark:text-slate-950">
+                  <p className="text-sm font-bold">Generated caption</p>
+                  <p className="mt-2 text-sm leading-6 text-white/75 dark:text-slate-700">
+                    One launch, every channel covered. Build the post once, tune the voice, and let your schedule do the heavy lifting.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {["#ContentMarketing", "#CreatorTools", "#LaunchDay"].map((tag) => (
+                      <span key={tag} className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold dark:bg-slate-950/10">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Caption preview */}
-              <div className="bg-muted/40 border border-border rounded-xl p-3.5 space-y-2">
-                <div className="h-2 bg-muted rounded-full w-full" />
-                <div className="h-2 bg-muted rounded-full w-5/6" />
-                <div className="h-2 bg-muted rounded-full w-4/6" />
-                <div className="flex gap-1.5 mt-3 flex-wrap">
-                  {["#growth", "#marketing", "#ai"].map((tag) => (
-                    <span key={tag} className="text-[10px] font-semibold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded-full">
-                      {tag}
-                    </span>
+              <div className="bg-slate-50 p-5 dark:bg-white/[0.03]">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-black text-slate-950 dark:text-white">Publishing queue</p>
+                  <CalendarDays className="h-4 w-4 text-teal-700 dark:text-teal-300" />
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {queue.map((item) => (
+                    <div key={item.platform} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900">
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
+                        <p className="text-sm font-bold text-slate-950 dark:text-white">{item.platform}</p>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.time}</p>
+                    </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Action row */}
-              <div className="flex gap-2 pt-1">
-                <div className="flex-1 h-9 bg-muted/50 border border-border rounded-xl flex items-center px-3 gap-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-muted-foreground">
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <path d="M16 2v4M8 2v4M3 10h18" />
-                  </svg>
-                  <div className="h-2 bg-muted rounded-full w-24" />
-                </div>
-                <div className="h-9 bg-[#0d7c8a] text-white text-[11px] font-bold px-4 rounded-xl flex items-center gap-1.5 shrink-0">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
-                    <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />
-                  </svg>
-                  Post Now
-                </div>
+                <button className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-300">
+                  <Send className="h-4 w-4" />
+                  Schedule all
+                </button>
               </div>
-
             </div>
           </div>
         </div>

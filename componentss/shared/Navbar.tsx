@@ -10,8 +10,8 @@ import { ModeToggle } from "./ModeToggle";
 
 const navLinks = [
   { href: "/#features", label: "Features" },
-  { href: "/#how-it-works", label: "How it works" },
   { href: "/#pricing", label: "Pricing" },
+  { href: "/#testimonials", label: "Customers" },
 ];
 
 export function Navbar() {
@@ -33,12 +33,12 @@ export function Navbar() {
   if (!isLoaded) return null; 
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(0,104,122,0.04)] transition-colors">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950/75">
       <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2 group">
-          <span className="w-2 h-2 rounded-full bg-[#06b6d4] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" />
           <span 
             className="font-bold text-lg tracking-tight text-foreground" 
             style={{ fontFamily: 'Epilogue, sans-serif' }}
@@ -53,7 +53,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="font-semibold text-sm tracking-tight text-muted-foreground hover:text-[#06b6d4] transition-colors duration-200"
+              className="font-semibold text-sm tracking-tight text-slate-600 hover:text-teal-700 transition-colors duration-200 dark:text-slate-300 dark:hover:text-teal-300"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               {link.label}
@@ -68,7 +68,7 @@ export function Navbar() {
             <>
               <Link
                 href={dashboardUrl}
-                className="inline-flex items-center justify-center h-8 bg-[#00687a] hover:bg-[#00424f] text-white font-semibold tracking-tight rounded-xl px-5 transition-all text-sm"
+                className="inline-flex items-center justify-center h-9 bg-teal-700 hover:bg-teal-800 text-white font-semibold tracking-tight rounded-lg px-5 transition-all text-sm"
                 style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
                 {isAdmin ? "Admin Panel" : "Dashboard"}
@@ -81,7 +81,7 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-foreground hover:bg-muted font-semibold tracking-tight px-5"
+                  className="text-slate-700 hover:bg-slate-100 font-semibold tracking-tight px-5 dark:text-slate-200 dark:hover:bg-white/10"
                   style={{ fontFamily: 'Epilogue, sans-serif' }}
                 >
                   Sign in
@@ -89,7 +89,7 @@ export function Navbar() {
               </SignInButton>
               <Link
                 href="/sign-up"
-                className="inline-flex items-center justify-center h-7 bg-[#00687a] hover:bg-[#00424f] text-white font-bold tracking-tight rounded-xl px-5 active:scale-95 transition-transform text-[0.8rem]"
+                className="inline-flex items-center justify-center h-9 bg-teal-700 hover:bg-teal-800 text-white font-bold tracking-tight rounded-lg px-5 active:scale-95 transition-transform text-[0.8rem]"
                 style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
                 Get started
@@ -118,7 +118,7 @@ export function Navbar() {
           <Link
             key={link.href}
             href={link.href}
-            className="font-semibold text-sm tracking-tight text-muted-foreground hover:text-[#06b6d4]"
+            className="font-semibold text-sm tracking-tight text-slate-600 hover:text-teal-700 dark:text-slate-300 dark:hover:text-teal-300"
             style={{ fontFamily: 'Epilogue, sans-serif' }}
             onClick={() => setMobileOpen(false)}
           >
@@ -134,7 +134,7 @@ export function Navbar() {
             <Link
               href={dashboardUrl}
               onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center justify-center h-8 bg-[#00687a] text-white font-semibold rounded-xl px-5 w-full text-sm"
+              className="inline-flex items-center justify-center h-9 bg-teal-700 text-white font-semibold rounded-lg px-5 w-full text-sm"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               {isAdmin ? "Admin Panel" : "Dashboard"}
@@ -143,7 +143,7 @@ export function Navbar() {
             <Link
               href="/sign-up"
               onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center justify-center h-8 bg-[#00687a] text-white font-bold rounded-xl px-5 w-full text-sm"
+              className="inline-flex items-center justify-center h-9 bg-teal-700 text-white font-bold rounded-lg px-5 w-full text-sm"
               style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               Get started

@@ -9,6 +9,8 @@ import {
   Users,
   BarChart3,
   CreditCard,
+  FileText,
+  Activity,
   Shield,
   ChevronLeft,
   ChevronRight,
@@ -17,8 +19,10 @@ import {
 export const navItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/content", label: "Content", icon: FileText },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
+  { href: "/admin/activity", label: "Activity", icon: Activity },
 ];
 
 export function AdminSidebar() {

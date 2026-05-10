@@ -4,195 +4,113 @@ import { CheckCircle2 } from "lucide-react";
 const plans = [
   {
     label: "Starter",
-    price: null,
-    period: null,
-    features: [
-      "1 platform connected",
-      "10 captions per day",
-      "15 scheduled posts per month",
-      "AI basic generator",
-    ],
+    price: "Free",
+    blurb: "For creators testing a repeatable content workflow.",
+    features: ["1 platform connected", "10 captions per day", "15 scheduled posts per month", "Basic AI generator"],
     cta: "Get Started",
     ctaLoggedInFree: "Current Plan",
     ctaLoggedInPro: "Downgrade",
-    popular: false,
     href: "/sign-up",
     planKey: "FREE",
+    highlighted: false,
   },
   {
     label: "Professional",
-    price: "12",
+    price: "$12",
     period: "/mo",
-    features: [
-      "All platforms connected",
-      "Unlimited captions & posts",
-      "Unlimited scheduled posts",
-      "Advanced analytics board",
-      "Priority support",
-    ],
+    blurb: "For teams and creators publishing consistently.",
+    features: ["All platforms connected", "Unlimited captions and posts", "Unlimited scheduled posts", "Advanced analytics board", "Priority support"],
     cta: "Try Pro Free",
     ctaLoggedInFree: "Upgrade to Pro",
     ctaLoggedInPro: "Manage Billing",
-    popular: true,
     href: "/sign-up?redirect_url=/pricing",
     planKey: "PRO",
+    highlighted: true,
   },
 ];
 
 interface PricingProps {
-  currentPlan?: string; // "FREE" | "PRO" | undefined (not logged in)
+  currentPlan?: string;
 }
 
 export function Pricing({ currentPlan }: PricingProps) {
   const isLoggedIn = currentPlan !== undefined;
 
   return (
-    <section
-      id="pricing"
-      className="w-full py-24 px-4"
-      style={{ background: "hsl(200 25% 94%)" }}
-    >
-      <div className="max-w-3xl mx-auto">
-        <p
-          className="text-xs font-semibold tracking-[0.14em] uppercase mb-3"
-          style={{ color: "#169B7F" }}
-        >
-          Pricing
-        </p>
-        <h2
-          className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3"
-          style={{ color: "#0A2E2E" }}
-        >
-          Straightforward pricing
-        </h2>
-        <p className="text-sm mb-14" style={{ color: "#0A2E2E99" }}>
-          Start free. Upgrade when you need to. No hidden fees.
-        </p>
+    <section id="pricing" className="bg-[hsl(194_54%_96%)] px-5 py-20 text-slate-950 sm:px-8 lg:px-10 lg:py-28 dark:bg-[hsl(222_47%_7%)] dark:text-white">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">Pricing</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Start free. Upgrade when the work grows.</h2>
+            <p className="mt-5 max-w-md text-base leading-8 text-slate-600 dark:text-slate-300">
+              Simple plans for building a consistent publishing habit, from first draft to scheduled campaign.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
-          {plans.map((plan) => {
-            const isCurrentPlan = isLoggedIn && currentPlan === plan.planKey;
+          <div className="grid gap-4 md:grid-cols-2">
+            {plans.map((plan) => {
+              const isCurrentPlan = isLoggedIn && currentPlan === plan.planKey;
+              const ctaLabel = isLoggedIn ? (currentPlan === "FREE" ? plan.ctaLoggedInFree : plan.ctaLoggedInPro) : plan.cta;
 
-            const ctaLabel = isLoggedIn
-              ? currentPlan === "FREE"
-                ? plan.ctaLoggedInFree
-                : plan.ctaLoggedInPro
-              : plan.cta;
+              let ctaHref: string;
+              if (isCurrentPlan && plan.planKey === "FREE") {
+                ctaHref = "/user/dashboard";
+              } else if (isCurrentPlan && plan.planKey === "PRO") {
+                ctaHref = "/api/billing-portal";
+              } else if (plan.planKey === "PRO") {
+                ctaHref = isLoggedIn ? "/api/checkout" : "/sign-up?redirect_url=/pricing";
+              } else {
+                ctaHref = isLoggedIn ? "/user/dashboard" : plan.href;
+              }
 
-            let ctaHref: string;
-            if (isCurrentPlan && plan.planKey === "FREE") {
-              ctaHref = "/user/dashboard";
-            } else if (isCurrentPlan && plan.planKey === "PRO") {
-              ctaHref = "/api/billing-portal";
-            } else if (plan.planKey === "PRO") {
-              ctaHref = isLoggedIn
-                ? "/api/checkout"
-                : "/sign-up?redirect_url=/pricing";
-            } else {
-              ctaHref = isLoggedIn ? "/user/dashboard" : plan.href;
-            }
-
-            return (
-              <div
-                key={plan.label}
-                className="relative flex flex-col gap-6 rounded-2xl p-8 transition-all duration-200"
-                style={
-                  plan.popular
-                    ? {
-                        background: "#ffffff",
-                        border: "2px solid #169B7F",
-                        boxShadow: "0 4px 32px rgba(22,155,127,0.10)",
-                      }
-                    : {
-                        background: "hsl(200 20% 88%)",
-                        border: "1px solid hsl(200 15% 82%)",
-                      }
-                }
-              >
-                {plan.popular && (
-                  <span
-                    className="absolute top-4 right-4 text-[0.6rem] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md"
-                    style={{ background: "#169B7F", color: "#ffffff" }}
-                  >
-                    Popular
-                  </span>
-                )}
-
-                <div>
-                  <p
-                    className="text-[0.65rem] font-semibold tracking-[0.15em] uppercase mb-2"
-                    style={{ color: "#169B7F" }}
-                  >
-                    {plan.label}
-                  </p>
-
-                  {plan.price ? (
-                    <div className="flex items-baseline gap-0.5">
-                      <span
-                        className="text-4xl font-extrabold tracking-tight"
-                        style={{ color: "#0A2E2E" }}
-                      >
-                        ${plan.price}
-                      </span>
-                      <span
-                        className="text-sm ml-0.5"
-                        style={{ color: "#0A2E2E80" }}
-                      >
-                        {plan.period}
-                      </span>
-                    </div>
-                  ) : (
-                    <p
-                      className="text-4xl font-extrabold tracking-tight"
-                      style={{ color: "#0A2E2E" }}
-                    >
-                      FREE
-                    </p>
-                  )}
-                </div>
-
-                <ul className="flex flex-col gap-3">
-                  {plan.features.map((feat) => (
-                    <li
-                      key={feat}
-                      className="flex items-center gap-2.5 text-sm"
-                      style={{ color: "#0A2E2ECC" }}
-                    >
-                      <CheckCircle2
-                        className="w-4.25 h-4.25 shrink-0"
-                        style={{ color: "#169B7F" }}
-                      />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href={ctaHref}
-                  className="w-full rounded-xl py-2.5 text-sm font-semibold text-center transition-opacity duration-150 hover:opacity-90"
-                  style={
-                    isCurrentPlan
-                      ? {
-                          background: "transparent",
-                          border: "1.5px solid #169B7F40",
-                          color: "#169B7F",
-                          cursor: "default",
-                          pointerEvents: "none",
-                        }
-                      : plan.popular
-                      ? { background: "#169B7F", color: "#ffffff" }
-                      : {
-                          background: "transparent",
-                          border: "1.5px solid #0A2E2E40",
-                          color: "#0A2E2E",
-                        }
+              return (
+                <div
+                  key={plan.label}
+                  className={
+                    plan.highlighted
+                      ? "relative border-2 border-teal-700 bg-white p-7 shadow-xl shadow-teal-950/10 dark:border-teal-300 dark:bg-slate-950"
+                      : "border border-slate-200 bg-white/70 p-7 dark:border-white/10 dark:bg-white/[0.04]"
                   }
                 >
-                  {ctaLabel}
-                </Link>
-              </div>
-            );
-          })}
+                  {plan.highlighted && (
+                    <span className="absolute right-5 top-5 rounded-md bg-amber-300 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-950">
+                      Popular
+                    </span>
+                  )}
+
+                  <p className="text-sm font-black text-teal-700 dark:text-teal-300">{plan.label}</p>
+                  <div className="mt-4 flex items-end gap-1">
+                    <span className="text-4xl font-black tracking-tight">{plan.price}</span>
+                    {plan.period && <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-400">{plan.period}</span>}
+                  </div>
+                  <p className="mt-4 min-h-12 text-sm leading-6 text-slate-600 dark:text-slate-400">{plan.blurb}</p>
+
+                  <ul className="mt-6 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex gap-2.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link
+                    href={ctaHref}
+                    className={
+                      isCurrentPlan
+                        ? "mt-7 inline-flex h-11 w-full pointer-events-none items-center justify-center rounded-lg border border-teal-700/30 text-sm font-black text-teal-700 dark:border-teal-300/30 dark:text-teal-300"
+                        : plan.highlighted
+                        ? "mt-7 inline-flex h-11 w-full items-center justify-center rounded-lg bg-teal-700 text-sm font-black text-white transition hover:bg-teal-800"
+                        : "mt-7 inline-flex h-11 w-full items-center justify-center rounded-lg border border-slate-300 text-sm font-black text-slate-950 transition hover:border-teal-700/40 hover:bg-white dark:border-white/15 dark:text-white dark:hover:bg-white/10"
+                    }
+                  >
+                    {ctaLabel}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>
