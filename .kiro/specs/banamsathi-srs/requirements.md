@@ -2,7 +2,7 @@
 
 ## Introduction
 
-PostSathi is an AI-powered SaaS platform for social media content generation and scheduling. Users provide a topic, target platform, and tone; the system generates platform-optimized captions and hashtags using Groq (Llama 3). Generated content can be published immediately or scheduled to connected social accounts (Instagram, Facebook, Twitter/X, LinkedIn, YouTube) via the Zernio API. The platform enforces per-user usage limits based on subscription tier (FREE / PRO / ENTERPRISE), manages billing through Stripe, and provides an admin panel for user management, analytics, and content moderation.
+PostSathi is an AI-powered SaaS platform for social media content generation and scheduling. Users provide a topic, target platform, and tone; the system generates platform-optimized captions and hashtags using Groq (Llama 3). Generated content can be published immediately or scheduled to connected social accounts (Instagram, Facebook, Twitter/X, LinkedIn, YouTube) via the Zernio API. The platform enforces per-user usage limits based on subscription tier (FREE / PRO), manages billing through Stripe, and provides an admin panel for user management, analytics, and content moderation.
 
 This document specifies the complete functional and non-functional requirements for PostSathi as a production SaaS system.
 
@@ -24,7 +24,7 @@ This document specifies the complete functional and non-functional requirements 
 - **Generation**: A single AI content generation event, producing a caption and hashtags, stored in the `Generation` database model.
 - **ScheduledPost**: A database record representing a post in DRAFT, SCHEDULED, PUBLISHED, FAILED, or CANCELLED state.
 - **SocialAccount**: A database record linking a User to a connected social media platform account via Zernio.
-- **Plan**: A subscription tier — FREE, PRO, or ENTERPRISE — that determines usage limits and feature access.
+- **Plan**: A subscription tier — FREE or PRO — that determines usage limits and feature access.
 - **PlanLimit**: A database record defining the daily caption, image, and platform limits for each Plan.
 - **Usage**: A database record tracking a User's daily consumption of captions, images, and posts.
 - **Platform**: One of INSTAGRAM, FACEBOOK, TWITTER, LINKEDIN, or YOUTUBE.
@@ -115,7 +115,7 @@ This document specifies the complete functional and non-functional requirements 
 5. THE System SHALL support OAuth connection for INSTAGRAM, FACEBOOK, TWITTER, and LINKEDIN platforms.
 6. WHEN a User requests the list of connected accounts via `/api/social/connections`, THE System SHALL return all SocialAccount records for that User from the local database.
 7. IF the Zernio OAuth callback contains an error parameter, THEN THE System SHALL redirect the User to the platforms page with a descriptive error message.
-8. THE System SHALL enforce the maximum number of connected social accounts per User based on the User's Plan (FREE: 2 accounts, PRO and ENTERPRISE: unlimited).
+8. THE System SHALL enforce the maximum number of connected social accounts per User based on the User's Plan (FREE: 2 accounts, PRO: unlimited).
 
 ---
 
@@ -201,8 +201,8 @@ This document specifies the complete functional and non-functional requirements 
 
 #### Acceptance Criteria
 
-1. THE Usage_Enforcer SHALL enforce the following daily caption limits: FREE plan — 10 captions per calendar day; PRO plan — unlimited; ENTERPRISE plan — unlimited.
-2. THE Usage_Enforcer SHALL enforce the following monthly scheduled post limits: FREE plan — 15 scheduled posts per calendar month; PRO plan — unlimited; ENTERPRISE plan — unlimited.
+1. THE Usage_Enforcer SHALL enforce the following daily caption limits: FREE plan — 10 captions per calendar day; PRO plan — unlimited.
+2. THE Usage_Enforcer SHALL enforce the following monthly scheduled post limits: FREE plan — 15 scheduled posts per calendar month; PRO plan — unlimited.
 4. WHEN a User's daily usage resets at midnight UTC, THE Usage_Enforcer SHALL allow the User to generate content up to the daily limit again.
 5. THE System SHALL read plan limits from the PlanLimit database table, not from hardcoded values in application logic.
 6. WHEN a limit is reached, THE System SHALL return HTTP 429 with a message indicating the limit type and the User's current Plan.
@@ -224,7 +224,7 @@ This document specifies the complete functional and non-functional requirements 
 6. IF the Stripe webhook signature verification fails, THEN THE System SHALL reject the request with HTTP 400.
 7. WHEN a User requests access to the Stripe billing portal via `/api/billing-portal`, THE System SHALL create a Stripe Billing Portal Session and redirect the User to it.
 8. THE PRO plan SHALL be priced at $12 per month.
-9. THE System SHALL support the following plan tiers: FREE (no charge), PRO ($12/month), ENTERPRISE (custom pricing).
+9. THE System SHALL support the following plan tiers: FREE (no charge), PRO ($12/month).
 
 ---
 
@@ -266,7 +266,7 @@ This document specifies the complete functional and non-functional requirements 
 
 1. THE System SHALL provide an admin analytics view at `/admin/analytics` displaying platform-wide statistics.
 2. THE System SHALL display the total number of registered Users, total Generations, total ScheduledPosts, and total published posts.
-3. THE System SHALL display a breakdown of Users by Plan (FREE, PRO, ENTERPRISE).
+3. THE System SHALL display a breakdown of Users by Plan (FREE, PRO).
 4. THE System SHALL display a breakdown of Generations by Platform.
 5. THE System SHALL display recent platform activity via `/api/admin/activity`, including new user registrations and recent generations.
 6. THE System SHALL display usage trend data over a configurable time range using chart visualizations.
@@ -280,7 +280,7 @@ This document specifies the complete functional and non-functional requirements 
 #### Acceptance Criteria
 
 1. WHEN an Admin updates a User's plan via the admin panel, THE System SHALL update the `plan` field on the User record immediately without requiring a Stripe transaction.
-2. THE System SHALL allow the Admin to set any User's plan to FREE, PRO, or ENTERPRISE.
+2. THE System SHALL allow the Admin to set any User's plan to FREE or PRO.
 3. WHEN an Admin overrides a plan, THE System SHALL apply the new PlanLimit immediately for all subsequent requests by that User.
 
 ---

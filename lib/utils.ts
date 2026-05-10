@@ -7,20 +7,12 @@ export function cn(...inputs: ClassValue[]) {
 
 export const PLAN_LIMITS = {
   FREE: {
-    dailyCaptions: 5,
-    dailyImages: 3,
-    platforms: ["INSTAGRAM"],
+    dailyCaptions: 10,
+    platforms: ["INSTAGRAM", "FACEBOOK"],
     tones: ["CASUAL", "INSPIRATIONAL"],
   },
   PRO: {
     dailyCaptions: 999,
-    dailyImages: 999,
-    platforms: ["INSTAGRAM", "FACEBOOK", "TWITTER", "LINKEDIN"],
-    tones: ["PROFESSIONAL", "CASUAL", "INSPIRATIONAL", "HUMOROUS"],
-  },
-  ENTERPRISE: {
-    dailyCaptions: 999,
-    dailyImages: 999,
     platforms: ["INSTAGRAM", "FACEBOOK", "TWITTER", "LINKEDIN"],
     tones: ["PROFESSIONAL", "CASUAL", "INSPIRATIONAL", "HUMOROUS"],
   },

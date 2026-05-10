@@ -1,6 +1,6 @@
 export type Platform = "INSTAGRAM" | "FACEBOOK" | "TWITTER" | "LINKEDIN";
 export type Tone = "PROFESSIONAL" | "CASUAL" | "INSPIRATIONAL" | "HUMOROUS";
-export type Plan = "FREE" | "PRO" | "ENTERPRISE";
+export type Plan = "FREE" | "PRO";
 export type Role = "USER" | "ADMIN";
 
 export interface GeneratedContent {
