@@ -136,7 +136,7 @@ export default function AdminAnalyticsPage() {
       icon: Users,
       description: "Registered accounts",
       accent: "text-blue-500",
-      bg: "bg-blue-50 dark:bg-blue-950/40",
+      bg: "",
       iconBg: "bg-blue-100 dark:bg-blue-900/50",
     },
     {
@@ -145,7 +145,7 @@ export default function AdminAnalyticsPage() {
       icon: FileText,
       description: "Non-deleted generations",
       accent: "text-purple-500",
-      bg: "bg-purple-50 dark:bg-purple-950/40",
+      bg: "",
       iconBg: "bg-purple-100 dark:bg-purple-900/50",
     },
     {
@@ -154,7 +154,7 @@ export default function AdminAnalyticsPage() {
       icon: DollarSign,
       description: `${data.totalStats.proUsers} Pro users`,
       accent: "text-amber-500",
-      bg: "bg-amber-50 dark:bg-amber-950/40",
+      bg: "",
       iconBg: "bg-amber-100 dark:bg-amber-900/50",
     },
   ] as const;
@@ -166,7 +166,7 @@ export default function AdminAnalyticsPage() {
       subtitle: "Last 30 days",
       icon: TrendingUp,
       accent: "text-blue-500",
-      bg: "bg-blue-50 dark:bg-blue-950/40",
+      bg: "",
       iconBg: "bg-blue-100 dark:bg-blue-900/50",
       color: CHART_COLORS.blue,
       chart: (
@@ -196,7 +196,7 @@ export default function AdminAnalyticsPage() {
       subtitle: "Content breakdown",
       icon: PieChartIcon,
       accent: "text-purple-500",
-      bg: "bg-purple-50 dark:bg-purple-950/40",
+      bg: "",
       iconBg: "bg-purple-100 dark:bg-purple-900/50",
       color: CHART_COLORS.purple,
       chart: (
@@ -231,7 +231,7 @@ export default function AdminAnalyticsPage() {
       subtitle: "Last 30 days",
       icon: Users,
       accent: "text-green-500",
-      bg: "bg-green-50 dark:bg-green-950/40",
+      bg: "",
       iconBg: "bg-green-100 dark:bg-green-900/50",
       color: CHART_COLORS.green,
       chart: (
@@ -259,7 +259,7 @@ export default function AdminAnalyticsPage() {
       subtitle: "Monthly recurring revenue",
       icon: Activity,
       accent: "text-amber-500",
-      bg: "bg-amber-50 dark:bg-amber-950/40",
+      bg: "",
       iconBg: "bg-amber-100 dark:bg-amber-900/50",
       color: CHART_COLORS.amber,
       chart: (
