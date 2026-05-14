@@ -2,7 +2,7 @@
 
 ## Introduction
 
-PostSathi is an AI-powered SaaS platform for social media content generation and scheduling. Users provide a topic, target platform, and tone; the system generates platform-optimized captions and hashtags using Groq (Llama 3). Generated content can be published immediately or scheduled to connected social accounts (Instagram, Facebook, Twitter/X, LinkedIn, YouTube) via the Zernio API. The platform enforces per-user usage limits based on subscription tier (FREE / PRO), manages billing through Stripe, and provides an admin panel for user management, analytics, and content moderation.
+PostSathi is an AI-powered SaaS platform for social media content generation and scheduling. Users provide a topic, target platform, and tone; the system generates platform-optimized captions and hashtags using finetuined model. Generated content can be published immediately or scheduled to connected social accounts (Instagram, Facebook, Twitter/X, LinkedIn, YouTube) via the Zernio API. The platform enforces per-user usage limits based on subscription tier (FREE / PRO), manages billing through Stripe, and provides an admin panel for user management, analytics, and content moderation.
 
 This document specifies the complete functional and non-functional requirements for PostSathi as a production SaaS system.
 
@@ -13,7 +13,7 @@ This document specifies the complete functional and non-functional requirements 
 - **System**: The PostSathi application as a whole.
 - **User**: An authenticated individual with the USER role who accesses the dashboard and content features.
 - **Admin**: An authenticated individual with the ADMIN role who accesses the admin panel.
-- **Caption_Generator**: The subsystem responsible for producing AI-generated captions and hashtags via the Groq API.
+- **Caption_Generator**: The subsystem responsible for producing AI-generated captions and hashtags via the finedtuined model.
 - **Scheduler**: The subsystem responsible for creating, storing, and managing scheduled and draft posts.
 - **Publisher**: The subsystem responsible for immediately publishing posts to connected social platforms via the Zernio API.
 - **Usage_Enforcer**: The subsystem responsible for tracking and enforcing per-user daily and monthly usage limits.
@@ -75,7 +75,7 @@ This document specifies the complete functional and non-functional requirements 
 #### Acceptance Criteria
 
 1. WHEN a User submits a generation request with a `topic`, `platform`, and `tone`, THE Caption_Generator SHALL return a caption and an array of hashtags.
-2. THE Caption_Generator SHALL use the Groq API with model `llama-3.3-70b-versatile` for caption generation and `llama-3.1-8b-instant` for hashtag generation.
+2. THE Caption_Generator SHALL use the  with fined-tuined model for caption generation andhashtag generation.
 3. THE Caption_Generator SHALL tailor the caption style and length to the specified Platform (e.g., concise for TWITTER, professional for LINKEDIN).
 4. THE Caption_Generator SHALL tailor the caption register to the specified Tone.
 5. WHEN a caption is successfully generated, THE System SHALL persist a Generation record with `userId`, `topic`, `platform`, `caption`, and `hashtags`.
