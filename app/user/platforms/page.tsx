@@ -26,6 +26,7 @@ export default function ConnectionsPage() {
   const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
   const [loading, setLoading]       = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [toggling, setToggling]     = useState<string | null>(null);
 
   useEffect(() => { fetchConnections(); }, []);
 
@@ -40,6 +41,30 @@ export default function ConnectionsPage() {
       console.error("Failed to fetch connections");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async (platformId: string, currentActive: boolean) => {
+    setToggling(platformId);
+    try {
+      const res = await fetch("/api/social/toggle-active", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ platform: platformId.toUpperCase(), isActive: !currentActive }),
+      });
+
+      if (!res.ok) {
+        toast.error("Failed to update setting");
+        setToggling(null);
+        return;
+      }
+
+      toast.success(`Auto-publishing ${!currentActive ? "enabled" : "disabled"}`);
+      setToggling(null);
+      await fetchConnections();
+    } catch {
+      toast.error("Network error — please try again");
+      setToggling(null);
     }
   };
 
@@ -64,31 +89,48 @@ export default function ConnectionsPage() {
     // Poll until the popup closes, then refresh connections.
     // Zernio's multi-hop OAuth redirect clears window.opener in most browsers,
     // so we can't rely solely on postMessage — polling is the reliable fallback.
-    const poll = setInterval(async () => {
+    const poll = setInterval(() => {
       if (!popup || popup.closed) {
         clearInterval(poll);
         window.removeEventListener("message", handleMessage);
-        setConnecting(null);
 
-        // Fetch fresh connections — if a new one appeared, show success toast
-        try {
-          const res = await fetch("/api/social/connections");
-          if (res.ok) {
-            const data: ConnectedAccount[] = await res.json();
-            const wasConnected = connectedAccounts.some(
-              (a) => a.platform === platformId.toUpperCase()
-            );
-            const nowConnected = data.some(
-              (a) => a.platform === platformId.toUpperCase()
-            );
-            setConnectedAccounts(Array.isArray(data) ? data : []);
-            if (!wasConnected && nowConnected) {
-              toast.success(`${platformName} connected successfully`);
+        // Snapshot whether this platform was connected BEFORE the OAuth flow
+        const wasConnectedBefore = connectedAccounts.some(
+          (a) => a.platform === platformId.toUpperCase()
+        );
+
+        // Retry fetching connections up to 5 times with 1s gaps.
+        // The callback DB write may still be in-flight when the popup closes.
+        let attempts = 0;
+        const retry = setInterval(async () => {
+          attempts++;
+          try {
+            const res = await fetch("/api/social/connections");
+            if (res.ok) {
+              const data: ConnectedAccount[] = await res.json();
+              const nowConnected = data.some(
+                (a) => a.platform === platformId.toUpperCase()
+              );
+
+              if (nowConnected || attempts >= 5) {
+                clearInterval(retry);
+                setConnecting(null);
+                setConnectedAccounts(Array.isArray(data) ? data : []);
+                if (!wasConnectedBefore && nowConnected) {
+                  toast.success(`${platformName} connected successfully`);
+                }
+              }
+            } else if (attempts >= 5) {
+              clearInterval(retry);
+              setConnecting(null);
+            }
+          } catch {
+            if (attempts >= 5) {
+              clearInterval(retry);
+              setConnecting(null);
             }
           }
-        } catch {
-          console.error("Failed to refresh connections after popup closed");
-        }
+        }, 1000);
       }
     }, 800);
   };
@@ -109,7 +151,7 @@ export default function ConnectionsPage() {
         return;
       }
       toast.success(`${platformName} disconnected`);
-      fetchConnections();
+      await fetchConnections();
     } catch {
       toast.dismiss(disconnectToast);
       toast.error("Network error — please try again");
@@ -171,7 +213,13 @@ export default function ConnectionsPage() {
                           <p className="text-xs font-bold text-foreground">Auto-Publishing</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">Allow system to post on your behalf</p>
                         </div>
-                        <Switch id={`active-${platform.id}`} checked={connected.isActive} className="data-[state=checked]:bg-[#0d7c8a]" />
+                        <Switch 
+                          id={`active-${platform.id}`} 
+                          checked={connected.isActive}
+                          disabled={toggling === platform.id}
+                          onCheckedChange={() => handleToggleActive(platform.id, connected.isActive)}
+                          className="data-[state=checked]:bg-[#0d7c8a]"
+                        />
                       </div>
                       <div className="h-px bg-border" />
                       <Button

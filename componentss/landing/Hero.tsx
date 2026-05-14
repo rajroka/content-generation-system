@@ -30,14 +30,11 @@ export function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-[hsl(194_54%_96%)] text-slate-950 dark:bg-[hsl(222_47%_7%)] dark:text-white">
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(120deg,rgba(13,124,138,0.16),transparent_36%),radial-gradient(circle_at_80%_10%,rgba(245,158,11,0.18),transparent_28%)]" />
-      <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-background to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-linear-to-t from-background to-transparent" />
 
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl grid-cols-1 items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:py-20">
         <div className="max-w-2xl">
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-teal-700/20 bg-white/70 px-3 py-1.5 text-xs font-semibold text-teal-800 shadow-sm backdrop-blur dark:border-teal-300/20 dark:bg-white/10 dark:text-teal-200">
-            <Sparkles className="h-3.5 w-3.5" />
-            Content planning for creators and small teams
-          </div>
+          
 
           <h1 className="max-w-3xl text-5xl font-black leading-[0.98] tracking-tight text-slate-950 sm:text-6xl lg:text-7xl dark:text-white">
             Create once.

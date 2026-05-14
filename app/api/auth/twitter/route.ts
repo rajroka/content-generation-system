@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import zernio from "@/lib/zernio";
+import { getZernioProfileId } from "@/lib/zernio-profiles";
 
 export async function GET() {
   const { userId } = await auth();
@@ -11,10 +12,11 @@ export async function GET() {
   }
 
   try {
+    const profileId = await getZernioProfileId();
     const result = await zernio.connect.getConnectUrl({
       path:  { platform: "twitter" },
       query: {
-        profileId:    process.env.ZERNIO_PROFILE_ID!,
+        profileId,
         redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/twitter/callback?state=${encodeURIComponent(userId)}`,
       },
     });

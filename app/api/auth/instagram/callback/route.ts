@@ -29,6 +29,7 @@ export async function GET(req: Request) {
   const username   = searchParams.get("username");
   const state      = searchParams.get("state");        // our Clerk userId
   const error      = searchParams.get("error");
+  const profileId  = searchParams.get("profileId");   // Capture Zernio profile ID
 
   if (error) {
     console.error("Zernio Instagram callback error:", error);
@@ -56,6 +57,7 @@ export async function GET(req: Request) {
         accountId,
         accountName: username || null,
         accessToken: accountId, // Zernio manages the actual token; store account ID as reference
+        zernioProfileId: profileId || null,
         isActive:    true,
       },
       create: {
@@ -64,6 +66,7 @@ export async function GET(req: Request) {
         accountId,
         accountName: username || null,
         accessToken: accountId,
+        zernioProfileId: profileId || null,
         isActive:    true,
       },
     });

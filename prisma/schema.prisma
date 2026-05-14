@@ -129,18 +129,19 @@ model PlanLimit {
 }
 
 model SocialAccount {
-  id           String         @id @default(cuid())
-  userId       String
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform     SocialPlatform
-  accessToken  String         @db.Text
-  refreshToken String?        @db.Text
-  expiresAt    DateTime?
-  accountId    String?
-  accountName  String?
-  isActive     Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform         SocialPlatform
+  accessToken      String         @db.Text
+  refreshToken     String?        @db.Text
+  expiresAt        DateTime?
+  accountId        String?
+  accountName      String?
+  zernioProfileId  String?        // Zernio profile ID for this social account
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@unique([userId, platform])
 }

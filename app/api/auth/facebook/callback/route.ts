@@ -28,6 +28,7 @@ export async function GET(req: Request) {
   const username  = searchParams.get("username");
   const state     = searchParams.get("state");
   const error     = searchParams.get("error");
+  const profileId = searchParams.get("profileId"); // Capture Zernio profile ID
 
   if (error) {
     console.error("Zernio Facebook callback error:", error);
@@ -57,6 +58,7 @@ export async function GET(req: Request) {
         accountId,
         accountName: username || null,
         accessToken: accountId,
+        zernioProfileId: profileId || null,
         isActive:    true,
       },
       create: {
@@ -65,6 +67,7 @@ export async function GET(req: Request) {
         accountId,
         accountName: username || null,
         accessToken: accountId,
+        zernioProfileId: profileId || null,
         isActive:    true,
       },
     });
