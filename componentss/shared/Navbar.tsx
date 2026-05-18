@@ -21,7 +21,6 @@ export function Navbar() {
 
   useEffect(() => {
     if (isSignedIn && user) {
-      // Check for admin role in Clerk publicMetadata
       const role = (user.publicMetadata as { role?: string })?.role;
       setIsAdmin(role === "admin");
     }
@@ -29,8 +28,34 @@ export function Navbar() {
 
   const dashboardUrl = isAdmin ? "/admin" : "/user/dashboard";
 
-  // Prevent "flicker" by checking Clerk's built-in isLoaded state
-  if (!isLoaded) return null; 
+  // While Clerk is loading, render a lightweight skeleton to avoid layout jump
+  if (!isLoaded) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950/75">
+        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-slate-300 animate-pulse dark:bg-slate-700" />
+            <div className="h-4 w-28 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+          </div>
+
+          <nav className="hidden md:flex items-center gap-6">
+            <div className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+            <div className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+            <div className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3">
+            <div className="h-9 w-9 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+            <div className="h-9 w-24 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+          </div>
+
+          <div className="md:hidden">
+            <div className="h-6 w-6 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950/75">
@@ -39,12 +64,7 @@ export function Navbar() {
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2 group">
           <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" />
-          <span 
-            className="font-bold text-lg tracking-tight text-foreground" 
-            style={{ fontFamily: 'Epilogue, sans-serif' }}
-          >
-            PostSathi
-          </span>
+          <span className="font-bold text-lg tracking-tight text-foreground">PostSathi</span>
         </Link>
 
         {/* Desktop Nav */}
@@ -54,7 +74,6 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               className="font-semibold text-sm tracking-tight text-slate-600 hover:text-teal-700 transition-colors duration-200 dark:text-slate-300 dark:hover:text-teal-300"
-              style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               {link.label}
             </Link>
@@ -69,7 +88,6 @@ export function Navbar() {
               <Link
                 href={dashboardUrl}
                 className="inline-flex items-center justify-center h-9 bg-teal-700 hover:bg-teal-800 text-white font-semibold tracking-tight rounded-lg px-5 transition-all text-sm"
-                style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
                 {isAdmin ? "Admin Panel" : "Dashboard"}
               </Link>
@@ -82,7 +100,6 @@ export function Navbar() {
                   variant="ghost"
                   size="sm"
                   className="text-slate-700 hover:bg-slate-100 font-semibold tracking-tight px-5 dark:text-slate-200 dark:hover:bg-white/10"
-                  style={{ fontFamily: 'Epilogue, sans-serif' }}
                 >
                   Sign in
                 </Button>
@@ -90,7 +107,6 @@ export function Navbar() {
               <Link
                 href="/sign-up"
                 className="inline-flex items-center justify-center h-9 bg-teal-700 hover:bg-teal-800 text-white font-bold tracking-tight rounded-lg px-5 active:scale-95 transition-transform text-[0.8rem]"
-                style={{ fontFamily: 'Epilogue, sans-serif' }}
               >
                 Get started
               </Link>
@@ -99,8 +115,8 @@ export function Navbar() {
         </div>
 
         {/* Mobile Toggle */}
-        <button 
-          className="md:hidden text-foreground" 
+        <button
+          className="md:hidden text-foreground"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -119,15 +135,14 @@ export function Navbar() {
             key={link.href}
             href={link.href}
             className="font-semibold text-sm tracking-tight text-slate-600 hover:text-teal-700 dark:text-slate-300 dark:hover:text-teal-300"
-            style={{ fontFamily: 'Epilogue, sans-serif' }}
             onClick={() => setMobileOpen(false)}
           >
             {link.label}
           </Link>
         ))}
-          <div className="flex flex-col gap-4 pt-4 border-t border-border">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-muted-foreground">Theme</span>
+        <div className="flex flex-col gap-4 pt-4 border-t border-border">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-muted-foreground">Theme</span>
             <ModeToggle />
           </div>
           {isSignedIn ? (
@@ -135,7 +150,6 @@ export function Navbar() {
               href={dashboardUrl}
               onClick={() => setMobileOpen(false)}
               className="inline-flex items-center justify-center h-9 bg-teal-700 text-white font-semibold rounded-lg px-5 w-full text-sm"
-              style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               {isAdmin ? "Admin Panel" : "Dashboard"}
             </Link>
@@ -144,7 +158,6 @@ export function Navbar() {
               href="/sign-up"
               onClick={() => setMobileOpen(false)}
               className="inline-flex items-center justify-center h-9 bg-teal-700 text-white font-bold rounded-lg px-5 w-full text-sm"
-              style={{ fontFamily: 'Epilogue, sans-serif' }}
             >
               Get started
             </Link>
