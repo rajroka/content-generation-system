@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import prisma from "@/lib/prisma";
@@ -16,9 +16,6 @@ export async function POST(req: Request) {
     const { topic, platform, tone } = await req.json();
     if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
 
-    const clerkUser  = await currentUser();
-    const userEmail  = clerkUser?.emailAddresses[0]?.emailAddress;
-    const userName   = `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim();
     const safePlatform = platform.toUpperCase() as Platform;
 
     const toneDescriptions: Record<string, string> = {
@@ -31,15 +28,13 @@ export async function POST(req: Request) {
     const prompt = `Generate a ${toneDescriptions[tone] || "casual"} social media caption for ${platform} about: "${topic}".
 Return ONLY a JSON object: { "caption": "...", "hashtags": ["#1", "#2"] }`;
 
-    // Upsert user
+    // Upsert user — use DB record only, no extra Clerk call needed
     const user = await prisma.user.upsert({
-      where: { clerkId: userId },
-      update: { imageUrl: clerkUser?.imageUrl || null },
+      where:  { clerkId: userId },
+      update: {},
       create: {
         clerkId:  userId,
-        email:    userEmail || `user_${userId}@fallback.com`,
-        name:     userName || null,
-        imageUrl: clerkUser?.imageUrl || null,
+        email:    `user_${userId}@postsathi.app`,
         plan:     "FREE",
       },
     });

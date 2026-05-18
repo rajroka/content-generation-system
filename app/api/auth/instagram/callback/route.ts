@@ -1,21 +1,21 @@
 export const dynamic = "force-dynamic";
 
 import prisma from "@/lib/prisma";
+import { resolveZernioAccount } from "@/lib/zernio-callback";
 
-const html = (type: string, extra?: Record<string, string>) => {
-  const payload = JSON.stringify({ type, platform: "instagram", ...extra });
+const html = (type: string, platform: string, extra?: Record<string, string>) => {
+  const payload = JSON.stringify({ type, platform, ...extra });
+  const success = type === "SOCIAL_CONNECTED";
   return new Response(
-    `<!DOCTYPE html>
-<html>
-  <head><title>${type === "SOCIAL_CONNECTED" ? "Connected" : "Failed"}</title></head>
-  <body>
-    <p>${type === "SOCIAL_CONNECTED" ? "Instagram connected! You can close this window." : "Connection failed. Please try again."}</p>
-    <script>
-      if (window.opener) window.opener.postMessage(${payload}, "*");
-      window.close();
-    </script>
-  </body>
-</html>`,
+    `<!DOCTYPE html><html>
+<head><title>${success ? "Connected" : "Failed"}</title></head>
+<body>
+  <p>${success ? "Instagram connected! You can close this window." : "Connection failed. Please try again."}</p>
+  <script>
+    if (window.opener) window.opener.postMessage(${payload}, "*");
+    setTimeout(() => window.close(), 500);
+  </script>
+</body></html>`,
     { headers: { "Content-Type": "text/html" } }
   );
 };
@@ -23,57 +23,62 @@ const html = (type: string, extra?: Record<string, string>) => {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
-  // Zernio appends these to the redirect_url on success
-  const connected  = searchParams.get("connected");   // "instagram"
-  const accountId  = searchParams.get("accountId");   // Zernio account _id
-  const username   = searchParams.get("username");
-  const state      = searchParams.get("state");        // our Clerk userId
-  const error      = searchParams.get("error");
-  const profileId  = searchParams.get("profileId");   // Capture Zernio profile ID
+  const connected    = searchParams.get("connected");
+  const state        = searchParams.get("state");
+  const error        = searchParams.get("error");
+  const profileId    = searchParams.get("profileId");
+  const connectToken = searchParams.get("connect_token");
+  const accountId    = searchParams.get("accountId");
+  const username     = searchParams.get("username");
 
   if (error) {
-    console.error("Zernio Instagram callback error:", error);
-    const errorMessages: Record<string, string> = {
-      access_denied:  "Instagram connection was cancelled.",
-      token_expired:  "Instagram token expired. Please try again.",
-      no_pages:       "No Instagram Business/Creator account found. Personal accounts cannot be connected.",
+    const msgs: Record<string, string> = {
+      access_denied: "Instagram connection was cancelled.",
+      token_expired: "Instagram token expired. Please try again.",
+      no_pages:      "No Instagram Business/Creator account found. Personal accounts cannot be connected.",
     };
-    return html("SOCIAL_CONNECT_ERROR", { error: errorMessages[error] || `Instagram connection failed: ${error}` });
+    return html("SOCIAL_CONNECT_ERROR", "instagram", { error: msgs[error] || `Instagram connection failed: ${error}` });
   }
 
-  if (!connected || !accountId || !state) {
-    return html("SOCIAL_CONNECT_ERROR", { error: "missing_params" });
+  if (!connected || !state) {
+    return html("SOCIAL_CONNECT_ERROR", "instagram", { error: "Missing required callback parameters." });
   }
 
-  const clerkUserId = state;
+  const account = await resolveZernioAccount("instagram", {
+    accountId, connectToken, profileId, username,
+  });
+
+  if (!account) {
+    return html("SOCIAL_CONNECT_ERROR", "instagram", { error: "Could not retrieve Instagram account from Zernio." });
+  }
 
   try {
-    const dbUser = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: state } });
     if (!dbUser) throw new Error("User not found in database");
 
     await prisma.socialAccount.upsert({
-      where: { userId_platform: { userId: dbUser.id, platform: "INSTAGRAM" } },
+      where:  { userId_platform: { userId: dbUser.id, platform: "INSTAGRAM" } },
       update: {
-        accountId,
-        accountName: username || null,
-        accessToken: accountId, // Zernio manages the actual token; store account ID as reference
+        accountId:       account.accountId,
+        accountName:     account.accountName,
+        accessToken:     account.accountId,
         zernioProfileId: profileId || null,
-        isActive:    true,
+        isActive:        true,
       },
       create: {
-        userId:      dbUser.id,
-        platform:    "INSTAGRAM",
-        accountId,
-        accountName: username || null,
-        accessToken: accountId,
+        userId:          dbUser.id,
+        platform:        "INSTAGRAM",
+        accountId:       account.accountId,
+        accountName:     account.accountName,
+        accessToken:     account.accountId,
         zernioProfileId: profileId || null,
-        isActive:    true,
+        isActive:        true,
       },
     });
 
-    return html("SOCIAL_CONNECTED");
+    return html("SOCIAL_CONNECTED", "instagram");
   } catch (err: any) {
     console.error("Instagram callback error:", err.message);
-    return html("SOCIAL_CONNECT_ERROR", { error: err.message });
+    return html("SOCIAL_CONNECT_ERROR", "instagram", { error: err.message });
   }
 }

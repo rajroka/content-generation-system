@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import zernio from "@/lib/zernio";
@@ -60,15 +60,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Select at least one platform" }, { status: 400 });
     }
 
-    const clerkUser = await currentUser();
     const user = await prisma.user.upsert({
       where:  { clerkId: userId },
       update: {},
       create: {
         clerkId:  userId,
-        email:    clerkUser?.emailAddresses[0]?.emailAddress || `user_${userId}@fallback.com`,
-        name:     `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || null,
-        imageUrl: clerkUser?.imageUrl || null,
+        email:    `user_${userId}@postsathi.app`,
         plan:     "FREE",
       },
     });

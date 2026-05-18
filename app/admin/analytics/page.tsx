@@ -134,28 +134,22 @@ export default function AdminAnalyticsPage() {
       title: "Total Users",
       value: data.totalStats.totalUsers.toLocaleString(),
       icon: Users,
-      description: "Registered accounts",
-      accent: "text-blue-500",
-      bg: "",
-      iconBg: "bg-blue-100 dark:bg-blue-900/50",
+      
+      accent: "text-[#0d7c8a]",
     },
     {
       title: "Total Generations",
       value: data.totalStats.totalGenerations.toLocaleString(),
       icon: FileText,
-      description: "Non-deleted generations",
-      accent: "text-purple-500",
-      bg: "",
-      iconBg: "bg-purple-100 dark:bg-purple-900/50",
+  
+      accent: "text-[#0d7c8a]",
     },
     {
       title: "Monthly Revenue",
       value: `$${data.totalStats.monthlyRevenue.toFixed(0)}`,
       icon: DollarSign,
-      description: `${data.totalStats.proUsers} Pro users`,
-      accent: "text-amber-500",
-      bg: "",
-      iconBg: "bg-amber-100 dark:bg-amber-900/50",
+  
+      accent: "text-[#0d7c8a]",
     },
   ] as const;
 
@@ -165,9 +159,7 @@ export default function AdminAnalyticsPage() {
       title: "Daily Generations",
       subtitle: "Last 30 days",
       icon: TrendingUp,
-      accent: "text-blue-500",
-      bg: "",
-      iconBg: "bg-blue-100 dark:bg-blue-900/50",
+      accent: "text-[#0d7c8a]",
       color: CHART_COLORS.blue,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -195,9 +187,7 @@ export default function AdminAnalyticsPage() {
       title: "Platform Distribution",
       subtitle: "Content breakdown",
       icon: PieChartIcon,
-      accent: "text-purple-500",
-      bg: "",
-      iconBg: "bg-purple-100 dark:bg-purple-900/50",
+      accent: "text-[#0d7c8a]",
       color: CHART_COLORS.purple,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -230,9 +220,7 @@ export default function AdminAnalyticsPage() {
       title: "User Growth",
       subtitle: "Last 30 days",
       icon: Users,
-      accent: "text-green-500",
-      bg: "",
-      iconBg: "bg-green-100 dark:bg-green-900/50",
+      accent: "text-[#0d7c8a]",
       color: CHART_COLORS.green,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -258,9 +246,7 @@ export default function AdminAnalyticsPage() {
       title: "Revenue (MRR)",
       subtitle: "Monthly recurring revenue",
       icon: Activity,
-      accent: "text-amber-500",
-      bg: "",
-      iconBg: "bg-amber-100 dark:bg-amber-900/50",
+      accent: "text-[#0d7c8a]",
       color: CHART_COLORS.amber,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -305,21 +291,14 @@ export default function AdminAnalyticsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((stat) => (
-          <Card
-            key={stat.title}
-            className={`border-0 shadow-sm ${stat.bg} transition-shadow hover:shadow-md`}
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.iconBg}`}>
-                <stat.icon className={`w-4 h-4 ${stat.accent}`} />
+          <Card key={stat.title}>
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
+                
               </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+              <stat.icon className={`h-5 w-5 ${stat.accent}`} />
             </CardContent>
           </Card>
         ))}
@@ -328,23 +307,17 @@ export default function AdminAnalyticsPage() {
       {/* Chart Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {chartCards.map((card) => (
-          <Card
-            key={card.title}
-            className={`border-0 shadow-sm ${card.bg} transition-shadow hover:shadow-md`}
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-              <div>
-                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {card.title}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
-              </div>
-              <div className={`p-2 rounded-lg ${card.iconBg}`}>
-                <card.icon className={`w-4 h-4 ${card.accent}`} />
+          <Card key={card.title}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-semibold">{card.title}</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
+                </div>
+                <card.icon className={`h-5 w-5 ${card.accent}`} />
               </div>
             </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {/* Fixed height container — charts scale within */}
+            <CardContent>
               <div className="h-56 sm:h-64 w-full">
                 {card.chart}
               </div>
