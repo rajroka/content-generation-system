@@ -10,6 +10,14 @@ const isPublicRoute = createRouteMatcher([
   "/auth/redirect",
   "/api/webhooks/stripe",
   "/api/webhooks/clerk",
+  // OAuth initiation routes — opened in popups where session cookie may not be sent
+  // These routes do their own auth() check internally and redirect to /sign-in if needed
+  "/api/auth/instagram(.*)",
+  "/api/auth/facebook(.*)",
+  "/api/auth/youtube(.*)",
+  "/api/auth/tiktok(.*)",
+  "/api/auth/twitter(.*)",
+  "/api/auth/linkedin(.*)",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
