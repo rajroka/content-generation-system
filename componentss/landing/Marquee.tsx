@@ -1,14 +1,10 @@
-import { CalendarClock, Hash, Image, Lock, PanelsTopLeft, PenLine, Sparkles, Wand2 } from "lucide-react";
+import { Hash, Image, PenLine, Wand2 } from "lucide-react";
 
 const marqueeItems = [
   { icon: PenLine, label: "AI caption writing" },
   { icon: Wand2, label: "Image generation" },
   { icon: Hash, label: "Hashtag sets" },
   { icon: Image, label: "Media uploads" },
-  { icon: CalendarClock, label: "Smart scheduling" },
-  { icon: PanelsTopLeft, label: "Content history" },
-  { icon: Sparkles, label: "Platform tuning" },
-  { icon: Lock, label: "Secure workspace" },
 ];
 
 export function Marquee() {

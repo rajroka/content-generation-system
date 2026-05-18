@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/componentss/shared/ThemeProvider";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "PostSathi — Create smarter. Post faster.",
@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
+        <body className={`${inter.variable} ${inter.className} antialiased`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"

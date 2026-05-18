@@ -2,108 +2,199 @@ import {
   BarChart3,
   CalendarCheck,
   Captions,
-  FolderClock,
   Hash,
   ImageUp,
-  LayoutDashboard,
-  Network,
+  Sparkles,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Send,
+  CheckCircle2,
 } from "lucide-react";
 
 const features = [
   {
     icon: Captions,
-    title: "Captions that match the channel",
-    desc: "Generate platform-aware copy for short posts, visual captions, professional updates, and promotional launches.",
+    title: "AI-powered captions",
+    desc: "Platform-aware copy for Instagram, LinkedIn, X, and more — tuned to your tone in seconds.",
   },
   {
     icon: Hash,
-    title: "Hashtags without guesswork",
-    desc: "Get a balanced set of niche, broad, and campaign tags instead of recycling the same list every time.",
+    title: "Smart hashtag sets",
+    desc: "Balanced niche, broad, and campaign tags generated alongside every caption.",
   },
   {
     icon: CalendarCheck,
-    title: "Queue posts in minutes",
-    desc: "Schedule drafts for the week and keep every upcoming post visible from one simple publishing calendar.",
+    title: "Visual post calendar",
+    desc: "Schedule the whole week at once and see every upcoming post in one clean calendar view.",
   },
   {
     icon: ImageUp,
-    title: "Media-ready workflows",
-    desc: "Upload images and videos, attach them to drafts, and keep creative assets connected to each post.",
+    title: "Media uploads",
+    desc: "Attach images and videos to drafts and keep creative assets connected to each post.",
   },
   {
     icon: BarChart3,
-    title: "Clear publishing analytics",
-    desc: "See what was generated, scheduled, and published without digging through complicated reporting screens.",
+    title: "Publishing analytics",
+    desc: "See what was generated, scheduled, and published without complicated reporting screens.",
   },
   {
-    icon: FolderClock,
-    title: "Reusable content history",
-    desc: "Find past drafts, reuse strong ideas, and keep your best performing messages within reach.",
+    icon: Sparkles,
+    title: "Multi-platform in one go",
+    desc: "Write once, tune per platform, and publish or schedule to all channels simultaneously.",
   },
+];
+
+const platforms = [
+  { icon: Instagram, label: "Instagram", color: "text-pink-500" },
+  { icon: Facebook,  label: "Facebook",  color: "text-blue-500" },
+  { icon: Linkedin,  label: "LinkedIn",  color: "text-sky-600"  },
+  { icon: Twitter,   label: "X",         color: "text-slate-800 dark:text-white" },
+];
+
+const queue = [
+  { platform: "Instagram", time: "Today · 7:30 PM",    dot: "bg-pink-500"  },
+  { platform: "LinkedIn",  time: "Tomorrow · 9:00 AM", dot: "bg-sky-600"   },
+  { platform: "X",         time: "Friday · 12:15 PM",  dot: "bg-slate-700 dark:bg-white" },
 ];
 
 export function Features() {
   return (
     <section id="features" className="bg-background px-5 py-20 text-foreground sm:px-8 lg:px-10 lg:py-28">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300">Workflow</p>
-            <h2 className="mt-4 max-w-xl text-4xl font-black tracking-tight text-slate-950 sm:text-5xl dark:text-white">
-              One calm place for the messy parts of posting.
-            </h2>
-          </div>
-          <p className="max-w-2xl text-base leading-8 text-slate-600 dark:text-slate-300">
+      <div className="mx-auto max-w-6xl">
+
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300 mb-3">
+            Workflow
+          </p>
+          <h2 className="text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
+            One calm place for the messy parts of posting.
+          </h2>
+          <p className="mt-5 text-base leading-8 text-slate-500 dark:text-slate-400">
             PostSathi brings generation, scheduling, media, and history together so you can move from idea to published post without bouncing between tabs.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
-          <div className="border border-slate-200 bg-[hsl(194_54%_96%)] p-6 dark:border-white/10 dark:bg-white/[0.04] lg:col-span-2">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-teal-700 text-white">
-                <Network className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-slate-950 dark:text-white">Multi-platform composer</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Write once, then tune before publishing.</p>
-              </div>
-            </div>
+        {/* Dashboard mock */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/8 overflow-hidden dark:border-white/10 dark:bg-slate-950 mb-16">
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-4">
-              {["Instagram", "Facebook", "LinkedIn", "X"].map((platform) => (
-                <div key={platform} className="border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-950">
-                  <p className="text-sm font-bold text-slate-950 dark:text-white">{platform}</p>
-                  <div className="mt-4 space-y-2">
-                    <div className="h-2 rounded-full bg-teal-700/25" />
-                    <div className="h-2 w-4/5 rounded-full bg-slate-200 dark:bg-white/15" />
-                    <div className="h-2 w-2/3 rounded-full bg-slate-200 dark:bg-white/15" />
-                  </div>
-                </div>
-              ))}
+          {/* Window chrome */}
+          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3 dark:border-white/10 dark:bg-white/5">
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-red-400" />
+              <span className="h-3 w-3 rounded-full bg-amber-400" />
+              <span className="h-3 w-3 rounded-full bg-emerald-400" />
             </div>
+            <div className="rounded-md bg-white px-4 py-1 text-xs font-semibold text-slate-400 shadow-sm dark:bg-slate-900 dark:text-slate-500">
+              postsathi.app/generate
+            </div>
+            <div className="w-16" />
           </div>
 
-          <div className="border border-slate-200 bg-slate-950 p-6 text-white dark:border-white/10">
-            <LayoutDashboard className="h-6 w-6 text-amber-300" />
-            <h3 className="mt-5 text-2xl font-black">Built for daily use</h3>
-            <p className="mt-3 text-sm leading-6 text-white/70">
-              Fast forms, clear queues, direct actions, and no bloated dashboard rituals.
-            </p>
+          {/* Dashboard body */}
+          <div className="grid lg:grid-cols-[1fr_320px]">
+
+            {/* Left: composer */}
+            <div className="p-8 border-b border-slate-100 dark:border-white/10 lg:border-b-0 lg:border-r">
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-teal-700 dark:text-teal-300 mb-1">New Campaign</p>
+                  <h3 className="text-xl font-black text-slate-950 dark:text-white">Spring product launch</h3>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white shadow-lg shadow-teal-900/20">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Prompt box */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 mb-6">
+                Launch our new content kit with a confident, useful tone. Mention templates, fast scheduling, and one workflow for every platform.
+              </div>
+
+              {/* Platform pills */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {platforms.map(({ icon: Icon, label, color }) => (
+                  <div key={label} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200">
+                    <Icon className={`h-4 w-4 ${color}`} />
+                    {label}
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Generated caption */}
+              <div className="rounded-xl bg-slate-950 p-5 text-white dark:bg-white dark:text-slate-950">
+                <p className="text-xs font-black uppercase tracking-widest text-teal-300 dark:text-teal-700 mb-2">Generated caption</p>
+                <p className="text-sm leading-6 text-white/80 dark:text-slate-600">
+                  One launch, every channel covered. Build the post once, tune the voice, and let your schedule do the heavy lifting.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {["#ContentMarketing", "#CreatorTools", "#LaunchDay"].map((tag) => (
+                    <span key={tag} className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold dark:bg-slate-950/10">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: queue */}
+            <div className="bg-slate-50 p-8 dark:bg-white/[0.02]">
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm font-black text-slate-950 dark:text-white">Publishing queue</p>
+                <CalendarCheck className="h-4 w-4 text-teal-700 dark:text-teal-300" />
+              </div>
+
+              <div className="space-y-3 mb-6">
+                {queue.map((item) => (
+                  <div key={item.platform} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`h-2 w-2 rounded-full ${item.dot}`} />
+                      <p className="text-sm font-bold text-slate-950 dark:text-white">{item.platform}</p>
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{item.time}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-300 active:scale-[0.98]">
+                <Send className="h-4 w-4" />
+                Schedule all
+              </button>
+
+              {/* Stats row */}
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                {[
+                  { label: "Posts this week", value: "12" },
+                  { label: "Platforms active", value: "4" },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                    <p className="text-2xl font-black text-slate-950 dark:text-white">{s.value}</p>
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Feature grid */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-white/[0.03]">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-700/10 text-teal-700 dark:bg-teal-300/10 dark:text-teal-300">
+            <div key={title} className="group flex gap-4 rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-teal-700/30 hover:shadow-md dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-teal-300/20">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-700/10 text-teal-700 dark:bg-teal-300/10 dark:text-teal-300">
                 <Icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-5 text-base font-black text-slate-950 dark:text-white">{title}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{desc}</p>
+              <div>
+                <h3 className="text-sm font-black text-slate-950 dark:text-white">{title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400">{desc}</p>
+              </div>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );

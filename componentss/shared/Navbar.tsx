@@ -31,7 +31,7 @@ export function Navbar() {
   // While Clerk is loading, render a lightweight skeleton to avoid layout jump
   if (!isLoaded) {
     return (
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950/75">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-slate-300 animate-pulse dark:bg-slate-700" />
@@ -58,7 +58,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950/75">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950">
       <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
 
         {/* Brand */}
