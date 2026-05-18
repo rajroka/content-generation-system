@@ -19,6 +19,7 @@ enum Platform {
   TWITTER
   LINKEDIN
   YOUTUBE
+  TIKTOK
 }
 
 enum Role {
@@ -40,6 +41,7 @@ enum SocialPlatform {
   TWITTER
   YOUTUBE
   LINKEDIN
+  TIKTOK
 }
 
 

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "react-hot-toast";
 import {
-  Instagram, Facebook, Twitter, Youtube,
-  Link2, Unlink, Loader2, CheckCircle2, Linkedin,
+  Instagram, Facebook, Youtube,
+  Link2, Unlink, Loader2, CheckCircle2, Music2,
 } from "lucide-react";
 
 interface ConnectedAccount {
@@ -20,8 +20,7 @@ interface ConnectedAccount {
 const PLATFORMS = [
   { id: "instagram", name: "Instagram", icon: Instagram, authUrl: "/api/auth/instagram", color: "text-pink-600" },
   { id: "facebook",  name: "Facebook",  icon: Facebook,  authUrl: "/api/auth/facebook",  color: "text-blue-600" },
-  { id: "twitter",   name: "Twitter/X", icon: Twitter,   authUrl: "/api/auth/twitter",   color: "text-blue-400" },
-  { id: "linkedin",  name: "LinkedIn",  icon: Linkedin,  authUrl: "/api/auth/linkedin",  color: "text-blue-700" },
+  { id: "tiktok",    name: "TikTok",    icon: Music2,    authUrl: "/api/auth/tiktok",    color: "text-foreground" },
   { id: "youtube",   name: "YouTube",   icon: Youtube,   authUrl: "/api/auth/youtube",   color: "text-red-600"  },
 ];
 
