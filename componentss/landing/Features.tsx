@@ -69,25 +69,25 @@ export function Features() {
           <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300 mb-3">
             Workflow
           </p>
-          <h2 className="text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
+          <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
             One calm place for the messy parts of posting.
           </h2>
-          <p className="mt-5 text-base leading-8 text-slate-500 dark:text-slate-400">
+          <p className="mt-5 text-base leading-8 text-muted-foreground">
             PostSathi brings generation, scheduling, media, and history together so you can move from idea to published post without bouncing between tabs.
           </p>
         </div>
 
         {/* Dashboard mock */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/8 overflow-hidden dark:border-white/10 dark:bg-slate-950 mb-16">
+        <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden mb-16">
 
           {/* Window chrome */}
-          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3 dark:border-white/10 dark:bg-white/5">
+          <div className="flex items-center justify-between border-b border-border bg-muted px-5 py-3">
             <div className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-full bg-red-400" />
               <span className="h-3 w-3 rounded-full bg-amber-400" />
               <span className="h-3 w-3 rounded-full bg-emerald-400" />
             </div>
-            <div className="rounded-md bg-white px-4 py-1 text-xs font-semibold text-slate-400 shadow-sm dark:bg-slate-900 dark:text-slate-500">
+            <div className="rounded-md bg-background px-4 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
               postsathi.app/generate
             </div>
             <div className="w-16" />
@@ -97,11 +97,11 @@ export function Features() {
           <div className="grid lg:grid-cols-[1fr_320px]">
 
             {/* Left: composer */}
-            <div className="p-8 border-b border-slate-100 dark:border-white/10 lg:border-b-0 lg:border-r">
+            <div className="p-8 border-b border-border lg:border-b-0 lg:border-r">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-teal-700 dark:text-teal-300 mb-1">New Campaign</p>
-                  <h3 className="text-xl font-black text-slate-950 dark:text-white">Spring product launch</h3>
+                  <h3 className="text-xl font-black text-foreground">Spring product launch</h3>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white shadow-lg shadow-teal-900/20">
                   <Sparkles className="h-5 w-5" />
@@ -109,14 +109,14 @@ export function Features() {
               </div>
 
               {/* Prompt box */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 mb-6">
+              <div className="rounded-xl border border-border bg-muted p-4 text-sm leading-6 text-muted-foreground mb-6">
                 Launch our new content kit with a confident, useful tone. Mention templates, fast scheduling, and one workflow for every platform.
               </div>
 
               {/* Platform pills */}
               <div className="flex flex-wrap gap-2 mb-6">
                 {platforms.map(({ icon: Icon, label, color }) => (
-                  <div key={label} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200">
+                  <div key={label} className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">
                     <Icon className={`h-4 w-4 ${color}`} />
                     {label}
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
@@ -141,20 +141,20 @@ export function Features() {
             </div>
 
             {/* Right: queue */}
-            <div className="bg-slate-50 p-8 dark:bg-white/[0.02]">
+            <div className="bg-muted p-8">
               <div className="flex items-center justify-between mb-6">
-                <p className="text-sm font-black text-slate-950 dark:text-white">Publishing queue</p>
+                <p className="text-sm font-black text-foreground">Publishing queue</p>
                 <CalendarCheck className="h-4 w-4 text-teal-700 dark:text-teal-300" />
               </div>
 
               <div className="space-y-3 mb-6">
                 {queue.map((item) => (
-                  <div key={item.platform} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
+                  <div key={item.platform} className="rounded-xl border border-border bg-card p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`h-2 w-2 rounded-full ${item.dot}`} />
-                      <p className="text-sm font-bold text-slate-950 dark:text-white">{item.platform}</p>
+                      <p className="text-sm font-bold text-foreground">{item.platform}</p>
                     </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">{item.time}</p>
+                    <p className="text-xs text-muted-foreground">{item.time}</p>
                   </div>
                 ))}
               </div>
@@ -170,9 +170,9 @@ export function Features() {
                   { label: "Posts this week", value: "12" },
                   { label: "Platforms active", value: "4" },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900">
-                    <p className="text-2xl font-black text-slate-950 dark:text-white">{s.value}</p>
-                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{s.label}</p>
+                  <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+                    <p className="text-2xl font-black text-foreground">{s.value}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -183,13 +183,13 @@ export function Features() {
         {/* Feature grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="group flex gap-4 rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-teal-700/30 hover:shadow-md dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-teal-300/20">
+            <div key={title} className="group flex gap-4 rounded-2xl border border-border bg-card p-6 transition hover:border-teal-700/30 hover:shadow-md dark:hover:border-teal-300/20">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-700/10 text-teal-700 dark:bg-teal-300/10 dark:text-teal-300">
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-slate-950 dark:text-white">{title}</h3>
-                <p className="mt-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400">{desc}</p>
+                <h3 className="text-sm font-black text-foreground">{title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{desc}</p>
               </div>
             </div>
           ))}

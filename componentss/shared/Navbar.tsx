@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "./ModeToggle";
+import { Logo } from "./Logo";
 
 const navLinks = [
   { href: "/#features", label: "Features" },
@@ -28,70 +29,66 @@ export function Navbar() {
 
   const dashboardUrl = isAdmin ? "/admin" : "/user/dashboard";
 
-  // While Clerk is loading, render a lightweight skeleton to avoid layout jump
+  const headerClass =
+    "sticky top-0 z-50 w-full border-b border-border bg-background";
+
   if (!isLoaded) {
     return (
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950">
-        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-slate-300 animate-pulse dark:bg-slate-700" />
-            <div className="h-4 w-28 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+      <header className={headerClass}>
+        <div className="mx-auto max-w-6xl px-5 sm:px-8 h-16 flex items-center justify-between">
+          {/* Logo skeleton */}
+          <div className="h-10 w-32 rounded-md bg-slate-200 animate-pulse dark:bg-slate-800" />
+          {/* Desktop nav skeleton */}
+          <div className="hidden md:flex items-center gap-6">
+            {[1,2,3].map(i => (
+              <div key={i} className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-800" />
+            ))}
           </div>
-
-          <nav className="hidden md:flex items-center gap-6">
-            <div className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
-            <div className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
-            <div className="h-4 w-20 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
-          </nav>
-
+          {/* Actions skeleton */}
           <div className="hidden md:flex items-center gap-3">
-            <div className="h-9 w-9 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
-            <div className="h-9 w-24 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
+            <div className="h-9 w-9 rounded-md bg-slate-200 animate-pulse dark:bg-slate-800" />
+            <div className="h-9 w-24 rounded-md bg-slate-200 animate-pulse dark:bg-slate-800" />
           </div>
-
-          <div className="md:hidden">
-            <div className="h-6 w-6 rounded-md bg-slate-200 animate-pulse dark:bg-slate-700" />
-          </div>
+          {/* Mobile hamburger skeleton */}
+          <div className="md:hidden h-6 w-6 rounded bg-slate-200 animate-pulse dark:bg-slate-800" />
         </div>
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white shadow-[0_1px_16px_rgba(15,23,42,0.04)] transition-colors dark:border-white/10 dark:bg-slate-950">
-      <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
+    <header className={headerClass}>
+      {/* ── Main bar ── */}
+      <div className="mx-auto max-w-6xl px-5 sm:px-8 h-16 flex items-center justify-between">
 
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse" />
-          <span className="font-bold text-lg tracking-tight text-foreground">PostSathi</span>
-        </Link>
+        {/* Logo — always visible */}
+        <Logo size="lg" />
 
-        {/* Desktop Nav */}
+        {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="font-semibold text-sm tracking-tight text-slate-600 hover:text-teal-700 transition-colors duration-200 dark:text-slate-300 dark:hover:text-teal-300"
+              className="text-sm font-semibold tracking-tight text-slate-600 hover:text-teal-700 transition-colors dark:text-slate-300 dark:hover:text-teal-300"
             >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        {/* Desktop Actions */}
+        {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
           <ModeToggle />
           {isSignedIn ? (
             <>
               <Link
                 href={dashboardUrl}
-                className="inline-flex items-center justify-center h-9 bg-teal-700 hover:bg-teal-800 text-white font-semibold tracking-tight rounded-lg px-5 transition-all text-sm"
+                className="inline-flex items-center justify-center h-9 rounded-lg bg-teal-700 px-5 text-sm font-semibold text-white transition hover:bg-teal-800"
               >
                 {isAdmin ? "Admin Panel" : "Dashboard"}
               </Link>
-              <UserButton afterSignOutUrl="/" />
+              <UserButton />
             </>
           ) : (
             <>
@@ -99,14 +96,14 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-700 hover:bg-slate-100 font-semibold tracking-tight px-5 dark:text-slate-200 dark:hover:bg-white/10"
+                  className="text-slate-700 hover:bg-slate-100 font-semibold px-5 dark:text-slate-200 dark:hover:bg-white/10"
                 >
                   Sign in
                 </Button>
               </SignInButton>
               <Link
                 href="/sign-up"
-                className="inline-flex items-center justify-center h-9 bg-teal-700 hover:bg-teal-800 text-white font-bold tracking-tight rounded-lg px-5 active:scale-95 transition-transform text-[0.8rem]"
+                className="inline-flex items-center justify-center h-9 rounded-lg bg-teal-700 px-5 text-sm font-bold text-white transition hover:bg-teal-800 active:scale-95"
               >
                 Get started
               </Link>
@@ -114,53 +111,69 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile Toggle */}
+        {/* Mobile: hamburger — right side */}
         <button
-          className="md:hidden text-foreground"
+          className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 text-slate-700 transition hover:border-teal-700/40 dark:border-slate-700 dark:text-slate-300"
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle menu"
         >
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ── Mobile menu ── */}
       <div
         className={cn(
-          "md:hidden border-t border-border bg-background/95 backdrop-blur-xl px-8 py-6 flex flex-col gap-5 transition-all duration-300",
-          mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0 pointer-events-none hidden"
+          "md:hidden overflow-hidden transition-all duration-300 border-t border-border bg-background",
+          mobileOpen ? "max-h-screen opacity-100 py-6 px-5 sm:px-8" : "max-h-0 opacity-0 py-0 px-5 sm:px-8"
         )}
       >
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="font-semibold text-sm tracking-tight text-slate-600 hover:text-teal-700 dark:text-slate-300 dark:hover:text-teal-300"
-            onClick={() => setMobileOpen(false)}
-          >
-            {link.label}
-          </Link>
-        ))}
-        <div className="flex flex-col gap-4 pt-4 border-t border-border">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-muted-foreground">Theme</span>
+        {/* Nav links */}
+        <nav className="flex flex-col gap-4 mb-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-semibold text-slate-700 hover:text-teal-700 dark:text-slate-300 dark:hover:text-teal-300"
+              onClick={() => setMobileOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Divider */}
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Theme</span>
             <ModeToggle />
           </div>
           {isSignedIn ? (
             <Link
               href={dashboardUrl}
               onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center justify-center h-9 bg-teal-700 text-white font-semibold rounded-lg px-5 w-full text-sm"
+              className="inline-flex items-center justify-center h-10 w-full rounded-lg bg-teal-700 text-sm font-semibold text-white transition hover:bg-teal-800"
             >
               {isAdmin ? "Admin Panel" : "Dashboard"}
             </Link>
           ) : (
-            <Link
-              href="/sign-up"
-              onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center justify-center h-9 bg-teal-700 text-white font-bold rounded-lg px-5 w-full text-sm"
-            >
-              Get started
-            </Link>
+            <>
+              <SignInButton mode="modal">
+                <button
+                  className="inline-flex items-center justify-center h-10 w-full rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 transition hover:border-teal-700/40 dark:border-slate-700 dark:text-slate-200"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Sign in
+                </button>
+              </SignInButton>
+              <Link
+                href="/sign-up"
+                onClick={() => setMobileOpen(false)}
+                className="inline-flex items-center justify-center h-10 w-full rounded-lg bg-teal-700 text-sm font-bold text-white transition hover:bg-teal-800"
+              >
+                Get started
+              </Link>
+            </>
           )}
         </div>
       </div>

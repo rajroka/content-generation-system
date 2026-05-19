@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -7,31 +8,22 @@ interface LogoProps {
 }
 
 export function Logo({ className, size = "md" }: LogoProps) {
-  const sizes = {
-    sm: "w-7 h-7 text-xs",
-    md: "w-9 h-9 text-sm",
-    lg: "w-12 h-12 text-base",
-  };
-
-  const textSizes = {
-    sm: "text-base",
-    md: "text-lg",
-    lg: "text-2xl",
+  const imgSizes = {
+    sm: 80,
+    md: 120,
+    lg: 180,
   };
 
   return (
-    <Link href="/" className={cn("flex items-center gap-2", className)}>
-      <div
-        className={cn(
-          "rounded-xl bg-[#00687A] flex items-center  justify-center font-bold text-white",
-          sizes[size]
-        )}
-      >
-        PS
-      </div>
-      <span className={cn("font-semibold text-foreground", textSizes[size])}>
-        PostSathi
-      </span>
+    <Link href="/" className={cn("inline-flex items-center", className)}>
+      <Image
+        src="/logo.png"
+        alt="PostSathi"
+        width={imgSizes[size]}
+        height={imgSizes[size]}
+        className="object-contain"
+        priority
+      />
     </Link>
   );
 }

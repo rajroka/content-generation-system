@@ -63,13 +63,13 @@ export function Pricing({ currentPlan }: PricingProps) {
           <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300 mb-4">
             Pricing
           </p>
-          <h2 className="text-4xl font-black tracking-tight text-slate-950 dark:text-white sm:text-5xl">
+          <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
             Free forever.
           </h2>
           <h2 className="mt-1 text-4xl font-black tracking-tight text-slate-400 dark:text-slate-500 sm:text-5xl">
             Pay as you grow.
           </h2>
-          <p className="mt-5 text-base leading-8 text-slate-600 dark:text-slate-300">
+          <p className="mt-5 text-base leading-8 text-muted-foreground">
             The right plan for everyone.
           </p>
         </div>
@@ -118,7 +118,7 @@ export function Pricing({ currentPlan }: PricingProps) {
 
                 {/* Price */}
                 <div className="mt-4 flex items-end gap-1">
-                  <span className="text-4xl font-black tracking-tight text-slate-950 dark:text-white">
+                  <span className="text-4xl font-black tracking-tight text-foreground">
                     {plan.price}
                   </span>
                   {plan.period && (
