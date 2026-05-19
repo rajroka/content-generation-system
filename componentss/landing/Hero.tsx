@@ -61,7 +61,7 @@ export function Hero() {
         {/* Right: person image */}
         <div className="relative flex items-center justify-center">
           <Image
-            src="/heroimage.png"
+            src="/newheroimage.png"
             alt="PostSathi creator"
             width={520}
             height={580}
