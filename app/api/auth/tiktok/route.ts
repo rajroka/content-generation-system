@@ -31,7 +31,7 @@ export async function GET() {
     return new Response(
       `<!DOCTYPE html><html><body><script>
         if (window.opener) window.opener.postMessage(${JSON.stringify({ type: "SOCIAL_CONNECT_ERROR", platform: "tiktok", error: msg })}, "*");
-        setTimeout(() => window.close(), 500);
+        window.close();
       </script></body></html>`,
       { headers: { "Content-Type": "text/html" } }
     );

@@ -57,8 +57,22 @@ export async function GET(req: Request) {
 
     await prisma.socialAccount.upsert({
       where:  { userId_platform: { userId: dbUser.id, platform: "TIKTOK" } },
-      update: { accountId: account.accountId, accountName: account.accountName, accessToken: account.accountId, zernioProfileId: profileId || null, isActive: true },
-      create: { userId: dbUser.id, platform: "TIKTOK", accountId: account.accountId, accountName: account.accountName, accessToken: account.accountId, zernioProfileId: profileId || null, isActive: true },
+      update: {
+        accountId:       account.accountId,
+        accountName:     account.accountName,
+        accessToken:     account.accountId,
+        zernioProfileId: profileId || null,
+        isActive:        true,
+      },
+      create: {
+        userId:          dbUser.id,
+        platform:        "TIKTOK",
+        accountId:       account.accountId,
+        accountName:     account.accountName,
+        accessToken:     account.accountId,
+        zernioProfileId: profileId || null,
+        isActive:        true,
+      },
     });
 
     return html("SOCIAL_CONNECTED", "tiktok");

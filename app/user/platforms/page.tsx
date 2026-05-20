@@ -5,9 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import {
   Instagram, Facebook, Youtube,
-  Link2, Unlink, Loader2, CheckCircle2, Music2,
+  Link2, Unlink, Loader2, CheckCircle2, Music2, Eye,
 } from "lucide-react";
 
 interface ConnectedAccount {
@@ -29,6 +30,7 @@ export default function ConnectionsPage() {
   const [loading, setLoading]       = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [toggling, setToggling]     = useState<string | null>(null);
+  const router = useRouter();
 
   // Keep a ref so interval callbacks always see the latest accounts list
   const accountsRef = useRef<ConnectedAccount[]>([]);
@@ -267,6 +269,19 @@ export default function ConnectionsPage() {
                           className="data-[state=checked]:bg-[#0d7c8a]"
                         />
                       </div>
+
+                      <div className="h-px bg-border" />
+
+                      {/* Change Preview */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-[#0d7c8a] hover:bg-[#0d7c8a]/10 text-xs font-bold w-full h-8"
+                        onClick={() => router.push(`/user/generate?preview=${platform.id}`)}
+                      >
+                        <Eye className="w-3 h-3 mr-2" />
+                        Change Preview
+                      </Button>
 
                       <div className="h-px bg-border" />
 

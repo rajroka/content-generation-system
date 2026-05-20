@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { Card } from "@/components/ui/card";
@@ -51,15 +52,34 @@ const YouTubeIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+  </svg>
+);
+
 const PLATFORMS = [
-  { id: "TWITTER",   label: "X",         Icon: XIcon        },
-  { id: "FACEBOOK",  label: "Facebook",  Icon: FacebookIcon  },
   { id: "INSTAGRAM", label: "Instagram", Icon: InstagramIcon },
-  { id: "LINKEDIN",  label: "LinkedIn",  Icon: LinkedInIcon  },
+  { id: "FACEBOOK",  label: "Facebook",  Icon: FacebookIcon  },
+  { id: "TIKTOK",    label: "TikTok",    Icon: TikTokIcon    },
   { id: "YOUTUBE",   label: "YouTube",   Icon: YouTubeIcon   },
 ];
 
+const PREVIEW_OPTIONS: { value: PreviewType; label: string; platform: string }[] = [
+  { value: "facebook-post", label: "Facebook post preview", platform: "FACEBOOK" },
+  { value: "facebook-reel", label: "Facebook reel preview", platform: "FACEBOOK" },
+  { value: "instagram",     label: "Instagram preview",     platform: "INSTAGRAM" },
+];
+
 // ── Component ────────────────────────────────────────────────────────────────
+
+type PreviewType = "facebook-post" | "facebook-reel" | "instagram";
+
+interface ConnectedAccount {
+  platform: string;
+  accountName: string | null;
+  profilePicture?: string;
+}
 
 export default function GeneratePage() {
   const { user: clerkUser } = useUser();
@@ -74,11 +94,20 @@ export default function GeneratePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [caption, setCaption] = useState("");
-  // mediaFiles stores both local blob preview URL and the uploaded CDN URL
   const [mediaFiles, setMediaFiles] = useState<{ localUrl: string; cdnUrl?: string; file?: File; type: "image" | "video" }[]>([]);
   const [scheduledFor, setScheduledFor] = useState("");
   const [usage, setUsage] = useState({ captions: 2, schedules: 1, plan: "FREE" });
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
+  const [previewType, setPreviewType] = useState<PreviewType>("facebook-post");
+  const [fbPhoto, setFbPhoto] = useState<string | null>(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const p = searchParams.get("preview");
+    if (p === "facebook") setPreviewType("facebook-post");
+    else if (p === "instagram") setPreviewType("instagram");
+  }, [searchParams]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +115,21 @@ export default function GeneratePage() {
     fetch("/api/user/usage")
       .then((r) => r.json())
       .then((d) => setUsage(d))
+      .catch(() => {});
+
+    // Fetch Facebook profile photo from connections
+    fetch("/api/social/connections")
+      .then((r) => r.json())
+      .then((data: ConnectedAccount[]) => {
+        if (!Array.isArray(data)) return;
+        const platforms = data.map((a) => a.platform.toUpperCase());
+        setConnectedPlatforms(platforms);
+        const fb = data.find((a) => a.platform.toUpperCase() === "FACEBOOK");
+        if (fb?.profilePicture) setFbPhoto(fb.profilePicture);
+        // Auto-set preview to first connected platform
+        if (platforms.includes("FACEBOOK")) setPreviewType("facebook-post");
+        else if (platforms.includes("INSTAGRAM")) setPreviewType("instagram");
+      })
       .catch(() => {});
   }, []);
 
@@ -97,7 +141,7 @@ export default function GeneratePage() {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handlePostNow = async () => {
-    if (!caption.trim() && mediaFiles.length === 0) return toast.error("Add some content before posting!");
+    if (!caption.trim() && mediaFiles.length === 0) return toast.error("Add a caption or media before posting!");
     if (selectedPlatforms.length === 0) return toast.error("Select at least one platform");
 
     // Ensure all files are uploaded to CDN first
@@ -414,7 +458,7 @@ export default function GeneratePage() {
               <div className="flex justify-between items-end">
                 <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Media Assets</Label>
                 {mediaFiles.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                  <span className="text-xs text-muted-foreground">
                     {mediaFiles.length} file{mediaFiles.length > 1 ? "s" : ""}
                     {isUploading && " · uploading..."}
                   </span>
@@ -474,12 +518,12 @@ export default function GeneratePage() {
                 />
               </div>
               {mediaFiles.length > 1 && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Click a thumbnail to switch the preview. All {mediaFiles.length} files will be saved.
                 </p>
               )}
-              <p className="text-[10px] text-muted-foreground">
-                Supports images (JPEG, PNG, WebP, GIF) and videos (MP4, MOV, WebM) · Max 20MB images / 100MB videos
+              <p className="text-xs text-muted-foreground">
+                Images (JPEG, PNG, WebP, GIF) · Videos (MP4, MOV, WebM) · Max 20MB / 100MB
               </p>
             </div>
 
@@ -509,110 +553,158 @@ export default function GeneratePage() {
 
           {/* RIGHT: Live Preview */}
           <div className="lg:col-span-5">
-            <div className="sticky top-8 bg-muted/30 dark:bg-zinc-900/30 rounded-2xl overflow-hidden border border-border/50 shadow-sm">
-              <div className="px-4 py-3 border-b bg-background/50 flex justify-between items-center">
-                <h3 className="font-bold text-sm text-[#0D7C8A]">Live Preview</h3>
-                <Badge variant="secondary" className="text-[10px] uppercase">Dynamic View</Badge>
+            <div className="sticky top-8">
+
+              {/* Platform selector — flat, no outer box */}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <select
+                  value={previewType}
+                  onChange={(e) => setPreviewType(e.target.value as PreviewType)}
+                  className="text-sm font-bold bg-transparent text-foreground outline-none cursor-pointer appearance-auto"
+                >
+                  {PREVIEW_OPTIONS.filter((o) =>
+                    connectedPlatforms.length === 0 || connectedPlatforms.includes(o.platform)
+                  ).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="p-3">
-                <Card className="w-full rounded-xl shadow-sm border overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
-                  {/* Mockup Header */}
+              {/* ── Facebook Reel Preview ── */}
+              {previewType === "facebook-reel" && (
+                <div className="relative w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden bg-zinc-900 shadow-xl" style={{ aspectRatio: "9/16" }}>
+                  {mediaFiles.length > 0 && mediaFiles[activePreviewIndex]?.type === "image" ? (
+                    <img src={mediaFiles[activePreviewIndex].localUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-70" />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-b from-zinc-700 to-zinc-900" />
+                  )}
+                  <div className="absolute top-0 left-0 right-0 px-3 pt-3 flex items-center justify-between z-10">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/60 shrink-0 bg-[#1877F2]/20">
+                        {fbPhoto ? <img src={fbPhoto} alt={userName} className="w-full h-full object-cover" />
+                          : userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center bg-[#1877F2]"><span className="text-white text-xs font-bold">{userName.charAt(0)}</span></div>}
+                      </div>
+                      <div>
+                        <p className="text-white text-xs font-bold leading-none">{userName}</p>
+                        <p className="text-white/60 text-[10px] mt-0.5">Reels · Just now · 🌍</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-white">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-12 left-0 right-0 px-3 z-10">
+                    <p className="text-white text-xs leading-relaxed line-clamp-3">
+                      {caption || <span className="text-white/50">Your caption will appear here...</span>}
+                    </p>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between z-10 bg-gradient-to-t from-black/60 to-transparent">
+                    <div className="flex items-center gap-1.5 text-white/80">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v9.28a4 4 0 00-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
+                      <span className="text-[10px] font-semibold">{userName} · Original audio</span>
+                    </div>
+                    <span className="text-white/60 text-[10px]">{userName.slice(0, 8)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Facebook Post Preview ── */}
+              {previewType === "facebook-post" && (
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
                   <div className="px-3 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#0D7C8A]/10 flex items-center justify-center overflow-hidden ring-1 ring-border shrink-0">
-                        {userImage ? (
-                          <img src={userImage} alt={userName} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xs font-bold text-[#0D7C8A]">
-                            {userName.charAt(0).toUpperCase()}
-                          </span>
-                        )}
+                      <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-border shrink-0 bg-[#1877F2]/10">
+                        {fbPhoto ? <img src={fbPhoto} alt={userName} className="w-full h-full object-cover" />
+                          : userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center bg-[#1877F2]"><span className="text-white text-xs font-bold">{userName.charAt(0)}</span></div>}
                       </div>
-                      <div className="text-left min-w-0">
-                        <p className="text-xs font-bold leading-none truncate">{userName}</p>
+                      <div>
+                        <p className="text-xs font-bold text-foreground leading-none">{userName}</p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">Just now · 🌍</p>
                       </div>
                     </div>
-                    <MoreHorizontal className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                   </div>
-
-                  {/* Caption */}
                   <div className="px-3 pb-2">
                     <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground">
-                      {caption || <span className="text-muted-foreground">Your generated content will appear here...</span>}
+                      {caption || <span className="text-muted-foreground">Your caption will appear here...</span>}
                     </p>
                   </div>
-
-                  {/* Media Preview */}
                   {mediaFiles.length > 0 ? (
-                    <div className="w-full">
-                      <div className="relative w-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden">
-                        {mediaFiles[activePreviewIndex]?.type === "video" ? (
-                          <video
-                            src={mediaFiles[activePreviewIndex]?.localUrl}
-                            className="w-full max-h-[280px] object-contain"
-                            controls
-                            muted
-                          />
-                        ) : (
-                          <img
-                            src={mediaFiles[activePreviewIndex]?.localUrl}
-                            alt="Preview"
-                            className="w-full h-auto max-h-[280px] object-contain"
-                          />
-                        )}
-                        {mediaFiles.length > 1 && (
-                          <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                            {activePreviewIndex + 1}/{mediaFiles.length}
-                          </div>
-                        )}
-                        {!mediaFiles[activePreviewIndex]?.cdnUrl && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2">
-                            <Loader2 className="w-5 h-5 text-white animate-spin" />
-                            <span className="text-white text-xs font-medium">Uploading...</span>
-                          </div>
-                        )}
-                      </div>
-                      {/* Thumbnail strip */}
-                      {mediaFiles.length > 1 && (
-                        <div className="flex gap-1.5 p-2 bg-zinc-50 dark:bg-zinc-800/50 overflow-x-auto">
-                          {mediaFiles.map((m, i) => (
-                            <button
-                              key={i}
-                              onClick={() => setActivePreviewIndex(i)}
-                              className={cn(
-                                "relative shrink-0 w-10 h-10 rounded-lg overflow-hidden border-2 transition-all flex items-center justify-center bg-zinc-200 dark:bg-zinc-700",
-                                activePreviewIndex === i ? "border-[#0D7C8A]" : "border-transparent opacity-60 hover:opacity-100"
-                              )}
-                            >
-                              {m.type === "video" ? (
-                                <Film className="w-4 h-4 text-zinc-500" />
-                              ) : (
-                                <img src={m.localUrl} alt="" className="w-full h-full object-cover" />
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <img src={mediaFiles[activePreviewIndex]?.localUrl} alt="Preview" className="w-full object-contain bg-black" />
                   ) : (
-                    <div className="aspect-video bg-muted/40 flex flex-col items-center justify-center border-y border-border/50 gap-1.5">
+                    <div className="h-32 bg-muted/40 flex items-center justify-center border-y border-border/50">
                       <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
-                      <span className="text-[11px] text-muted-foreground/50">Media Preview</span>
                     </div>
                   )}
-
-                  {/* Mockup Footer */}
                   <div className="px-3 py-2 border-t border-border/50 flex items-center justify-between text-muted-foreground">
                     <div className="flex gap-4">
-                      <span className="text-[11px] font-semibold hover:text-[#0D7C8A] cursor-pointer transition-colors">Like</span>
-                      <span className="text-[11px] font-semibold hover:text-[#0D7C8A] cursor-pointer transition-colors">Comment</span>
+                      <span className="text-[11px] font-semibold">👍 Like</span>
+                      <span className="text-[11px] font-semibold">💬 Comment</span>
                     </div>
-                    <span className="text-[11px] font-semibold hover:text-[#0D7C8A] cursor-pointer">Share</span>
+                    <span className="text-[11px] font-semibold">↗ Share</span>
                   </div>
-                </Card>
-              </div>
+                  {/* Post Preview button */}
+                  <div className="px-3 py-2 border-t border-border/50">
+                    <button
+                      onClick={handlePostNow}
+                      disabled={isPosting}
+                      className="w-full h-9 rounded-lg bg-[#0D7C8A] text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition active:scale-95"
+                    >
+                      {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Post Now
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Instagram Preview ── */}
+              {previewType === "instagram" && (
+                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+                  <div className="px-3 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full overflow-hidden p-0.5 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shrink-0">
+                        <div className="w-full h-full rounded-full overflow-hidden bg-card">
+                          {userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center bg-pink-100"><span className="text-xs font-bold text-pink-600">{userName.charAt(0)}</span></div>}
+                        </div>
+                      </div>
+                      <p className="text-xs font-bold text-foreground">{userName}</p>
+                    </div>
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  {mediaFiles.length > 0 ? (
+                    <img src={mediaFiles[activePreviewIndex]?.localUrl} alt="Preview" className="w-full object-contain bg-black" />
+                  ) : (
+                    <div className="aspect-square bg-muted/40 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
+                    </div>
+                  )}
+                  <div className="px-3 py-2 flex gap-3 text-muted-foreground">
+                    <span className="text-lg">🤍</span><span className="text-lg">💬</span><span className="text-lg">↗</span>
+                  </div>
+                  <div className="px-3 pb-2">
+                    <p className="text-xs leading-relaxed text-foreground line-clamp-3">
+                      <span className="font-bold mr-1">{userName}</span>
+                      {caption || <span className="text-muted-foreground">Your caption...</span>}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2 border-t border-border/50">
+                    <button
+                      onClick={handlePostNow}
+                      disabled={isPosting}
+                      className="w-full h-9 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition active:scale-95"
+                    >
+                      {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Post Now
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
 
