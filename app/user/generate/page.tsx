@@ -182,19 +182,19 @@ export default function GeneratePage() {
 
       if (succeeded.length > 0) {
         if (data.instagramContentType === "story") {
-          toast.success(`✅ Published to ${succeeded.join(", ")}`);
-          toast(`📖 Instagram: posted as a Story (your image was too tall for a feed post). Stories disappear after 24h.`, {
+          toast.success(`Published to ${succeeded.join(", ")}`);
+          toast(`Instagram: posted as a Story (your image was too tall for a feed post). Stories disappear after 24h.`, {
             icon: "ℹ️",
             duration: 6000,
           });
         } else {
-          toast.success(`✅ Published to ${succeeded.join(", ")}`);
+          toast.success(`Published to ${succeeded.join(", ")}`);
         }
         setCaption("");
         setMediaFiles([]);
       }
       if (failed.length > 0) {
-        toast.error(`❌ Failed on: ${failed.join(", ")}`);
+        toast.error(`Failed on: ${failed.join(", ")}`);
       }
     } catch (err: any) {
       toast.dismiss(postingToast);
@@ -354,8 +354,8 @@ export default function GeneratePage() {
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Generate & Compose</h1>
-            <p className="text-muted-foreground text-sm">Design your next viral post with AI.</p>
+            <h1 className="text-2xl md:text-xl font-bold tracking-tight">Generate & Compose</h1>
+            
           </div>
           <div className="flex items-center w-full md:w-auto gap-3">
             <div className="hidden sm:flex flex-col items-end text-xs font-medium text-muted-foreground">
@@ -555,18 +555,16 @@ export default function GeneratePage() {
           <div className="lg:col-span-5">
             <div className="sticky top-8">
 
-              {/* Platform selector — flat, no outer box */}
-              <div className="flex items-center justify-between mb-2 px-1">
+              {/* Platform selector */}
+              <div className="flex items-center mb-2 px-1">
                 <select
                   value={previewType}
                   onChange={(e) => setPreviewType(e.target.value as PreviewType)}
-                  className="text-sm font-bold bg-transparent text-foreground outline-none cursor-pointer appearance-auto"
+                  className="text-sm font-bold bg-background text-foreground border border-border rounded-lg px-3 py-1.5 outline-none cursor-pointer"
                 >
-                  {PREVIEW_OPTIONS.filter((o) =>
-                    connectedPlatforms.length === 0 || connectedPlatforms.includes(o.platform)
-                  ).map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  <option value="facebook-post" className="bg-background text-foreground">Facebook post preview</option>
+                  <option value="facebook-reel" className="bg-background text-foreground">Facebook reel preview</option>
+                  <option value="instagram" className="bg-background text-foreground">Instagram preview</option>
                 </select>
               </div>
 
@@ -613,7 +611,7 @@ export default function GeneratePage() {
 
               {/* ── Facebook Post Preview ── */}
               {previewType === "facebook-post" && (
-                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+                <div className="rounded-xl border border-border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
                   <div className="px-3 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-border shrink-0 bg-[#1877F2]/10">
@@ -647,27 +645,16 @@ export default function GeneratePage() {
                     </div>
                     <span className="text-[11px] font-semibold">↗ Share</span>
                   </div>
-                  {/* Post Preview button */}
-                  <div className="px-3 py-2 border-t border-border/50">
-                    <button
-                      onClick={handlePostNow}
-                      disabled={isPosting}
-                      className="w-full h-9 rounded-lg bg-[#0D7C8A] text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition active:scale-95"
-                    >
-                      {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                      Post Now
-                    </button>
-                  </div>
                 </div>
               )}
 
               {/* ── Instagram Preview ── */}
               {previewType === "instagram" && (
-                <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+                <div className="rounded-xl border border-border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
                   <div className="px-3 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full overflow-hidden p-0.5 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shrink-0">
-                        <div className="w-full h-full rounded-full overflow-hidden bg-card">
+                        <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-zinc-900">
                           {userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
                             : <div className="w-full h-full flex items-center justify-center bg-pink-100"><span className="text-xs font-bold text-pink-600">{userName.charAt(0)}</span></div>}
                         </div>
@@ -691,16 +678,6 @@ export default function GeneratePage() {
                       <span className="font-bold mr-1">{userName}</span>
                       {caption || <span className="text-muted-foreground">Your caption...</span>}
                     </p>
-                  </div>
-                  <div className="px-3 py-2 border-t border-border/50">
-                    <button
-                      onClick={handlePostNow}
-                      disabled={isPosting}
-                      className="w-full h-9 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition active:scale-95"
-                    >
-                      {isPosting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                      Post Now
-                    </button>
                   </div>
                 </div>
               )}
