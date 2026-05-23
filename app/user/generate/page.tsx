@@ -96,7 +96,7 @@ export default function GeneratePage() {
   const [caption, setCaption] = useState("");
   const [mediaFiles, setMediaFiles] = useState<{ localUrl: string; cdnUrl?: string; file?: File; type: "image" | "video" }[]>([]);
   const [scheduledFor, setScheduledFor] = useState("");
-  const [usage, setUsage] = useState({ captions: 2, schedules: 1, plan: "FREE" });
+  const [usage, setUsage] = useState({ captions: 0, schedules: 0, plan: "FREE", captionLimit: 10 as number | null, scheduleLimit: 15 as number | null });
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [previewType, setPreviewType] = useState<PreviewType>("facebook-post");
   const [fbPhoto, setFbPhoto] = useState<string | null>(null);
@@ -358,11 +358,13 @@ export default function GeneratePage() {
             
           </div>
           <div className="flex items-center w-full md:w-auto gap-3">
-            <div className="hidden sm:flex flex-col items-end text-xs font-medium text-muted-foreground">
-              <span>{usage.captions}/10 captions — {usage.schedules}/5 schedules</span>
-              <div className="w-32 h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
-                <div className="h-full bg-[#0D7C8A]" style={{ width: `${(usage.captions / 10) * 100}%` }} />
-              </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs font-semibold">
+                {usage.captions}/{usage.captionLimit ?? "∞"} captions
+              </Badge>
+              <Badge variant="secondary" className="text-xs font-semibold">
+                {usage.schedules}/{usage.scheduleLimit ?? "∞"} schedules
+              </Badge>
             </div>
             <Button
               variant="outline"
