@@ -105,10 +105,6 @@ body {
 }
 
 /* ── Theme transition — only bg/color, not layout properties ── */
-*,
-*::before,
-*::after {
-  transition-property: background-color, color, border-color, fill, stroke;
-  transition-duration: 200ms;
-  transition-timing-function: ease;
+body {
+  transition: background-color 150ms ease, color 150ms ease;
 }
