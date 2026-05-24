@@ -70,7 +70,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-semibold tracking-tight text-slate-600 hover:text-teal-700 transition-colors dark:text-slate-300 dark:hover:text-teal-300"
+              className="text-sm font-semibold tracking-tight text-slate-600 hover:text-foreground transition-colors dark:text-slate-300 dark:hover:text-white"
             >
               {link.label}
             </Link>
@@ -134,7 +134,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-semibold text-slate-700 hover:text-teal-700 dark:text-slate-300 dark:hover:text-teal-300"
+              className="text-sm font-semibold text-slate-700 hover:text-foreground dark:text-slate-300 dark:hover:text-white"
               onClick={() => setMobileOpen(false)}
             >
               {link.label}

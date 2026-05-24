@@ -47,7 +47,7 @@ export function AdminSidebar() {
       {/* Small Toggle Button */}
       <button 
         onClick={toggle}
-        className="absolute -right-3 top-8 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-[#0d7c8a] shadow-sm z-50 transition-colors"
+        className="absolute -right-3 top-8 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm z-50 transition-colors"
       >
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
@@ -69,10 +69,10 @@ export function AdminSidebar() {
           return (
             <Link key={item.href} href={item.href} className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all group",
-              isActive ? "bg-[#0d7c8a]/10 text-[#0d7c8a]" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
               collapsed && "justify-center"
             )}>
-              <item.icon size={18} className={cn("shrink-0", isActive ? "text-[#0d7c8a]" : "text-muted-foreground group-hover:text-foreground")} />
+              <item.icon size={18} className={cn("shrink-0", isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground")} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );

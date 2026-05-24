@@ -47,10 +47,10 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
       "hidden md:flex h-screen bg-background border-r border-border flex-col transition-all duration-300 relative",
       collapsed ? "w-16" : "w-60"
     )}>
-      {/* Small Toggle Button */}
-      <button 
+      {/* Toggle Button */}
+      <button
         onClick={toggle}
-        className="absolute -right-3 top-8 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-[#0d7c8a] shadow-sm z-50 transition-colors"
+        className="absolute -right-3 top-8 w-6 h-6 bg-background border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground shadow-sm z-50"
       >
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
@@ -59,13 +59,13 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
       <div className={cn("h-16 flex items-center px-4 shrink-0", collapsed && "justify-center")}>
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-[#0d7c8a] rounded-lg flex items-center justify-center shrink-0">
-             <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
+            <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
           </div>
           {!collapsed && <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>}
         </div>
       </div>
 
-      {/* Compact New Post Button */}
+      {/* New Post Button */}
       <div className="px-3 mb-4">
         <Link href="/user/generate" className={cn(
           "flex items-center justify-center gap-2 w-full bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-[13px] font-semibold rounded-lg py-2 transition-all",
@@ -76,17 +76,22 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
         </Link>
       </div>
 
-      {/* Navigation Spacing Managed */}
+      {/* Navigation */}
       <nav className="flex-1 px-2 space-y-0.5">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href} className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all group",
-              isActive ? "bg-[#0d7c8a]/10 text-[#0d7c8a]" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              isActive
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
               collapsed && "justify-center"
             )}>
-              <item.icon size={18} className={cn("shrink-0", isActive ? "text-[#0d7c8a]" : "text-muted-foreground group-hover:text-foreground")} />
+              <item.icon size={18} className={cn(
+                "shrink-0",
+                isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+              )} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
@@ -99,14 +104,14 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
           "flex items-center gap-3 p-2 bg-background border border-border rounded-xl shadow-sm",
           collapsed && "justify-center border-none bg-transparent shadow-none px-0"
         )}>
-          <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
+          <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
           {!collapsed && (
             <div className="flex flex-col min-w-0">
               <span className="text-[12px] font-bold text-foreground truncate leading-none">
                 {user?.firstName || "Member"}
               </span>
               {plan === "PRO" && (
-                <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider mt-1">
+                <div className="flex items-center gap-1 text-[9px] text-muted-foreground font-bold uppercase tracking-wider mt-1">
                   <ShieldCheck size={10} />
                   <span>Pro User</span>
                 </div>

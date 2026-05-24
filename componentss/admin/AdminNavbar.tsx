@@ -57,9 +57,9 @@ export function AdminNavbar() {
                     <SheetClose key={item.href}>
                       <Link href={item.href} className={cn(
                         "flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all group",
-                        isActive ? "bg-[#0d7c8a]/10 text-[#0d7c8a]" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}>
-                        <item.icon size={18} className={cn("shrink-0", isActive ? "text-[#0d7c8a]" : "text-muted-foreground group-hover:text-foreground")} />
+                        <item.icon size={18} className={cn("shrink-0", isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground")} />
                         <span>{item.label}</span>
                       </Link>
                     </SheetClose>
@@ -75,7 +75,7 @@ export function AdminNavbar() {
                     <span className="text-[12px] font-bold text-foreground truncate leading-none mb-1">
                       {user?.firstName || "Member"}
                     </span>
-                    <div className="flex items-center gap-1 text-[9px] text-[#0d7c8a] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground font-bold uppercase tracking-wider">
                       <ShieldCheck size={10} />
                       <span>Admin</span>
                     </div>

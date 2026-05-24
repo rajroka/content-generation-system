@@ -239,7 +239,7 @@ export default function ConnectionsPage() {
                   <div>
                     <h3 className="font-bold text-foreground text-sm">{platform.name}</h3>
                     {account ? (
-                      <p className="text-[11px] text-[#0d7c8a] flex items-center gap-1 font-medium mt-0.5">
+                      <p className="text-[11px] text-foreground flex items-center gap-1 font-medium mt-0.5">
                         <CheckCircle2 className="w-3 h-3" />
                         {account.accountName || "Connected"}
                       </p>
@@ -266,7 +266,7 @@ export default function ConnectionsPage() {
                           checked={account.isActive}
                           disabled={toggling === platform.id}
                           onCheckedChange={() => handleToggle(platform.id, account.isActive)}
-                          className="data-[state=checked]:bg-[#0d7c8a]"
+                          className="data-[state=checked]:bg-foreground"
                         />
                       </div>
 
