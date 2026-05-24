@@ -91,7 +91,7 @@ export function AdminNavbar() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Search users, content, reports..."
-          className="pl-9 h-9 bg-muted border-none text-xs rounded-lg focus-visible:ring-1 focus-visible:ring-[#0d7c8a]"
+          className="pl-9 h-9 bg-muted border-none text-xs rounded-lg focus-visible:ring-1 focus-visible:ring-border"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />

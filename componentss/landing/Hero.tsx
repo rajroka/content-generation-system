@@ -19,7 +19,7 @@ export function Hero() {
         <div className="max-w-2xl">
           <h1 className="text-5xl font-black leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
             Create once.
-            <span className="block text-teal-700 dark:text-teal-300">Post everywhere.</span>
+            <span className="block text-foreground">Post everywhere.</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 dark:text-slate-400 sm:text-lg">

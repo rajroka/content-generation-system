@@ -147,7 +147,7 @@ export default function AdminSubscriptionsPage() {
               <p className="text-sm text-muted-foreground">Total Users</p>
               <p className="text-2xl font-bold">{summary.totalUsers}</p>
             </div>
-            <Users className="h-5 w-5 text-[#0d7c8a]" />
+            <Users className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
         <Card>
@@ -156,7 +156,7 @@ export default function AdminSubscriptionsPage() {
               <p className="text-sm text-muted-foreground">Pro Users</p>
               <p className="text-2xl font-bold">{summary.proUsers}</p>
             </div>
-            <Crown className="h-5 w-5 text-[#0d7c8a]" />
+            <Crown className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
         <Card>
@@ -174,7 +174,7 @@ export default function AdminSubscriptionsPage() {
               <p className="text-sm text-muted-foreground">Projected MRR</p>
               <p className="text-2xl font-bold">${summary.monthlyRevenue.toFixed(0)}</p>
             </div>
-            <CreditCard className="h-5 w-5 text-[#0d7c8a]" />
+            <CreditCard className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
       </div>

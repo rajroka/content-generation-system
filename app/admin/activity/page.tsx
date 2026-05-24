@@ -97,7 +97,7 @@ export default function AdminActivityPage() {
           <div className="space-y-4">
             {filteredLogs.map((log) => (
               <div key={log.id} className="flex gap-4 border-b pb-4 last:border-0">
-                <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0d7c8a]/10 text-[#0d7c8a]">
+                <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                   <Activity className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">

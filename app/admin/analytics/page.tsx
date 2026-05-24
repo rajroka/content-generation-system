@@ -135,21 +135,21 @@ export default function AdminAnalyticsPage() {
       value: data.totalStats.totalUsers.toLocaleString(),
       icon: Users,
       
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
     },
     {
       title: "Total Generations",
       value: data.totalStats.totalGenerations.toLocaleString(),
       icon: FileText,
   
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
     },
     {
       title: "Monthly Revenue",
       value: `$${data.totalStats.monthlyRevenue.toFixed(0)}`,
       icon: DollarSign,
   
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
     },
   ] as const;
 
@@ -159,7 +159,7 @@ export default function AdminAnalyticsPage() {
       title: "Daily Generations",
       subtitle: "Last 30 days",
       icon: TrendingUp,
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
       color: CHART_COLORS.blue,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -187,7 +187,7 @@ export default function AdminAnalyticsPage() {
       title: "Platform Distribution",
       subtitle: "Content breakdown",
       icon: PieChartIcon,
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
       color: CHART_COLORS.purple,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -220,7 +220,7 @@ export default function AdminAnalyticsPage() {
       title: "User Growth",
       subtitle: "Last 30 days",
       icon: Users,
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
       color: CHART_COLORS.green,
       chart: (
         <ResponsiveContainer width="100%" height="100%">
@@ -246,7 +246,7 @@ export default function AdminAnalyticsPage() {
       title: "Revenue (MRR)",
       subtitle: "Monthly recurring revenue",
       icon: Activity,
-      accent: "text-[#0d7c8a]",
+      accent: "text-muted-foreground",
       color: CHART_COLORS.amber,
       chart: (
         <ResponsiveContainer width="100%" height="100%">

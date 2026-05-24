@@ -60,13 +60,13 @@ export function Pricing({ currentPlan }: PricingProps) {
 
         {/* Header */}
         <div className="text-center mb-12">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300 mb-4">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground mb-4">
             Pricing
           </p>
           <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
             Free forever.
           </h2>
-          <h2 className="mt-1 text-4xl font-black tracking-tight text-slate-400 dark:text-slate-500 sm:text-5xl">
+          <h2 className="mt-1 text-4xl font-black tracking-tight text-muted-foreground sm:text-5xl">
             Pay as you grow.
           </h2>
           <p className="mt-5 text-base leading-8 text-muted-foreground">
@@ -100,11 +100,10 @@ export function Pricing({ currentPlan }: PricingProps) {
                 key={plan.label}
                 className={
                   plan.highlighted
-                    ? "relative border-2 border-teal-700 bg-white p-7 shadow-xl shadow-teal-950/10 dark:border-teal-300 dark:bg-slate-950"
-                    : "border border-slate-200 bg-[hsl(194_54%_96%)] p-7 dark:border-white/10 dark:bg-white/[0.04]"
+                    ? "relative border-2 border-border bg-card p-7 shadow-xl dark:bg-card"
+                    : "border border-border bg-muted/40 p-7 dark:bg-white/[0.04]"
                 }
               >
-                {/* Popular badge — amber like Hero's Schedule button */}
                 {plan.highlighted && (
                   <span className="absolute right-5 top-5 rounded-md bg-amber-400 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-950">
                     Popular
@@ -112,7 +111,7 @@ export function Pricing({ currentPlan }: PricingProps) {
                 )}
 
                 {/* Plan name */}
-                <p className="text-sm font-black text-teal-700 dark:text-teal-300">
+                <p className="text-sm font-black text-foreground">
                   {plan.label}
                 </p>
 
@@ -122,14 +121,14 @@ export function Pricing({ currentPlan }: PricingProps) {
                     {plan.price}
                   </span>
                   {plan.period && (
-                    <span className="pb-1 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    <span className="pb-1 text-sm font-semibold text-muted-foreground">
                       {plan.period}
                     </span>
                   )}
                 </div>
 
                 {/* Blurb */}
-                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   {plan.blurb}
                 </p>
 
@@ -138,17 +137,17 @@ export function Pricing({ currentPlan }: PricingProps) {
                   href={ctaHref}
                   className={
                     isCurrentPlan
-                      ? "mt-6 inline-flex h-11 w-full pointer-events-none items-center justify-center rounded-lg border border-teal-700/30 text-sm font-black text-teal-700 dark:border-teal-300/30 dark:text-teal-300"
+                      ? "mt-6 inline-flex h-11 w-full pointer-events-none items-center justify-center rounded-lg border border-border text-sm font-black text-muted-foreground"
                       : plan.highlighted
-                      ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-teal-700 text-sm font-black text-white shadow-lg shadow-teal-900/15 transition hover:bg-teal-800 active:scale-[0.98]"
-                      : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-slate-300 bg-white/70 text-sm font-black text-slate-950 transition hover:border-teal-700/40 hover:bg-white dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                      ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#0d7c8a] text-sm font-black text-white shadow-lg transition hover:bg-[#0b6a75] active:scale-[0.98]"
+                      : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-black text-foreground transition hover:bg-muted"
                   }
                 >
                   {ctaLabel}
                 </Link>
 
                 {/* Features label */}
-                <p className="mt-6 mb-3 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                <p className="mt-6 mb-3 text-xs font-semibold text-muted-foreground">
                   {plan.featuresLabel}
                 </p>
 
@@ -157,9 +156,9 @@ export function Pricing({ currentPlan }: PricingProps) {
                   {plan.features.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-start gap-2.5 text-sm font-medium text-slate-700 dark:text-slate-300"
+                      className="flex items-start gap-2.5 text-sm font-medium text-foreground"
                     >
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-700 dark:text-teal-300" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                       {feature}
                     </li>
                   ))}

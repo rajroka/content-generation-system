@@ -66,7 +66,7 @@ export function Features() {
 
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700 dark:text-teal-300 mb-3">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground mb-3">
             Workflow
           </p>
           <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
@@ -100,7 +100,7 @@ export function Features() {
             <div className="p-8 border-b border-border lg:border-b-0 lg:border-r">
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-teal-700 dark:text-teal-300 mb-1">New Campaign</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">New Campaign</p>
                   <h3 className="text-xl font-black text-foreground">Spring product launch</h3>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white shadow-lg shadow-teal-900/20">
@@ -126,7 +126,7 @@ export function Features() {
 
               {/* Generated caption */}
               <div className="rounded-xl bg-slate-950 p-5 text-white dark:bg-white dark:text-slate-950">
-                <p className="text-xs font-black uppercase tracking-widest text-teal-300 dark:text-teal-700 mb-2">Generated caption</p>
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">Generated caption</p>
                 <p className="text-sm leading-6 text-white/80 dark:text-slate-600">
                   One launch, every channel covered. Build the post once, tune the voice, and let your schedule do the heavy lifting.
                 </p>
@@ -144,7 +144,7 @@ export function Features() {
             <div className="bg-muted p-8">
               <div className="flex items-center justify-between mb-6">
                 <p className="text-sm font-black text-foreground">Publishing queue</p>
-                <CalendarCheck className="h-4 w-4 text-teal-700 dark:text-teal-300" />
+                <CalendarCheck className="h-4 w-4 text-muted-foreground" />
               </div>
 
               <div className="space-y-3 mb-6">
@@ -183,8 +183,8 @@ export function Features() {
         {/* Feature grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="group flex gap-4 rounded-2xl border border-border bg-card p-6 transition hover:border-teal-700/30 hover:shadow-md dark:hover:border-teal-300/20">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-700/10 text-teal-700 dark:bg-teal-300/10 dark:text-teal-300">
+            <div key={title} className="group flex gap-4 rounded-2xl border border-border bg-card p-6 transition hover:shadow-md">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <Icon className="h-5 w-5" />
               </div>
               <div>

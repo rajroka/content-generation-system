@@ -144,7 +144,7 @@ export default async function AdminOverview() {
                     <TrendBadge value={stat.trend} />
                   </div>
                 </div>
-                <stat.icon className="h-5 w-5 text-[#0d7c8a]" />
+                <stat.icon className="h-5 w-5 text-muted-foreground" />
               </CardContent>
             </Card>
           </Link>

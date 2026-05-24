@@ -137,7 +137,7 @@ export default async function DashboardPage({
               <Card className="border-none shadow-sm rounded-lg hover:shadow-md transition-all cursor-pointer h-full">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="p-2 bg-muted rounded-lg shrink-0">
-                    <action.icon size={16} className="text-[#0d7c8a]" />
+                    <action.icon size={16} className="text-muted-foreground" />
                   </div>
                   <p className="text-sm font-bold text-foreground">{action.label}</p>
                 </CardContent>
@@ -158,7 +158,7 @@ export default async function DashboardPage({
               {(recentPosts as any[]).length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   No posts yet.{" "}
-                  <Link href="/user/generate" className="text-[#0d7c8a] font-semibold hover:underline">
+                  <Link href="/user/generate" className="text-foreground font-semibold hover:underline">
                     Create your first post
                   </Link>
                 </div>

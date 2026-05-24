@@ -21,7 +21,7 @@ export function Marquee() {
             key={`${label}-${i}`}
             className="flex items-center gap-2.5 border-r border-slate-200 px-9 py-4 text-sm font-semibold text-slate-600 whitespace-nowrap dark:border-white/10 dark:text-slate-300"
           >
-            <Icon className="h-4 w-4 text-teal-700 dark:text-teal-300" />
+            <Icon className="h-4 w-4 text-muted-foreground" />
             {label}
           </div>
         ))}

@@ -225,7 +225,7 @@ function PostDrawer({
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Hashtags</p>
               <div className="flex flex-wrap gap-1.5">
                 {post.hashtags.map((tag, i) => (
-                  <span key={i} className="text-[11px] text-[#0d7c8a] bg-[#0d7c8a]/10 px-2 py-0.5 rounded-full font-medium">
+                  <span key={i} className="text-[11px] text-foreground bg-muted px-2 py-0.5 rounded-full font-medium">
                     {tag}
                   </span>
                 ))}
@@ -531,7 +531,7 @@ export default function ContentCalendar() {
                       </p>
                       <p className={cn(
                         "text-sm font-bold mt-0.5",
-                        today ? "text-[#0d7c8a]" : "text-foreground"
+                        today ? "text-foreground font-bold" : "text-foreground"
                       )}>
                         {format(day, "d")}
                       </p>
@@ -569,8 +569,8 @@ export default function ContentCalendar() {
             <Card className="border-[#0d7c8a]/20 bg-[#0d7c8a]/5">
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-1">
-                  <Clock className="w-4 h-4 text-[#0d7c8a]" />
-                  <p className="text-sm font-semibold text-[#0d7c8a]">Scheduled</p>
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">Scheduled</p>
                 </div>
                 <p className="text-3xl font-black text-foreground">{stats.scheduled}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">posts queued</p>

@@ -5,6 +5,7 @@ import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "./ModeToggle";
 import { Logo } from "./Logo";
@@ -19,6 +20,7 @@ export function Navbar() {
   const { isSignedIn, user, isLoaded } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isSignedIn && user) {
@@ -70,7 +72,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-semibold tracking-tight text-slate-600 hover:text-foreground transition-colors dark:text-slate-300 dark:hover:text-white"
+              className="text-sm font-semibold tracking-tight text-slate-400 hover:text-foreground transition-colors"
             >
               {link.label}
             </Link>
@@ -134,7 +136,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-semibold text-slate-700 hover:text-foreground dark:text-slate-300 dark:hover:text-white"
+              className="text-sm font-semibold text-slate-400 hover:text-foreground transition-colors"
               onClick={() => setMobileOpen(false)}
             >
               {link.label}

@@ -276,7 +276,7 @@ export default function ConnectionsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-[#0d7c8a] hover:bg-[#0d7c8a]/10 text-xs font-bold w-full h-8"
+                        className="text-foreground hover:bg-muted text-xs font-bold w-full h-8"
                         onClick={() => router.push(`/user/generate?preview=${platform.id}`)}
                       >
                         <Eye className="w-3 h-3 mr-2" />
