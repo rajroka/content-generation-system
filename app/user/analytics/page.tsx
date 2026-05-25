@@ -2,356 +2,389 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-} from "recharts";
-import {
-  Sparkles, CalendarDays, CheckCircle2, Link2,
-  TrendingUp, Loader2,
-} from "lucide-react";
+import { BarChart } from "@mui/x-charts/BarChart";
+import { LineChart } from "@mui/x-charts/LineChart";
+import { PieChart } from "@mui/x-charts/PieChart";
+import { Loader2 } from "lucide-react";
+import { FaFacebook, FaYoutube } from "react-icons/fa";
+import { SiInstagram, SiTiktok } from "react-icons/si";
+
+type DateRange = "7d" | "30d" | "90d";
 
 interface AnalyticsData {
-  generationsOverTime: { date: string; count: number }[];
-  platformBreakdown:   { platform: string; count: number }[];
-  scheduledByStatus:   { status: string; count: number }[];
-  usageOverTime:       { date: string; captions: number; schedules: number }[];
+  range: DateRange;
   totals: {
-    generations: number;
-    scheduled:   number;
-    published:   number;
-    connected:   number;
+    totalCaptionsGenerated: number;
+    postsPublished: number;
+    scheduledPosts: number;
+    connectedAccounts: number;
   };
+  captionTrend: { date: string; label: string; count: number }[];
+  publishingActivity: {
+    date: string;
+    label: string;
+    captionsGenerated: number;
+    postsPublished: number;
+  }[];
+  platformBreakdown: { platform: string; count: number }[];
+  postStatusDistribution: { status: string; count: number }[];
 }
 
-const PLATFORM_COLORS: Record<string, string> = {
-  INSTAGRAM: "#e1306c",
-  FACEBOOK:  "#1877f2",
-  TWITTER:   "#1da1f2",
-  LINKEDIN:  "#0a66c2",
-  YOUTUBE:   "#ff0000",
+const TEAL = "#169B7F";
+const PUBLISHED_COLOR = "#4F86C6";
+
+const DATE_RANGES: { value: DateRange; label: string; shortLabel: string }[] = [
+  { value: "7d", label: "Last 7 days", shortLabel: "7 days" },
+  { value: "30d", label: "Last 30 days", shortLabel: "30 days" },
+  { value: "90d", label: "Last 90 days", shortLabel: "90 days" },
+];
+
+const PLATFORM_META = {
+  INSTAGRAM: { label: "Instagram", color: "#E1306C", Icon: SiInstagram },
+  FACEBOOK:  { label: "Facebook",  color: "#1877F2", Icon: FaFacebook },
+  TIKTOK:    { label: "TikTok",    color: "#69C9D0", Icon: SiTiktok },
+  YOUTUBE:   { label: "YouTube",   color: "#FF0000", Icon: FaYoutube },
+} as const;
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  PUBLISHED: { label: "Published", color: "#169B7F" },
+  SCHEDULED: { label: "Scheduled", color: "#4F86C6" },
+  DRAFT:     { label: "Draft",     color: "#A78BFA" },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED:  "hsl(var(--primary))",
-  DRAFT:      "#94a3b8",
-  PUBLISHED:  "#22c55e",
-  FAILED:     "#ef4444",
-  CANCELLED:  "#f59e0b",
-};
+function platformMeta(platform: string) {
+  return PLATFORM_META[platform.toUpperCase() as keyof typeof PLATFORM_META] ?? null;
+}
+
+function formatPlatform(platform: string) {
+  const meta = platformMeta(platform);
+  if (meta) return meta.label;
+  return platform.charAt(0).toUpperCase() + platform.slice(1).toLowerCase();
+}
+
+function formatStatus(status: string) {
+  return STATUS_META[status]?.label ?? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+function PlatformIcon({ platform, className = "w-4 h-4" }: { platform: string; className?: string }) {
+  const meta = platformMeta(platform);
+  if (!meta) return <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/50" />;
+  const Icon = meta.Icon;
+  return <Icon className={className} style={{ color: meta.color }} />;
+}
 
 function StatCard({
   title,
   value,
   description,
-  icon,
 }: {
   title: string;
-  value: string | number;
+  value: number | null;
   description: string;
-  icon: React.ReactNode;
 }) {
   return (
     <Card className="border-none shadow-sm rounded-lg">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold text-foreground mt-2">{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{description}</p>
-          </div>
-          <div className="p-2 bg-muted rounded-lg">
-            {icon}
-          </div>
-        </div>
+      <CardContent className="p-5">
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <p className="mt-2 text-3xl font-bold text-foreground tabular-nums">
+          {value === null ? "..." : value}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   );
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
+function ChartCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="bg-background border border-border rounded-lg shadow-lg px-3 py-2 text-xs">
-      <p className="font-semibold mb-1 text-foreground">{label}</p>
-      {payload.map((entry: any) => (
-        <p key={entry.name} style={{ color: entry.color }}>
-          {entry.name}: <span className="font-bold">{entry.value}</span>
-        </p>
-      ))}
+    <Card className="border-none shadow-sm rounded-lg">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+function EmptyChart({ message }: { message: string }) {
+  return (
+    <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+      {message}
     </div>
   );
-};
+}
 
 export default function AnalyticsPage() {
-  const [data, setData]       = useState<AnalyticsData | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>("30d");
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard/analytics")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) throw new Error(d.error);
-        setData(d);
+    let ignore = false;
+    setIsLoading(true);
+    setError(null);
+
+    fetch(`/api/dashboard/analytics?range=${dateRange}`)
+      .then((response) => response.json())
+      .then((payload) => {
+        if (payload.error) throw new Error(payload.error);
+        if (!ignore) setData(payload);
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setIsLoading(false));
-  }, []);
+      .catch((err) => {
+        if (!ignore) setError(err.message);
+      })
+      .finally(() => {
+        if (!ignore) setIsLoading(false);
+      });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+    return () => {
+      ignore = true;
+    };
+  }, [dateRange]);
 
-  if (error || !data) {
-    return (
-      <div className="flex items-center justify-center h-[60vh] text-muted-foreground text-sm">
-        Failed to load analytics. Try refreshing.
-      </div>
-    );
-  }
+  const chartSx = {
+    "& .MuiChartsAxis-tickLabel": { fill: "hsl(var(--muted-foreground)) !important", fontSize: 11 },
+    "& .MuiChartsAxis-line": { stroke: "hsl(var(--border)) !important" },
+    "& .MuiChartsAxis-tick": { stroke: "hsl(var(--border)) !important" },
+    "& .MuiChartsGrid-line": { stroke: "hsl(var(--border))", strokeDasharray: "4 4" },
+    "& .MuiChartsLegend-label": { fill: "hsl(var(--foreground)) !important", fontSize: 12 },
+  };
 
-  const totalPlatformCount = data.platformBreakdown.reduce((s, p) => s + p.count, 0);
+  const selectedRange = DATE_RANGES.find((range) => range.value === dateRange) ?? DATE_RANGES[1];
+  const totalPlatformCount = data?.platformBreakdown.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
+  const platformPieData = data?.platformBreakdown.map((entry, index) => {
+    const meta = platformMeta(entry.platform);
+    return {
+      id: entry.platform,
+      value: entry.count,
+      label: formatPlatform(entry.platform),
+      color: meta?.color ?? ["#64748b", "#94a3b8", "#cbd5e1"][index % 3],
+    };
+  }) ?? [];
+  const statusChartData = data?.postStatusDistribution
+    .filter((entry) => entry.count > 0)
+    .map((entry) => ({
+      id: entry.status,
+      value: entry.count,
+      label: formatStatus(entry.status),
+      color: STATUS_META[entry.status]?.color ?? "#64748b",
+    })) ?? [];
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">
+            Track content output, publishing, platform mix, and scheduling health.
+          </p>
+        </div>
 
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Analytics</h1>
-        <p className="text-muted-foreground mt-1">
-          Track your content performance and usage patterns
-        </p>
+        <div className="inline-flex w-full sm:w-auto rounded-lg border border-border bg-card p-1">
+          {DATE_RANGES.map((range) => (
+            <button
+              key={range.value}
+              type="button"
+              onClick={() => setDateRange(range.value)}
+              className={[
+                "flex-1 sm:flex-none rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                dateRange === range.value
+                  ? "bg-[#169B7F] text-white"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              ].join(" ")}
+            >
+              {range.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Generations"
-          value={data.totals.generations}
-          description="All time"
-          icon={<Sparkles className="w-4 h-4 text-primary" />}
-        />
-        <StatCard
-          title="Scheduled Posts"
-          value={data.totals.scheduled}
-          description="Upcoming"
-          icon={<CalendarDays className="w-4 h-4 text-primary" />}
-        />
-        <StatCard
-          title="Published Posts"
-          value={data.totals.published}
-          description="All time"
-          icon={<CheckCircle2 className="w-4 h-4 text-primary" />}
-        />
-        <StatCard
-          title="Connected Accounts"
-          value={data.totals.connected}
-          description="Active"
-          icon={<Link2 className="w-4 h-4 text-primary" />}
-        />
-      </div>
+      {error ? (
+        <div className="flex h-[60vh] items-center justify-center text-sm text-muted-foreground">
+          Failed to load analytics. Try refreshing.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              title="Total Captions Generated"
+              value={data?.totals.totalCaptionsGenerated ?? null}
+              description={selectedRange.label}
+            />
+            <StatCard
+              title="Posts Published"
+              value={data?.totals.postsPublished ?? null}
+              description={selectedRange.label}
+            />
+            <StatCard
+              title="Scheduled Posts"
+              value={data?.totals.scheduledPosts ?? null}
+              description={`Next ${selectedRange.shortLabel}`}
+            />
+            <StatCard
+              title="Connected Accounts"
+              value={data?.totals.connectedAccounts ?? null}
+              description={selectedRange.label}
+            />
+          </div>
 
-      {/* Generations Over Time */}
-      <Card className="border-none shadow-sm rounded-lg">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Generations — Last 30 Days</CardTitle>
-          <TrendingUp className="w-4 h-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {data.generationsOverTime.every((d) => d.count === 0) ? (
-            <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-              No generations in the last 30 days.
+          {isLoading ? (
+            <div className="flex h-[420px] items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={data.generationsOverTime} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="genGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="hsl(var(--primary))" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}   />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  interval={4}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  name="Generations"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  fill="url(#genGradient)"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Weekly Usage + Platform Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Weekly Usage */}
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardHeader>
-            <CardTitle>Usage — Last 7 Days</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {data.usageOverTime.every((d) => d.captions === 0 && d.schedules === 0) ? (
-              <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-                No usage data for the last 7 days.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={data.usageOverTime} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
+          ) : data ? (
+            <>
+              <ChartCard title="Caption Generation Trend">
+                {data.captionTrend.every((entry) => entry.count === 0) ? (
+                  <EmptyChart message="No captions generated in this range." />
+                ) : (
+                  <LineChart
+                    height={300}
+                    dataset={data.captionTrend}
+                    margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
+                    xAxis={[{ scaleType: "point", dataKey: "label" }]}
+                    yAxis={[{ min: 0 }]}
+                    series={[
+                      {
+                        dataKey: "count",
+                        label: "Captions generated",
+                        color: TEAL,
+                        curve: "monotoneX",
+                        showMark: false,
+                      },
+                    ]}
+                    grid={{ horizontal: true }}
+                    sx={chartSx}
                   />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                    tickLine={false}
-                    axisLine={false}
-                    allowDecimals={false}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    wrapperStyle={{ fontSize: 11 }}
-                    iconType="circle"
-                    iconSize={8}
-                  />
-                  <Bar dataKey="captions"  name="Captions"  fill="hsl(var(--primary))"    radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="schedules" name="Schedules" fill="hsl(var(--primary) / 0.35)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </ChartCard>
 
-        {/* Platform Breakdown */}
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardHeader>
-            <CardTitle>Platform Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {data.platformBreakdown.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-                No platform data yet.
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <ResponsiveContainer width={180} height={180}>
-                  <PieChart>
-                    <Pie
-                      data={data.platformBreakdown}
-                      dataKey="count"
-                      nameKey="platform"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
-                    >
-                      {data.platformBreakdown.map((entry) => (
-                        <Cell
-                          key={entry.platform}
-                          fill={PLATFORM_COLORS[entry.platform] ?? "#94a3b8"}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string) => [value, name]}
-                      contentStyle={{
-                        fontSize: 11,
-                        borderRadius: 8,
-                        border: "1px solid hsl(var(--border))",
-                        background: "hsl(var(--background))",
-                      }}
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <ChartCard title="Publishing Activity">
+                  {data.publishingActivity.every(
+                    (entry) => entry.captionsGenerated === 0 && entry.postsPublished === 0
+                  ) ? (
+                    <EmptyChart message="No publishing activity in this range." />
+                  ) : (
+                    <BarChart
+                      height={300}
+                      dataset={data.publishingActivity}
+                      margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
+                      xAxis={[{ scaleType: "band", dataKey: "label" }]}
+                      yAxis={[{ min: 0 }]}
+                      series={[
+                        { dataKey: "captionsGenerated", label: "Captions generated", color: TEAL },
+                        { dataKey: "postsPublished", label: "Posts published", color: PUBLISHED_COLOR },
+                      ]}
+                      grid={{ horizontal: true }}
+                      borderRadius={6}
+                      sx={chartSx}
                     />
-                  </PieChart>
-                </ResponsiveContainer>
+                  )}
+                </ChartCard>
 
-                <div className="flex flex-col gap-2 flex-1">
-                  {data.platformBreakdown.map((entry) => {
-                    const pct = totalPlatformCount > 0
-                      ? Math.round((entry.count / totalPlatformCount) * 100)
-                      : 0;
-                    return (
-                      <div key={entry.platform} className="flex items-center gap-3">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: PLATFORM_COLORS[entry.platform] ?? "#94a3b8" }}
-                        />
-                        <span className="text-sm text-foreground flex-1">{entry.platform}</span>
-                        <span className="text-xs text-muted-foreground">{entry.count}</span>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 min-w-[36px] justify-center">
-                          {pct}%
-                        </Badge>
+                <ChartCard title="Platform Breakdown">
+                  {platformPieData.length === 0 ? (
+                    <EmptyChart message="No posts by platform in this range." />
+                  ) : (
+                    <div className="grid gap-6 md:grid-cols-[minmax(220px,280px)_1fr] md:items-center">
+                      <PieChart
+                        height={280}
+                        series={[
+                          {
+                            data: platformPieData,
+                            innerRadius: 58,
+                            outerRadius: 104,
+                            paddingAngle: 3,
+                            cornerRadius: 4,
+                          },
+                        ]}
+                        colors={platformPieData.map((entry) => entry.color)}
+                        hideLegend
+                      />
+
+                      <div className="min-w-0 space-y-3">
+                        {data.platformBreakdown.map((entry) => {
+                          const pct = totalPlatformCount > 0
+                            ? Math.round((entry.count / totalPlatformCount) * 100)
+                            : 0;
+                          const meta = platformMeta(entry.platform);
+                          const color = meta?.color ?? "#64748b";
+
+                          return (
+                            <div
+                              key={entry.platform}
+                              className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-3 text-sm"
+                            >
+                              <PlatformIcon platform={entry.platform} />
+                              <span className="min-w-0 truncate text-foreground">{formatPlatform(entry.platform)}</span>
+                              <span className="text-xs tabular-nums text-muted-foreground">{entry.count}</span>
+                              <span
+                                className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
+                                style={{ color, borderColor: `${color}55`, backgroundColor: `${color}12` }}
+                              >
+                                {pct}%
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  )}
+                </ChartCard>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Scheduled Posts by Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Scheduled Posts by Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.scheduledByStatus.length === 0 ? (
-            <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
-              No scheduled posts yet.
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-4">
-              {data.scheduledByStatus.map((entry) => (
-                <div
-                  key={entry.status}
-                  className="flex items-center gap-3 bg-muted/40 border border-border rounded-xl px-5 py-4 min-w-[140px]"
-                >
-                  <div
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: STATUS_COLORS[entry.status] ?? "#94a3b8" }}
-                  />
-                  <div>
-                    <p className="text-xs text-muted-foreground capitalize">{entry.status.toLowerCase()}</p>
-                    <p className="text-xl font-bold">{entry.count}</p>
+              <ChartCard title="Post Status Distribution">
+                {statusChartData.length === 0 ? (
+                  <EmptyChart message="No post status data in this range." />
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-[minmax(220px,300px)_1fr] md:items-center">
+                    <PieChart
+                      height={280}
+                      series={[
+                        {
+                          data: statusChartData,
+                          innerRadius: 58,
+                          outerRadius: 104,
+                          paddingAngle: 3,
+                          cornerRadius: 4,
+                        },
+                      ]}
+                      colors={statusChartData.map((entry) => entry.color)}
+                      hideLegend
+                    />
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {data.postStatusDistribution.map((entry) => {
+                        const meta = STATUS_META[entry.status] ?? { label: formatStatus(entry.status), color: "#64748b" };
+                        return (
+                          <div key={entry.status} className="rounded-lg border border-border bg-muted/30 p-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="h-2.5 w-2.5 rounded-full"
+                                style={{ backgroundColor: meta.color }}
+                              />
+                              <p className="text-xs font-medium text-muted-foreground">{meta.label}</p>
+                            </div>
+                            <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{entry.count}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
+                )}
+              </ChartCard>
+            </>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

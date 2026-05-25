@@ -3,117 +3,193 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { startOfDay, subDays, format } from "date-fns";
+import { addDays, format, startOfDay, subDays } from "date-fns";
 
-export async function GET() {
+const RANGE_DAYS = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+} as const;
+
+type RangeKey = keyof typeof RANGE_DAYS;
+
+const SUPPORTED_PLATFORMS = ["INSTAGRAM", "FACEBOOK", "TIKTOK", "YOUTUBE"] as const;
+
+function getRange(searchParams: URLSearchParams): RangeKey {
+  const range = searchParams.get("range");
+  return range === "7d" || range === "30d" || range === "90d" ? range : "30d";
+}
+
+function createDayMap(days: number, today: Date) {
+  const dayMap: Record<string, number> = {};
+  for (let i = 0; i < days; i++) {
+    const day = subDays(today, days - 1 - i);
+    dayMap[format(day, "yyyy-MM-dd")] = 0;
+  }
+  return dayMap;
+}
+
+function toDayLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return format(new Date(year, month - 1, day), "MMM dd");
+}
+
+export async function GET(req: Request) {
   try {
     const { userId } = await auth();
-    if (!userId)
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const range = getRange(new URL(req.url).searchParams);
+    const days = RANGE_DAYS[range];
+    const now = new Date();
+    const today = startOfDay(now);
+    const rangeStart = startOfDay(subDays(today, days - 1));
+    const futureEnd = addDays(now, days);
 
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (!user)
+    if (!user) {
       return NextResponse.json({
-        generationsOverTime: [],
+        range,
+        totals: {
+          totalCaptionsGenerated: 0,
+          postsPublished: 0,
+          scheduledPosts: 0,
+          connectedAccounts: 0,
+        },
+        captionTrend: [],
+        publishingActivity: [],
         platformBreakdown: [],
-        scheduledByStatus: [],
-        usageOverTime: [],
-        totals: { generations: 0, scheduled: 0, published: 0, connected: 0 },
+        postStatusDistribution: [],
       });
-
-    const today = startOfDay(new Date());
-    const last30 = subDays(today, 29);
-    const last7  = subDays(today, 6);
-
-    // 1. Generations over last 30 days
-    const generations = await prisma.generation.findMany({
-      where: { userId: user.id, isDeleted: false, createdAt: { gte: last30 } },
-      select: { createdAt: true, platform: true },
-    });
-
-    // Build day-by-day map for last 30 days
-    const dayMap: Record<string, number> = {};
-    for (let i = 0; i < 30; i++) {
-      const d = format(subDays(today, 29 - i), "MMM dd");
-      dayMap[d] = 0;
     }
-    for (const gen of generations) {
-      const d = format(gen.createdAt, "MMM dd");
-      if (d in dayMap) dayMap[d]++;
-    }
-    const generationsOverTime = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
 
-    // 2. Platform breakdown (all time)
-    const allGenerations = await prisma.generation.findMany({
-      where: { userId: user.id, isDeleted: false },
-      select: { platform: true },
-    });
-    const platformMap: Record<string, number> = {};
-    for (const gen of allGenerations) {
-      platformMap[gen.platform] = (platformMap[gen.platform] ?? 0) + 1;
+    const [
+      totalCaptionsGenerated,
+      postsPublished,
+      scheduledPosts,
+      connectedAccounts,
+      generations,
+      publishedPosts,
+      platformPosts,
+      draftPostsCount,
+    ] = await Promise.all([
+      prisma.generation.count({
+        where: {
+          userId: user.id,
+          isDeleted: false,
+          createdAt: { gte: rangeStart, lte: now },
+        },
+      }),
+      prisma.scheduledPost.count({
+        where: {
+          userId: user.id,
+          status: "PUBLISHED",
+          publishedAt: { gte: rangeStart, lte: now },
+        },
+      }),
+      prisma.scheduledPost.count({
+        where: {
+          userId: user.id,
+          status: "SCHEDULED",
+          scheduledFor: { gt: now, lte: futureEnd },
+        },
+      }),
+      prisma.socialAccount.count({
+        where: {
+          userId: user.id,
+          createdAt: { gte: rangeStart, lte: now },
+        },
+      }),
+      prisma.generation.findMany({
+        where: {
+          userId: user.id,
+          isDeleted: false,
+          createdAt: { gte: rangeStart, lte: now },
+        },
+        select: { createdAt: true },
+      }),
+      prisma.scheduledPost.findMany({
+        where: {
+          userId: user.id,
+          status: "PUBLISHED",
+          publishedAt: { gte: rangeStart, lte: now },
+        },
+        select: { publishedAt: true },
+      }),
+      prisma.scheduledPost.findMany({
+        where: {
+          userId: user.id,
+          createdAt: { gte: rangeStart, lte: now },
+        },
+        select: { platforms: true },
+      }),
+      prisma.scheduledPost.count({
+        where: {
+          userId: user.id,
+          status: "DRAFT",
+          createdAt: { gte: rangeStart, lte: now },
+        },
+      }),
+    ]);
+
+    const captionDayMap = createDayMap(days, today);
+    for (const generation of generations) {
+      const day = format(generation.createdAt, "yyyy-MM-dd");
+      if (day in captionDayMap) captionDayMap[day]++;
     }
-    const platformBreakdown = Object.entries(platformMap).map(([platform, count]) => ({
-      platform,
+
+    const publishedDayMap = createDayMap(days, today);
+    for (const post of publishedPosts) {
+      if (!post.publishedAt) continue;
+      const day = format(post.publishedAt, "yyyy-MM-dd");
+      if (day in publishedDayMap) publishedDayMap[day]++;
+    }
+
+    const captionTrend = Object.entries(captionDayMap).map(([date, count]) => ({
+      date,
+      label: toDayLabel(date),
       count,
     }));
 
-    // 3. Scheduled posts by status
-    const scheduledPosts = await prisma.scheduledPost.findMany({
-      where: { userId: user.id },
-      select: { status: true },
-    });
-    const statusMap: Record<string, number> = {};
-    for (const post of scheduledPosts) {
-      statusMap[post.status] = (statusMap[post.status] ?? 0) + 1;
-    }
-    const scheduledByStatus = Object.entries(statusMap).map(([status, count]) => ({
-      status,
-      count,
+    const publishingActivity = Object.keys(captionDayMap).map((date) => ({
+      date,
+      label: toDayLabel(date),
+      captionsGenerated: captionDayMap[date],
+      postsPublished: publishedDayMap[date],
     }));
 
-    // 4. Usage over last 7 days
-    const usageRows = await prisma.usage.findMany({
-      where: { userId: user.id, date: { gte: last7 } },
-      orderBy: { date: "asc" },
-    });
-    const usageDayMap: Record<string, { captions: number; schedules: number }> = {};
-    for (let i = 0; i < 7; i++) {
-      const d = format(subDays(today, 6 - i), "MMM dd");
-      usageDayMap[d] = { captions: 0, schedules: 0 };
-    }
-    for (const row of usageRows) {
-      const d = format(row.date, "MMM dd");
-      if (d in usageDayMap) {
-        usageDayMap[d].captions  = row.captionCount;
-        usageDayMap[d].schedules = row.scheduleCount;
+    const platformCounts: Record<string, number> = {};
+    for (const post of platformPosts) {
+      for (const platform of post.platforms) {
+        if (!SUPPORTED_PLATFORMS.includes(platform as any)) continue;
+        platformCounts[platform] = (platformCounts[platform] ?? 0) + 1;
       }
     }
-    const usageOverTime = Object.entries(usageDayMap).map(([date, data]) => ({
-      date,
-      captions:  data.captions,
-      schedules: data.schedules,
-    }));
 
-    // 5. Totals
-    const [totalGenerations, totalScheduled, totalPublished, totalConnected] =
-      await Promise.all([
-        prisma.generation.count({ where: { userId: user.id, isDeleted: false } }),
-        prisma.scheduledPost.count({ where: { userId: user.id, status: "SCHEDULED" } }),
-        prisma.scheduledPost.count({ where: { userId: user.id, status: "PUBLISHED" } }),
-        prisma.socialAccount.count({ where: { userId: user.id, isActive: true } }),
-      ]);
+    const platformBreakdown = SUPPORTED_PLATFORMS
+      .map((platform) => ({ platform, count: platformCounts[platform] ?? 0 }))
+      .filter((entry) => entry.count > 0);
+
+    const postStatusDistribution = [
+      { status: "PUBLISHED", count: postsPublished },
+      { status: "SCHEDULED", count: scheduledPosts },
+      { status: "DRAFT", count: draftPostsCount },
+    ];
 
     return NextResponse.json({
-      generationsOverTime,
-      platformBreakdown,
-      scheduledByStatus,
-      usageOverTime,
+      range,
       totals: {
-        generations: totalGenerations,
-        scheduled:   totalScheduled,
-        published:   totalPublished,
-        connected:   totalConnected,
+        totalCaptionsGenerated,
+        postsPublished,
+        scheduledPosts,
+        connectedAccounts,
       },
+      captionTrend,
+      publishingActivity,
+      platformBreakdown,
+      postStatusDistribution,
     });
   } catch (err: any) {
     console.error(err);

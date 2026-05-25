@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   format,
   startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
   addDays,
+  addMonths,
   isSameDay,
+  isSameMonth,
   parseISO,
   isToday,
 } from "date-fns";
@@ -19,16 +23,19 @@ import {
   ChevronRight,
   FileText,
   CheckCircle2,
-  Clock,
   Calendar as CalendarIcon,
+  Eye,
+  List,
   X,
   Trash2,
   Pencil,
-  Send,
   AlertCircle,
   Image as ImageIcon,
   Loader2,
 } from "lucide-react";
+import { FaFacebookF, FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
+import { SiInstagram, SiTiktok } from "react-icons/si";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -65,13 +72,78 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: "bg-zinc-400 text-white",
 };
 
-const STATUS_CARD: Record<string, string> = {
-  SCHEDULED: "bg-[#0d7c8a]/90 text-white",
-  DRAFT:     "bg-amber-500/90 text-white",
-  PUBLISHED: "bg-emerald-700/90 text-white",
-  FAILED:    "bg-red-600/90 text-white",
-  CANCELLED: "bg-zinc-500/90 text-white",
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: "Scheduled",
+  DRAFT:     "Draft Post",
+  PUBLISHED: "Published",
+  FAILED:    "Failed",
+  CANCELLED: "Cancelled",
 };
+
+const STATUS_TEXT: Record<string, string> = {
+  SCHEDULED: "text-[#0d7c8a]",
+  DRAFT:     "text-amber-500",
+  PUBLISHED: "text-emerald-600",
+  FAILED:    "text-red-500",
+  CANCELLED: "text-zinc-500",
+};
+
+const PLATFORM_COLORS: Record<string, string> = {
+  INSTAGRAM: "#E1306C",
+  FACEBOOK:  "#1877F2",
+  TWITTER:   "#111827",
+  LINKEDIN:  "#0A66C2",
+  TIKTOK:    "#111827",
+  YOUTUBE:   "#FF0000",
+};
+
+function PlatformIcon({
+  platform,
+  className = "size-3",
+}: {
+  platform: string;
+  className?: string;
+}) {
+  const normalized = platform.toUpperCase();
+  const color = PLATFORM_COLORS[normalized] || "#64748b";
+
+  if (normalized === "INSTAGRAM") return <SiInstagram className={className} style={{ color }} />;
+  if (normalized === "FACEBOOK") return <FaFacebookF className={className} style={{ color }} />;
+  if (normalized === "TWITTER" || normalized === "X") return <FaXTwitter className={className} style={{ color }} />;
+  if (normalized === "LINKEDIN") return <FaLinkedinIn className={className} style={{ color }} />;
+  if (normalized === "TIKTOK") return <SiTiktok className={className} style={{ color }} />;
+  if (normalized === "YOUTUBE") return <FaYoutube className={className} style={{ color }} />;
+
+  return (
+    <span className="flex size-3 items-center justify-center rounded-full bg-muted-foreground/20 text-[7px] font-bold text-muted-foreground">
+      {normalized.slice(0, 1)}
+    </span>
+  );
+}
+
+function PlatformIcons({ platforms }: { platforms: string[] }) {
+  const visible = platforms.slice(0, 3);
+  const extra = platforms.length - visible.length;
+
+  return (
+    <span className="flex items-center gap-1">
+      {visible.map((platform) => (
+        <span
+          key={platform}
+          className="flex size-4 items-center justify-center rounded-[4px] bg-background shadow-sm ring-1 ring-border"
+          title={platform}
+        >
+          <PlatformIcon platform={platform} />
+        </span>
+      ))}
+      {extra > 0 && (
+        <span className="text-[10px] font-semibold text-muted-foreground">+{extra}</span>
+      )}
+    </span>
+  );
+}
 
 // ── Post detail drawer ────────────────────────────────────────────────────────
 
@@ -195,7 +267,8 @@ function PostDrawer({
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Platforms</p>
             <div className="flex flex-wrap gap-1.5">
               {post.platforms.map((p) => (
-                <span key={p} className="text-[11px] font-semibold bg-muted px-2.5 py-1 rounded-lg">
+                <span key={p} className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-muted px-2.5 py-1 rounded-lg">
+                  <PlatformIcon platform={p} className="size-3.5" />
                   {p}
                 </span>
               ))}
@@ -365,29 +438,37 @@ function PostCard({
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left rounded-xl p-2.5 space-y-1.5 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]",
-        STATUS_CARD[post.status] || "bg-zinc-500/90 text-white"
+        "group w-full rounded-[6px] border bg-background px-2 py-1.5 text-left shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:border-[#0d7c8a]/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d7c8a]/30",
+        post.status === "PUBLISHED" && "bg-emerald-50/60 dark:bg-emerald-950/20",
+        post.status === "DRAFT" && "bg-amber-50/70 dark:bg-amber-950/20",
+        post.status === "FAILED" && "bg-red-50/70 dark:bg-red-950/20"
       )}
     >
-      <p className="text-[11px] font-bold leading-tight line-clamp-2">
-        {post.caption || "No caption"}
-      </p>
-      <div className="flex items-center justify-between">
-        <span className="text-[9px] font-semibold opacity-80 uppercase tracking-wide">
-          {post.status}
-        </span>
-        <span className="text-[9px] opacity-70 font-mono">
+      <div className="mb-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <span className="size-2 rounded-full border border-muted-foreground/30" />
+        <span className="truncate">
           {post.scheduledFor
-            ? format(parseISO(post.scheduledFor), "HH:mm")
-            : "—"}
+            ? format(parseISO(post.scheduledFor), "h:mm a")
+            : "No time"}
         </span>
       </div>
-      {post.imageUrls?.length > 0 && (
-        <div className="flex items-center gap-1 opacity-70">
-          <ImageIcon className="w-2.5 h-2.5" />
-          <span className="text-[9px]">{post.imageUrls.length} media</span>
+      <p className="line-clamp-1 text-[11px] font-semibold leading-snug text-foreground">
+        {post.caption || "No caption"}
+      </p>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className={cn("truncate text-[10px] font-bold", STATUS_TEXT[post.status] || "text-muted-foreground")}>
+            {STATUS_LABELS[post.status] || post.status}
+          </span>
+          {post.imageUrls?.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+              <ImageIcon className="size-3" />
+              {post.imageUrls.length}
+            </span>
+          )}
         </div>
-      )}
+        <PlatformIcons platforms={post.platforms} />
+      </div>
     </button>
   );
 }
@@ -400,9 +481,8 @@ export default function ContentCalendar() {
   const [isLoading,  setIsLoading]  = useState(true);
   const [showAll,    setShowAll]    = useState(false);
   const [selected,   setSelected]   = useState<ScheduledPost | null>(null);
-  const [weekStart,  setWeekStart]  = useState(
-    startOfWeek(new Date(), { weekStartsOn: 1 })
-  );
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
   const fetchPosts = async (all = showAll) => {
     setIsLoading(true);
@@ -420,10 +500,17 @@ export default function ContentCalendar() {
 
   useEffect(() => { fetchPosts(); }, []);
 
-  const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart]
-  );
+  const monthDays = useMemo(() => {
+    const firstCalendarDay = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 });
+    const lastCalendarDay = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 0 });
+    const days: Date[] = [];
+
+    for (let day = firstCalendarDay; day <= lastCalendarDay; day = addDays(day, 1)) {
+      days.push(day);
+    }
+
+    return days;
+  }, [currentMonth]);
 
   const getPostsForDay = (date: Date) =>
     posts.filter((p) => {
@@ -438,189 +525,188 @@ export default function ContentCalendar() {
     fetchPosts(next);
   };
 
+  const toggleExpandedDay = (key: string) => {
+    setExpandedDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 transition-colors duration-300">      <div className="max-w-[1600px] mx-auto">
+    <div className="min-h-screen bg-background p-3 text-foreground transition-colors duration-300 sm:p-5 lg:p-6">
+      <div className="mx-auto max-w-[1600px]">
 
         {/* Header */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Content Calendar</h1>
-            <p className="text-muted-foreground text-sm mt-1">Click any post to view, edit, or delete it.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={handleToggleAll}
-            >
-              {showAll ? "Hide published" : "Show published"}
-            </Button>
-            <Link href="/user/generate">
-              <Button className="bg-[#0d7c8a] hover:bg-[#0b6b78] text-white gap-2 shadow-sm">
-                <Plus className="w-4 h-4" /> New Post
+        <header className="mb-5 rounded-[8px] border bg-card/95 p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <Badge variant="secondary" className="mb-2 gap-1.5 px-2.5 text-[11px]">
+                <CalendarIcon className="size-3" />
+                Weekly planner
+              </Badge>
+              <h1 className="text-2xl font-bold leading-tight sm:text-3xl">Content Calendar</h1>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                Click any post to view, edit, or delete it.
+              </p>
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 w-full justify-center text-xs sm:w-auto"
+                onClick={handleToggleAll}
+              >
+                {showAll ? "Hide published" : "Show published"}
               </Button>
-            </Link>
+              <Link href="/user/generate" className="w-full sm:w-auto">
+                <Button className="h-9 w-full gap-2 bg-[#0d7c8a] text-white shadow-sm hover:bg-[#0b6b78] sm:w-auto">
+                  <Plus className="size-4" /> New Post
+                </Button>
+              </Link>
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-
-          {/* Calendar */}
-          <div className="xl:col-span-9 space-y-0">
-
-            {/* Week nav */}
-            <div className="flex items-center justify-between bg-card border border-b-0 rounded-t-xl px-4 py-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                <span>
-                  {format(weekDays[0], "MMM d")} – {format(weekDays[6], "MMM d, yyyy")}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-8"
-                  onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-                >
-                  Today
-                </Button>
-                <div className="flex border rounded-lg overflow-hidden">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-none"
-                    onClick={() => setWeekStart(addDays(weekStart, -7))}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-none"
-                    onClick={() => setWeekStart(addDays(weekStart, 7))}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Day columns — horizontal scroll on mobile */}
-            <div className="overflow-x-auto">
-              <div className="grid grid-cols-7 border rounded-b-xl bg-card shadow-sm min-w-[560px]">
-              {weekDays.map((day, idx) => {
-                const dayPosts = getPostsForDay(day);
-                const today    = isToday(day);
-                return (
-                  <div
-                    key={idx}
+        <section className="overflow-hidden rounded-[8px] border bg-card shadow-sm">
+          <div className="flex flex-col gap-3 border-b p-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="size-8 border" aria-label="List view">
+                <List className="size-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="size-8 border bg-muted" aria-label="Calendar view">
+                <CalendarIcon className="size-4" />
+              </Button>
+              <div className="ml-1 flex rounded-[8px] bg-muted p-1">
+                {["Week", "Month", "Year"].map((label) => (
+                  <span
+                    key={label}
                     className={cn(
-                      "min-h-[560px] border-r last:border-r-0 flex flex-col",
-                      today && "bg-[#0d7c8a]/5"
+                      "rounded-[6px] px-3 py-1.5 text-xs font-medium text-muted-foreground",
+                      label === "Month" && "bg-background text-foreground shadow-sm"
                     )}
                   >
-                    {/* Day header */}
-                    <div className={cn(
-                      "p-2 text-center border-b",
-                      today ? "bg-[#0d7c8a]/10" : "bg-muted/30"
-                    )}>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {format(day, "EEE")}
-                      </p>
-                      <p className={cn(
-                        "text-sm font-bold mt-0.5",
-                        today ? "text-foreground font-bold" : "text-foreground"
-                      )}>
-                        {format(day, "d")}
-                      </p>
-                    </div>
-
-                    {/* Posts */}
-                    <div className="p-1.5 flex flex-col gap-1.5 flex-1 overflow-y-auto">
-                      {isLoading ? (
-                        <div className="h-14 bg-muted animate-pulse rounded-lg" />
-                      ) : dayPosts.length === 0 ? (
-                        <div className="flex-1 flex items-center justify-center">
-                          <span className="text-[10px] text-muted-foreground/40">—</span>
-                        </div>
-                      ) : (
-                        dayPosts.map((post) => (
-                          <PostCard
-                            key={post.id}
-                            post={post}
-                            onClick={() => setSelected(post)}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                    {label}
+                  </span>
+                ))}
               </div>
             </div>
+
+            <div className="flex items-center justify-between gap-2 lg:justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 border"
+                onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 min-w-[132px] text-sm font-semibold"
+                onClick={() => setCurrentMonth(startOfMonth(new Date()))}
+              >
+                {format(currentMonth, "MMMM yyyy")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 border"
+                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-2 text-xs"
+              onClick={handleToggleAll}
+            >
+              <Eye className="size-3.5" />
+              {showAll ? "Hide published" : "Show Campaigns"}
+            </Button>
           </div>
 
-          {/* Sidebar */}
-          <aside className="xl:col-span-3 space-y-3">
+          <div className="hidden grid-cols-7 border-b bg-muted/30 lg:grid">
+            {WEEKDAYS.map((day) => (
+              <div key={day} className="border-r px-3 py-3 text-center text-[11px] font-bold uppercase text-muted-foreground last:border-r-0">
+                {day}
+              </div>
+            ))}
+          </div>
 
-            {/* Scheduled */}
-            <Card className="border-[#0d7c8a]/20 bg-[#0d7c8a]/5">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <p className="text-sm font-semibold text-foreground">Scheduled</p>
-                </div>
-                <p className="text-3xl font-black text-foreground">{stats.scheduled}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">posts queued</p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7">
+            {monthDays.map((day) => {
+              const dayPosts = getPostsForDay(day);
+              const dayKey = format(day, "yyyy-MM-dd");
+              const expanded = expandedDays.has(dayKey);
+              const visiblePosts = expanded ? dayPosts : dayPosts.slice(0, 3);
+              const overflowCount = dayPosts.length - visiblePosts.length;
+              const today = isToday(day);
+              const outsideMonth = !isSameMonth(day, currentMonth);
 
-            {/* Drafts */}
-            <Card className="border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/30">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="w-4 h-4 text-amber-500" />
-                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Drafts</p>
-                </div>
-                <p className="text-3xl font-black text-foreground">{stats.drafts}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">saved drafts</p>
-              </CardContent>
-            </Card>
-
-            {/* Published */}
-            <Card className="border-emerald-200/50 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800/30">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Published</p>
-                </div>
-                <p className="text-3xl font-black text-foreground">{stats.published}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">posts live</p>
-              </CardContent>
-            </Card>
-
-            {/* Legend */}
-            <Card>
-              <CardContent className="p-4 space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Legend</p>
-                {[
-                  { label: "Scheduled", color: "bg-[#0d7c8a]" },
-                  { label: "Draft",     color: "bg-amber-500" },
-                  { label: "Published", color: "bg-emerald-600" },
-                  { label: "Failed",    color: "bg-red-500" },
-                ].map(({ label, color }) => (
-                  <div key={label} className="flex items-center gap-2">
-                    <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", color)} />
-                    <span className="text-xs text-muted-foreground">{label}</span>
+              return (
+                <div
+                  key={dayKey}
+                  className={cn(
+                    "min-h-[190px] border-b border-r bg-background p-2.5 lg:min-h-[150px]",
+                    outsideMonth && "bg-muted/20 text-muted-foreground",
+                    today && "bg-[#0d7c8a]/10"
+                  )}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase text-muted-foreground lg:hidden">
+                      {format(day, "EEEE")}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex size-7 items-center justify-center rounded-[6px] text-sm font-bold",
+                        today ? "bg-[#0d7c8a] text-white" : "text-foreground"
+                      )}
+                    >
+                      {format(day, "d")}
+                    </span>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
 
-          </aside>
-        </div>
+                  <div className="space-y-1.5">
+                    {isLoading ? (
+                      <div className="h-12 animate-pulse rounded-[6px] bg-muted" />
+                    ) : (
+                      visiblePosts.map((post) => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          onClick={() => setSelected(post)}
+                        />
+                      ))
+                    )}
+
+                    {!isLoading && overflowCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpandedDay(dayKey)}
+                        className="w-full rounded-[6px] border bg-background px-2 py-1.5 text-center text-[11px] font-semibold hover:bg-muted"
+                      >
+                        See All (+{overflowCount})
+                      </button>
+                    )}
+
+                    {!isLoading && today && dayPosts.length === 0 && (
+                      <Link href="/user/generate" className="mt-8 flex items-center justify-center gap-2 text-xs font-semibold text-[#0d7c8a]">
+                        <Plus className="size-3.5" />
+                        Create Post
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
 
       {/* Post detail drawer */}
@@ -637,8 +723,24 @@ export default function ContentCalendar() {
             }));
           }}
           onUpdated={(updated) => {
-            setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated as ScheduledPost : p)));
-            setSelected(updated as ScheduledPost);
+            const nextPost = updated as ScheduledPost;
+            const previousStatus = selected.status;
+            const nextStatus = nextPost.status;
+
+            setPosts((prev) => prev.map((p) => (p.id === nextPost.id ? nextPost : p)));
+            setSelected(nextPost);
+            setStats((prev) => ({
+              ...prev,
+              scheduled: prev.scheduled
+                + (nextStatus === "SCHEDULED" ? 1 : 0)
+                - (previousStatus === "SCHEDULED" ? 1 : 0),
+              drafts: prev.drafts
+                + (nextStatus === "DRAFT" ? 1 : 0)
+                - (previousStatus === "DRAFT" ? 1 : 0),
+              published: prev.published
+                + (nextStatus === "PUBLISHED" ? 1 : 0)
+                - (previousStatus === "PUBLISHED" ? 1 : 0),
+            }));
           }}
         />
       )}

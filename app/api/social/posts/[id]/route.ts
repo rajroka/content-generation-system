@@ -2,10 +2,89 @@ export const dynamic = "force-dynamic";
 
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";
 import zernio from "@/lib/zernio";
 
-// ── GET /api/social/posts/[id] ────────────────────────────────────────────────
+class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function isVideo(url: string) {
+  return /\.(mp4|mov|webm|avi|mpeg|mkv)(\?|$)/i.test(url);
+}
+
+function getStoredZernioPostId(post: { zernioPostId?: string | null; failureReason?: string | null }) {
+  if (post.zernioPostId) return post.zernioPostId;
+  if (post.failureReason?.startsWith("zernio:")) return post.failureReason.slice("zernio:".length);
+  return null;
+}
+
+async function getZernioPlatforms(userId: string, platforms: string[]) {
+  const socialAccounts = await prisma.socialAccount.findMany({
+    where: {
+      userId,
+      platform: { in: platforms as any },
+      isActive: true,
+      accountId: { not: null },
+    },
+  });
+
+  const connectedPlatforms = socialAccounts.map((account) => account.platform as string);
+  const missingPlatforms = platforms.filter((platform) => !connectedPlatforms.includes(platform));
+  if (missingPlatforms.length > 0) {
+    throw new HttpError(
+      400,
+      `Not connected to: ${missingPlatforms.join(", ")}. Go to Connections to link your accounts.`
+    );
+  }
+
+  return socialAccounts.map((account) => ({
+    platform:  account.platform.toLowerCase(),
+    accountId: account.accountId!,
+  }));
+}
+
+async function createZernioScheduledPost({
+  userId,
+  caption,
+  platforms,
+  scheduledFor,
+  imageUrls,
+}: {
+  userId: string;
+  caption: string;
+  platforms: string[];
+  scheduledFor: Date;
+  imageUrls: string[];
+}) {
+  const zernioPlatforms = await getZernioPlatforms(userId, platforms);
+  const mediaItems = imageUrls.map((url) => ({
+    type: isVideo(url) ? "video" as const : "image" as const,
+    url,
+  }));
+
+  const result = await zernio.posts.createPost({
+    body: {
+      content: caption,
+      scheduledFor: scheduledFor.toISOString(),
+      platforms: zernioPlatforms,
+      ...(mediaItems.length > 0 && { mediaItems }),
+    },
+  });
+
+  return result.data?.post?._id ?? null;
+}
+
+async function deleteZernioPost(postId: string) {
+  await zernio.posts.deletePost({ path: { postId } });
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
@@ -30,9 +109,6 @@ export async function GET(
   }
 }
 
-// ── PATCH /api/social/posts/[id] ──────────────────────────────────────────────
-// Supports editing caption, scheduledFor, platforms, imageUrls
-// Also handles status changes: DRAFT → SCHEDULED, SCHEDULED → DRAFT
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
@@ -50,7 +126,6 @@ export async function PATCH(
 
     if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
-    // Cannot edit published or cancelled posts
     if (post.status === "PUBLISHED" || post.status === "CANCELLED") {
       return NextResponse.json(
         { error: `Cannot edit a ${post.status.toLowerCase()} post` },
@@ -61,49 +136,139 @@ export async function PATCH(
     const body = await req.json();
     const { caption, scheduledFor, platforms, imageUrls, imageUrl, isDraft } = body;
 
-    // Validate future date if scheduling
-    if (scheduledFor && !isDraft) {
-      const date = new Date(scheduledFor);
-      if (date < new Date()) {
+    const nextStatus = isDraft === true ? "DRAFT" : isDraft === false ? "SCHEDULED" : post.status;
+    const nextPlatforms = platforms !== undefined
+      ? Array.isArray(platforms) ? platforms : []
+      : post.platforms;
+    const nextCaption = caption !== undefined ? caption.trim() : post.caption || "";
+    const nextImageUrls: string[] = Array.isArray(imageUrls)
+      ? imageUrls.filter(Boolean)
+      : imageUrl !== undefined
+        ? imageUrl ? [imageUrl] : []
+        : post.imageUrls?.length
+          ? post.imageUrls
+          : post.imageUrl
+            ? [post.imageUrl]
+            : [];
+
+    if (nextStatus === "SCHEDULED" && nextPlatforms.length === 0) {
+      return NextResponse.json({ error: "Select at least one platform" }, { status: 400 });
+    }
+
+    const nextScheduledFor = nextStatus === "DRAFT"
+      ? null
+      : scheduledFor !== undefined
+        ? scheduledFor ? new Date(scheduledFor) : null
+        : post.scheduledFor;
+
+    if (nextStatus === "SCHEDULED") {
+      if (!nextScheduledFor) {
+        return NextResponse.json({ error: "Schedule time is required" }, { status: 400 });
+      }
+      if (Number.isNaN(nextScheduledFor.getTime())) {
+        return NextResponse.json({ error: "Invalid schedule time" }, { status: 400 });
+      }
+      if (nextScheduledFor <= new Date()) {
         return NextResponse.json({ error: "Cannot schedule in the past" }, { status: 400 });
       }
     }
 
-    const newStatus = isDraft === true ? "DRAFT" : isDraft === false ? "SCHEDULED" : post.status;
-    const newScheduledFor = isDraft ? null : scheduledFor ? new Date(scheduledFor) : post.scheduledFor;
+    if (post.status === "DRAFT" && nextStatus === "SCHEDULED" && user.plan === "FREE") {
+      const monthlyCount = await prisma.scheduledPost.count({
+        where: {
+          userId: user.id,
+          status: { in: ["SCHEDULED", "PUBLISHED"] },
+          createdAt: { gte: startOfMonth(new Date()), lte: endOfMonth(new Date()) },
+        },
+      });
 
-    // If post has a Zernio ID and we're rescheduling, update via Zernio
-    // (Zernio post ID is stored in zernioPostId field after schema migration)
-    const zernioPostId = (post as any).zernioPostId;
-    if (zernioPostId && newStatus === "SCHEDULED" && newScheduledFor) {
-      try {
-        // Zernio doesn't have a direct update endpoint in v0.2 — cancel and recreate
-        // For now we just update locally; Zernio will handle at publish time
-      } catch (zErr: any) {
-        console.warn("Zernio update warning:", zErr.message);
+      if (monthlyCount >= 15) {
+        return NextResponse.json(
+          { error: "Monthly schedule limit reached (15/month). Upgrade to Pro for unlimited." },
+          { status: 403 }
+        );
+      }
+    }
+
+    const currentZernioPostId = getStoredZernioPostId(post);
+    let nextZernioPostId = currentZernioPostId;
+
+    if (post.status === "SCHEDULED" && nextStatus === "DRAFT" && currentZernioPostId) {
+      await deleteZernioPost(currentZernioPostId);
+      nextZernioPostId = null;
+    } else if (nextStatus === "SCHEDULED" && nextScheduledFor) {
+      const remoteShapeChanged =
+        post.status !== "SCHEDULED" ||
+        platforms !== undefined ||
+        imageUrls !== undefined ||
+        imageUrl !== undefined;
+
+      if (!currentZernioPostId || remoteShapeChanged) {
+        const replacementZernioPostId = await createZernioScheduledPost({
+          userId: user.id,
+          caption: nextCaption,
+          platforms: nextPlatforms,
+          scheduledFor: nextScheduledFor,
+          imageUrls: nextImageUrls,
+        });
+
+        if (currentZernioPostId) {
+          try {
+            await deleteZernioPost(currentZernioPostId);
+          } catch (err) {
+            if (replacementZernioPostId) {
+              await deleteZernioPost(replacementZernioPostId).catch(() => {});
+            }
+            throw err;
+          }
+        }
+
+        nextZernioPostId = replacementZernioPostId;
+      } else {
+        await zernio.posts.updatePost({
+          path: { postId: currentZernioPostId },
+          body: {
+            content: nextCaption,
+            scheduledFor: nextScheduledFor.toISOString(),
+          },
+        });
       }
     }
 
     const updated = await prisma.scheduledPost.update({
       where: { id: params.id },
       data: {
-        ...(caption !== undefined && { caption: caption.trim() || null }),
-        ...(platforms !== undefined && { platforms }),
-        ...(imageUrls !== undefined && { imageUrls, imageUrl: imageUrls[0] || null }),
-        ...(imageUrl !== undefined && !imageUrls && { imageUrl }),
-        scheduledFor: newScheduledFor,
-        status:       newStatus as any,
+        ...(caption !== undefined && { caption: nextCaption || null }),
+        ...(platforms !== undefined && { platforms: nextPlatforms }),
+        ...(imageUrls !== undefined && { imageUrls: nextImageUrls, imageUrl: nextImageUrls[0] || null }),
+        ...(imageUrl !== undefined && imageUrls === undefined && { imageUrl, imageUrls: nextImageUrls }),
+        scheduledFor: nextScheduledFor,
+        status:       nextStatus as any,
+        zernioPostId: nextZernioPostId,
+        ...(post.failureReason?.startsWith("zernio:") && { failureReason: null }),
       },
     });
+
+    if (post.status === "DRAFT" && nextStatus === "SCHEDULED" && user.plan === "FREE") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      await prisma.usage.upsert({
+        where:  { userId_date: { userId: user.id, date: today } },
+        update: { scheduleCount: { increment: 1 } },
+        create: { userId: user.id, date: today, scheduleCount: 1 },
+      });
+    }
 
     return NextResponse.json({ success: true, post: updated });
   } catch (err: any) {
     console.error("PATCH post error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Internal Server Error" },
+      { status: err.status || 500 }
+    );
   }
 }
 
-// ── DELETE /api/social/posts/[id] ─────────────────────────────────────────────
 export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
@@ -121,14 +286,9 @@ export async function DELETE(
 
     if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
-    // If it has a Zernio post ID, cancel it there too
-    const zernioPostId = (post as any).zernioPostId;
+    const zernioPostId = getStoredZernioPostId(post);
     if (zernioPostId && post.status === "SCHEDULED") {
-      try {
-        await zernio.posts.deletePost(zernioPostId);
-      } catch (zErr: any) {
-        console.warn("Zernio delete warning:", zErr.message);
-      }
+      await deleteZernioPost(zernioPostId);
     }
 
     await prisma.scheduledPost.delete({ where: { id: params.id } });
@@ -136,6 +296,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("DELETE post error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Internal Server Error" },
+      { status: err.status || 500 }
+    );
   }
 }

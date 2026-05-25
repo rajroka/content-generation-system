@@ -14,7 +14,6 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  Plus,
   ShieldCheck,
 } from "lucide-react";
 
@@ -24,7 +23,7 @@ export const navItems = [
   { href: "/user/calendar", label: "Schedule", icon: Calendar },
   { href: "/user/history", label: "Library", icon: Clock },
   { href: "/user/platforms", label: "Connections", icon: Globe },
-  { href: "/user/analytics", label: "Insights", icon: BarChart3 },
+  { href: "/user/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 export function Sidebar({ plan = "FREE" }: { plan?: string }) {
@@ -63,17 +62,6 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
           </div>
           {!collapsed && <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>}
         </div>
-      </div>
-
-      {/* New Post Button */}
-      <div className="px-3 mb-4">
-        <Link href="/user/generate" className={cn(
-          "flex items-center justify-center gap-2 w-full bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-[13px] font-semibold rounded-lg py-2 transition-all",
-          collapsed && "w-10 h-10 mx-auto p-0"
-        )}>
-          <Plus size={16} />
-          {!collapsed && <span>New Post</span>}
-        </Link>
       </div>
 
       {/* Navigation */}
