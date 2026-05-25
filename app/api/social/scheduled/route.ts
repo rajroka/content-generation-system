@@ -15,6 +15,18 @@ export async function GET(req: Request) {
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ posts: [], stats: { scheduled: 0, drafts: 0, published: 0 } });
 
+    await prisma.scheduledPost.updateMany({
+      where: {
+        userId: user.id,
+        status: "SCHEDULED",
+        scheduledFor: { lte: new Date() },
+      },
+      data: {
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+      },
+    });
+
     // Return all statuses for the calendar (SCHEDULED, DRAFT, PUBLISHED)
     // so users can see their full history on the calendar
     const posts = await prisma.scheduledPost.findMany({
@@ -22,7 +34,7 @@ export async function GET(req: Request) {
         userId: user.id,
         status: includeAll
           ? { in: ["SCHEDULED", "DRAFT", "PUBLISHED", "FAILED"] }
-          : { in: ["SCHEDULED", "DRAFT"] },
+          : { in: ["SCHEDULED", "DRAFT", "PUBLISHED"] },
       },
       orderBy: { scheduledFor: "asc" },
     });

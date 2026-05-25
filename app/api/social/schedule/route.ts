@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const hasCaption = caption?.trim();
     const hasImage   = allMedia.length > 0;
     if (!hasCaption && !hasImage)
-      return NextResponse.json({ error: "Post must have a caption or an image" }, { status: 400 });
+      return NextResponse.json({ error: "Post must have a caption or media" }, { status: 400 });
 
     if (!isDraft && !scheduledFor)
       return NextResponse.json({ error: "Schedule time is required" }, { status: 400 });

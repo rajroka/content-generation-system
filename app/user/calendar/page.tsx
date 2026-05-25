@@ -21,11 +21,9 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  FileText,
   CheckCircle2,
   Calendar as CalendarIcon,
   Eye,
-  List,
   X,
   Trash2,
   Pencil,
@@ -61,6 +59,8 @@ interface Stats {
   drafts:    number;
   published: number;
 }
+
+type CalendarView = "week" | "month";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
@@ -161,6 +161,7 @@ function PostDrawer({
   const [isEditing,   setIsEditing]   = useState(false);
   const [isDeleting,  setIsDeleting]  = useState(false);
   const [isSaving,    setIsSaving]    = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [caption,     setCaption]     = useState(post.caption || "");
   const [scheduledFor, setScheduledFor] = useState(
     post.scheduledFor
@@ -170,6 +171,7 @@ function PostDrawer({
 
   const canEdit   = post.status === "DRAFT" || post.status === "SCHEDULED";
   const canDelete = post.status !== "PUBLISHED";
+  const canPublish = post.status === "DRAFT" || post.status === "SCHEDULED";
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -180,7 +182,7 @@ function PostDrawer({
         body:    JSON.stringify({
           caption,
           scheduledFor: scheduledFor || null,
-          isDraft:      post.status === "DRAFT",
+          isDraft:      scheduledFor ? false : post.status === "DRAFT",
         }),
       });
       const data = await res.json();
@@ -212,22 +214,24 @@ function PostDrawer({
     }
   };
 
-  const handleConvertToDraft = async () => {
-    setIsSaving(true);
+  const handlePublishNow = async () => {
+    if (!confirm("Publish this post now?")) return;
+    setIsPublishing(true);
     try {
       const res = await fetch(`/api/social/posts/${post.id}`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ isDraft: true }),
+        body:    JSON.stringify({ publishNow: true, caption }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to convert");
-      toast.success("Moved to drafts");
+      if (!res.ok) throw new Error(data.error || "Failed to publish");
+      toast.success("Post published");
       onUpdated(data.post);
+      setIsEditing(false);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
-      setIsSaving(false);
+      setIsPublishing(false);
     }
   };
 
@@ -239,8 +243,8 @@ function PostDrawer({
         onClick={onClose}
       />
 
-      {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-[480px] bg-background border-l border-border shadow-2xl z-50 flex flex-col overflow-hidden">
+      {/* Modal */}
+      <div className="fixed left-1/2 top-1/2 z-50 flex max-h-[92vh] w-[calc(100vw-24px)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[8px] border bg-background shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b">
@@ -321,9 +325,9 @@ function PostDrawer({
           )}
 
           {/* Schedule time (editable) */}
-          {isEditing && post.status !== "DRAFT" && (
+          {isEditing && canEdit && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Scheduled for</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Reschedule for</p>
               <input
                 type="datetime-local"
                 value={scheduledFor}
@@ -361,9 +365,9 @@ function PostDrawer({
         </div>
 
         {/* Footer actions */}
-        <div className="border-t p-4 space-y-2">
+        <div className="border-t p-4">
           {isEditing ? (
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -381,30 +385,30 @@ function PostDrawer({
               </Button>
             </div>
           ) : (
-            <>
+            <div className="grid gap-2 sm:grid-cols-2">
               {canEdit && (
                 <Button
                   variant="outline"
-                  className="w-full gap-2"
+                  className="w-full gap-2 justify-center"
                   onClick={() => setIsEditing(true)}
                 >
-                  <Pencil className="w-3.5 h-3.5" /> Edit post
+                  <Pencil className="w-3.5 h-3.5" /> Edit / Reschedule
                 </Button>
               )}
-              {post.status === "SCHEDULED" && (
+              {canPublish && (
                 <Button
-                  variant="outline"
-                  className="w-full gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                  onClick={handleConvertToDraft}
-                  disabled={isSaving}
+                  className="w-full gap-2 justify-center bg-[#0d7c8a] text-white hover:bg-[#0b6b78]"
+                  onClick={handlePublishNow}
+                  disabled={isPublishing}
                 >
-                  <FileText className="w-3.5 h-3.5" /> Move to drafts
+                  {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Post now
                 </Button>
               )}
               {canDelete && (
                 <Button
                   variant="outline"
-                  className="w-full gap-2 text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  className="w-full gap-2 justify-center text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30 sm:col-span-2"
                   onClick={handleDelete}
                   disabled={isDeleting}
                 >
@@ -412,12 +416,7 @@ function PostDrawer({
                   Delete post
                 </Button>
               )}
-              <Link href="/user/generate" className="block">
-                <Button className="w-full gap-2 bg-[#0d7c8a] hover:bg-[#0b6b78] text-white">
-                  <Plus className="w-3.5 h-3.5" /> Create new post
-                </Button>
-              </Link>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -482,6 +481,7 @@ export default function ContentCalendar() {
   const [showAll,    setShowAll]    = useState(false);
   const [selected,   setSelected]   = useState<ScheduledPost | null>(null);
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [viewMode, setViewMode] = useState<CalendarView>("month");
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
 
   const fetchPosts = async (all = showAll) => {
@@ -498,11 +498,19 @@ export default function ContentCalendar() {
     }
   };
 
-  useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => {
+    fetchPosts(showAll);
+    const interval = window.setInterval(() => fetchPosts(showAll), 60_000);
+    return () => window.clearInterval(interval);
+  }, [showAll]);
 
-  const monthDays = useMemo(() => {
-    const firstCalendarDay = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 });
-    const lastCalendarDay = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 0 });
+  const calendarDays = useMemo(() => {
+    const firstCalendarDay = viewMode === "month"
+      ? startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 })
+      : startOfWeek(currentMonth, { weekStartsOn: 0 });
+    const lastCalendarDay = viewMode === "month"
+      ? endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 0 })
+      : endOfWeek(currentMonth, { weekStartsOn: 0 });
     const days: Date[] = [];
 
     for (let day = firstCalendarDay; day <= lastCalendarDay; day = addDays(day, 1)) {
@@ -510,7 +518,7 @@ export default function ContentCalendar() {
     }
 
     return days;
-  }, [currentMonth]);
+  }, [currentMonth, viewMode]);
 
   const getPostsForDay = (date: Date) =>
     posts.filter((p) => {
@@ -552,14 +560,6 @@ export default function ContentCalendar() {
               </p>
             </div>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 w-full justify-center text-xs sm:w-auto"
-                onClick={handleToggleAll}
-              >
-                {showAll ? "Hide published" : "Show published"}
-              </Button>
               <Link href="/user/generate" className="w-full sm:w-auto">
                 <Button className="h-9 w-full gap-2 bg-[#0d7c8a] text-white shadow-sm hover:bg-[#0b6b78] sm:w-auto">
                   <Plus className="size-4" /> New Post
@@ -572,23 +572,22 @@ export default function ContentCalendar() {
         <section className="overflow-hidden rounded-[8px] border bg-card shadow-sm">
           <div className="flex flex-col gap-3 border-b p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="size-8 border" aria-label="List view">
-                <List className="size-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="size-8 border bg-muted" aria-label="Calendar view">
-                <CalendarIcon className="size-4" />
-              </Button>
-              <div className="ml-1 flex rounded-[8px] bg-muted p-1">
-                {["Week", "Month", "Year"].map((label) => (
-                  <span
-                    key={label}
+              <div className="flex rounded-[8px] bg-muted p-1">
+                {[
+                  { label: "Week", value: "week" as CalendarView },
+                  { label: "Month", value: "month" as CalendarView },
+                ].map(({ label, value }) => (
+                  <button
+                    type="button"
+                    key={value}
+                    onClick={() => setViewMode(value)}
                     className={cn(
                       "rounded-[6px] px-3 py-1.5 text-xs font-medium text-muted-foreground",
-                      label === "Month" && "bg-background text-foreground shadow-sm"
+                      viewMode === value && "bg-background text-foreground shadow-sm"
                     )}
                   >
                     {label}
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -598,23 +597,25 @@ export default function ContentCalendar() {
                 variant="ghost"
                 size="icon"
                 className="size-8 border"
-                onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
+                onClick={() => setCurrentMonth(viewMode === "month" ? addMonths(currentMonth, -1) : addDays(currentMonth, -7))}
               >
                 <ChevronLeft className="size-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 min-w-[132px] text-sm font-semibold"
+                className="h-8 min-w-[160px] text-sm font-semibold"
                 onClick={() => setCurrentMonth(startOfMonth(new Date()))}
               >
-                {format(currentMonth, "MMMM yyyy")}
+                {viewMode === "month"
+                  ? format(currentMonth, "MMMM yyyy")
+                  : `${format(startOfWeek(currentMonth, { weekStartsOn: 0 }), "MMM d")} - ${format(endOfWeek(currentMonth, { weekStartsOn: 0 }), "MMM d, yyyy")}`}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="size-8 border"
-                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                onClick={() => setCurrentMonth(viewMode === "month" ? addMonths(currentMonth, 1) : addDays(currentMonth, 7))}
               >
                 <ChevronRight className="size-4" />
               </Button>
@@ -627,7 +628,7 @@ export default function ContentCalendar() {
               onClick={handleToggleAll}
             >
               <Eye className="size-3.5" />
-              {showAll ? "Hide published" : "Show Campaigns"}
+              {showAll ? "Hide failed" : "Show failed"}
             </Button>
           </div>
 
@@ -640,7 +641,7 @@ export default function ContentCalendar() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7">
-            {monthDays.map((day) => {
+            {calendarDays.map((day) => {
               const dayPosts = getPostsForDay(day);
               const dayKey = format(day, "yyyy-MM-dd");
               const expanded = expandedDays.has(dayKey);

@@ -81,6 +81,35 @@ async function createZernioScheduledPost({
   return result.data?.post?._id ?? null;
 }
 
+async function publishZernioPostNow({
+  userId,
+  caption,
+  platforms,
+  imageUrls,
+}: {
+  userId: string;
+  caption: string;
+  platforms: string[];
+  imageUrls: string[];
+}) {
+  const zernioPlatforms = await getZernioPlatforms(userId, platforms);
+  const mediaItems = imageUrls.map((url) => ({
+    type: isVideo(url) ? "video" as const : "image" as const,
+    url,
+  }));
+
+  const result = await zernio.posts.createPost({
+    body: {
+      content: caption,
+      publishNow: true,
+      platforms: zernioPlatforms,
+      ...(mediaItems.length > 0 && { mediaItems }),
+    },
+  });
+
+  return result.data?.post?._id ?? null;
+}
+
 async function deleteZernioPost(postId: string) {
   await zernio.posts.deletePost({ path: { postId } });
 }
@@ -126,15 +155,72 @@ export async function PATCH(
 
     if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
+    const body = await req.json();
+    const { caption, scheduledFor, platforms, imageUrls, imageUrl, isDraft, publishNow } = body;
+
+    if (publishNow === true) {
+      if (post.status === "PUBLISHED") {
+        return NextResponse.json({ error: "Post is already published" }, { status: 400 });
+      }
+      if (post.status === "CANCELLED") {
+        return NextResponse.json({ error: "Cannot publish a cancelled post" }, { status: 400 });
+      }
+
+      const publishPlatforms = Array.isArray(platforms) ? platforms : post.platforms;
+      const publishCaption = caption !== undefined ? caption.trim() : post.caption || "";
+      const publishImageUrls: string[] = Array.isArray(imageUrls)
+        ? imageUrls.filter(Boolean)
+        : imageUrl !== undefined
+          ? imageUrl ? [imageUrl] : []
+          : post.imageUrls?.length
+            ? post.imageUrls
+            : post.imageUrl
+              ? [post.imageUrl]
+              : [];
+
+      if (!publishCaption && publishImageUrls.length === 0) {
+        return NextResponse.json({ error: "Post must have a caption or media" }, { status: 400 });
+      }
+      if (publishPlatforms.length === 0) {
+        return NextResponse.json({ error: "Select at least one platform" }, { status: 400 });
+      }
+
+      const currentZernioPostId = getStoredZernioPostId(post);
+      const publishedZernioPostId = await publishZernioPostNow({
+        userId: user.id,
+        caption: publishCaption,
+        platforms: publishPlatforms,
+        imageUrls: publishImageUrls,
+      });
+
+      if (currentZernioPostId && post.status === "SCHEDULED") {
+        await deleteZernioPost(currentZernioPostId).catch(() => {});
+      }
+
+      const updated = await prisma.scheduledPost.update({
+        where: { id: params.id },
+        data: {
+          caption: publishCaption || null,
+          platforms: publishPlatforms,
+          imageUrls: publishImageUrls,
+          imageUrl: publishImageUrls[0] || null,
+          scheduledFor: new Date(),
+          status: "PUBLISHED",
+          publishedAt: new Date(),
+          zernioPostId: publishedZernioPostId,
+          failureReason: null,
+        },
+      });
+
+      return NextResponse.json({ success: true, post: updated });
+    }
+
     if (post.status === "PUBLISHED" || post.status === "CANCELLED") {
       return NextResponse.json(
         { error: `Cannot edit a ${post.status.toLowerCase()} post` },
         { status: 400 }
       );
     }
-
-    const body = await req.json();
-    const { caption, scheduledFor, platforms, imageUrls, imageUrl, isDraft } = body;
 
     const nextStatus = isDraft === true ? "DRAFT" : isDraft === false ? "SCHEDULED" : post.status;
     const nextPlatforms = platforms !== undefined

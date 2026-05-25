@@ -88,6 +88,20 @@ export default async function DashboardPage({
     plan = "PRO";
   }
 
+  if (user) {
+    await prisma.scheduledPost.updateMany({
+      where: {
+        userId: user.id,
+        status: "SCHEDULED",
+        scheduledFor: { lte: new Date() },
+      },
+      data: {
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+      },
+    });
+  }
+
   const isUnlimited = plan === "PRO";
 
   const [

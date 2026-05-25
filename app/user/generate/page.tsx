@@ -4,12 +4,22 @@ import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
+import { format, startOfToday } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check, Send, Film, Upload } from "lucide-react";
+import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Sparkles, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check, Send, Film } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +81,8 @@ const PREVIEW_OPTIONS: { value: PreviewType; label: string; platform: string }[]
   { value: "instagram",     label: "Instagram preview",     platform: "INSTAGRAM" },
 ];
 
+const formatDate = (date: Date) => format(date, "MMM d, yyyy");
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 type PreviewType = "facebook-post" | "facebook-reel" | "instagram";
@@ -92,10 +104,11 @@ export default function GeneratePage() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [caption, setCaption] = useState("");
   const [mediaFiles, setMediaFiles] = useState<{ localUrl: string; cdnUrl?: string; file?: File; type: "image" | "video" }[]>([]);
-  const [scheduledFor, setScheduledFor] = useState("");
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
+  const [isSchedulePickerOpen, setIsSchedulePickerOpen] = useState(false);
+  const [scheduleTime, setScheduleTime] = useState("");
   const [usage, setUsage] = useState({ captions: 0, schedules: 0, plan: "FREE", captionLimit: 10 as number | null, scheduleLimit: 15 as number | null });
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [previewType, setPreviewType] = useState<PreviewType>("facebook-post");
@@ -250,37 +263,14 @@ export default function GeneratePage() {
     }
   };
 
-  const handleSaveDraft = async () => {
-    if (!caption.trim()) return toast.error("Write something before saving a draft!");
-    setIsSaving(true);
-    try {
-      const cdnUrls = mediaFiles.filter((m) => m.cdnUrl).map((m) => m.cdnUrl!);
-      const res = await fetch("/api/social/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          caption,
-          platforms: selectedPlatforms,
-          imageUrl:  cdnUrls[0] || null,
-          imageUrls: cdnUrls,
-          isDraft:   true,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save draft");
-      toast.success("Draft saved successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Could not save draft.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleSchedule = async () => {
-    if (!caption.trim()) return toast.error("Content cannot be empty");
+    if (!caption.trim() && mediaFiles.length === 0) return toast.error("Add a caption or media before scheduling");
     if (selectedPlatforms.length === 0) return toast.error("Select at least one platform");
-    if (!scheduledFor) return toast.error("Please select a date and time");
-    const selectedDate = new Date(scheduledFor);
+    if (mediaFiles.some((m) => !m.cdnUrl)) return toast.error("Please wait for all files to finish uploading.");
+    if (!scheduleDate || !scheduleTime) return toast.error("Please select a date and time");
+    const [hours, minutes] = scheduleTime.split(":").map(Number);
+    const selectedDate = new Date(scheduleDate);
+    selectedDate.setHours(hours || 0, minutes || 0, 0, 0);
     if (selectedDate < new Date()) return toast.error("Cannot schedule in the past!");
 
     setIsScheduling(true);
@@ -295,7 +285,6 @@ export default function GeneratePage() {
           scheduledFor: selectedDate.toISOString(),
           imageUrl:     cdnUrls[0] || null,
           imageUrls:    cdnUrls,
-          isDraft:      false,
         }),
       });
       const data = await res.json();
@@ -304,7 +293,8 @@ export default function GeneratePage() {
       setUsage((prev) => ({ ...prev, schedules: prev.schedules + 1 }));
       setCaption("");
       setMediaFiles([]);
-      setScheduledFor("");
+      setScheduleDate(undefined);
+      setScheduleTime("");
     } catch (err: any) {
       toast.error(err.message || "An error occurred while scheduling");
     } finally {
@@ -345,6 +335,25 @@ export default function GeneratePage() {
     setMediaFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const activeMedia = mediaFiles[activePreviewIndex];
+
+  const renderPreviewMedia = (className: string) => {
+    if (!activeMedia) return null;
+    if (activeMedia.type === "video") {
+      return (
+        <video
+          src={activeMedia.localUrl}
+          controls
+          muted
+          playsInline
+          className={className}
+        />
+      );
+    }
+
+    return <img src={activeMedia.localUrl} alt="Preview" className={className} />;
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -366,28 +375,10 @@ export default function GeneratePage() {
                 {usage.schedules}/{usage.scheduleLimit ?? "∞"} schedules
               </Badge>
             </div>
-            <Button
-              variant="outline"
-              className="font-bold rounded-lg px-5 ml-auto md:ml-0"
-              onClick={handleSaveDraft}
-              disabled={isSaving}
-            >
-              {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Save Draft
-            </Button>
-            <Button
-              style={{ backgroundColor: "#0D7C8A" }}
-              className="hover:opacity-90 text-white font-bold rounded-lg px-6 shadow-lg shadow-[#0D7C8A]/20 flex items-center gap-2"
-              onClick={handlePostNow}
-              disabled={isPosting}
-            >
-              {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Post Now
-            </Button>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
           {/* LEFT: Composer */}
           <div className="lg:col-span-7 space-y-6">
@@ -529,52 +520,86 @@ export default function GeneratePage() {
               </p>
             </div>
 
-            {/* Schedule */}
-            <div className="pt-4 space-y-4">
-              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Schedule Posting</Label>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="relative w-full">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="datetime-local"
-                    value={scheduledFor}
-                    onChange={(e) => setScheduledFor(e.target.value)}
-                    className="w-full h-12 pl-12 pr-4 bg-card border rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0D7C8A]/20 dark:[color-scheme:dark]"
+            {/* Publish actions */}
+            <div className="space-y-4 rounded-[8px] border bg-card p-4 shadow-sm">
+              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Schedule & Publish</Label>
+              <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+                <Popover open={isSchedulePickerOpen} onOpenChange={setIsSchedulePickerOpen}>
+                  <PopoverTrigger
+                    render={
+                      <Button variant="outline" className="h-11 w-full justify-start gap-2 rounded-[8px]">
+                        <Calendar className="size-4 text-muted-foreground" />
+                        {scheduleDate ? formatDate(scheduleDate) : "Pick a date"}
+                      </Button>
+                    }
                   />
-                </div>
+                  <PopoverContent align="start" className="w-auto p-0">
+                    <DatePickerCalendar
+                      mode="single"
+                      selected={scheduleDate}
+                      onSelect={(date) => {
+                        setScheduleDate(date);
+                        if (date) setIsSchedulePickerOpen(false);
+                      }}
+                      disabled={{ before: startOfToday() }}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="h-11 rounded-[8px] border bg-background px-3 text-sm outline-none transition-all focus:ring-2 focus:ring-[#0D7C8A]/20 dark:[color-scheme:dark]"
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Button
                   onClick={handleSchedule}
                   disabled={isScheduling}
-                  className="h-12 px-10 rounded-xl bg-[#0D7C8A] text-white hover:opacity-90 font-bold w-full sm:w-auto shrink-0 transition-all active:scale-95"
+                  className="h-10 rounded-[8px] bg-[#0D7C8A] text-white hover:bg-[#0b6b78] font-bold"
                 >
                   {isScheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Schedule"}
+                </Button>
+                <Button
+                  className="h-10 rounded-[8px] bg-[#0D7C8A] text-white hover:bg-[#0b6b78] font-bold gap-2"
+                  onClick={handlePostNow}
+                  disabled={isPosting}
+                >
+                  {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Post Now
                 </Button>
               </div>
             </div>
           </div>
 
           {/* RIGHT: Live Preview */}
-          <div className="lg:col-span-5">
-            <div className="sticky top-8">
+          <div className="min-w-0 lg:col-span-5">
+            <div className="space-y-2 lg:sticky lg:top-8">
 
               {/* Platform selector */}
-              <div className="flex items-center mb-2 px-1">
-                <select
+              <div className="flex items-center px-1">
+                <Select
                   value={previewType}
-                  onChange={(e) => setPreviewType(e.target.value as PreviewType)}
-                  className="text-sm font-bold bg-background text-foreground border border-border rounded-lg px-3 py-1.5 outline-none cursor-pointer"
+                  onValueChange={(value) => setPreviewType(value as PreviewType)}
                 >
-                  <option value="facebook-post" className="bg-background text-foreground">Facebook post preview</option>
-                  <option value="facebook-reel" className="bg-background text-foreground">Facebook reel preview</option>
-                  <option value="instagram" className="bg-background text-foreground">Instagram preview</option>
-                </select>
+                  <SelectTrigger className="h-9 w-full rounded-[8px] bg-background font-bold sm:w-[220px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PREVIEW_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* ── Facebook Reel Preview ── */}
               {previewType === "facebook-reel" && (
                 <div className="relative w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden bg-zinc-900 shadow-xl" style={{ aspectRatio: "9/16" }}>
-                  {mediaFiles.length > 0 && mediaFiles[activePreviewIndex]?.type === "image" ? (
-                    <img src={mediaFiles[activePreviewIndex].localUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-70" />
+                  {activeMedia ? (
+                    renderPreviewMedia("absolute inset-0 w-full h-full object-cover opacity-70")
                   ) : (
                     <div className="absolute inset-0 bg-gradient-to-b from-zinc-700 to-zinc-900" />
                   )}
@@ -613,7 +638,7 @@ export default function GeneratePage() {
 
               {/* ── Facebook Post Preview ── */}
               {previewType === "facebook-post" && (
-                <div className="rounded-xl border border-border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                <div className="mx-auto w-full max-w-[420px] rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
                   <div className="px-3 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-border shrink-0 bg-[#1877F2]/10">
@@ -633,10 +658,10 @@ export default function GeneratePage() {
                       {caption || <span className="text-muted-foreground">Your caption will appear here...</span>}
                     </p>
                   </div>
-                  {mediaFiles.length > 0 ? (
-                    <img src={mediaFiles[activePreviewIndex]?.localUrl} alt="Preview" className="w-full object-contain bg-black" />
+                  {activeMedia ? (
+                    renderPreviewMedia("w-full aspect-square object-contain bg-black")
                   ) : (
-                    <div className="h-32 bg-muted/40 flex items-center justify-center border-y border-border/50">
+                    <div className="aspect-square bg-muted/40 flex items-center justify-center border-y border-border/50">
                       <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
                     </div>
                   )}
@@ -652,7 +677,7 @@ export default function GeneratePage() {
 
               {/* ── Instagram Preview ── */}
               {previewType === "instagram" && (
-                <div className="rounded-xl border border-border overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                <div className="mx-auto w-full max-w-[420px] rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
                   <div className="px-3 py-2.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-full overflow-hidden p-0.5 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 shrink-0">
@@ -665,8 +690,8 @@ export default function GeneratePage() {
                     </div>
                     <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  {mediaFiles.length > 0 ? (
-                    <img src={mediaFiles[activePreviewIndex]?.localUrl} alt="Preview" className="w-full object-contain bg-black" />
+                  {activeMedia ? (
+                    renderPreviewMedia("w-full aspect-square object-contain bg-black")
                   ) : (
                     <div className="aspect-square bg-muted/40 flex items-center justify-center">
                       <ImageIcon className="w-8 h-8 text-muted-foreground/30" />
