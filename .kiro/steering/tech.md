@@ -7,10 +7,13 @@
 - **React 18**
 - **Package manager:** pnpm
 
-## AI / LLM
+## Model / Caption Generation
 
-- **Groq SDK** (`groq-sdk`) — primary text generation using `llama-3.1-8b-instant` and `llama-3.3-70b-versatile`
-- AI helpers live in `lib/groq.ts`
+- **Fine-tuned Phi-2** — custom model trained on PostSathi's own dataset, hosted on Hugging Face Inference API
+- Model client lives in `lib/model.ts`
+- Requires `HF_MODEL_ID` and `HF_API_KEY` in `.env.local` (set when model is deployed to HF Hub)
+- Until deployed, caption route returns HTTP 503 with a friendly message
+- Caption route: `app/api/generate/caption/route.ts`
 
 ## Database
 
@@ -97,7 +100,8 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
 DATABASE_URL
 
 # AI
-GROQ_API_KEY
+HF_MODEL_ID        # Hugging Face model ID (e.g. your-org/phi2-postsathi)
+HF_API_KEY         # Hugging Face API key
 
 # ImageKit
 NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY

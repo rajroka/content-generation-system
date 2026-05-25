@@ -2,11 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import Groq from "groq-sdk";
+import { generateCaption } from "@/lib/model";
 import prisma from "@/lib/prisma";
 import { Platform } from "@/lib/generated/prisma";
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: Request) {
   try {
@@ -18,54 +16,38 @@ export async function POST(req: Request) {
 
     const safePlatform = platform.toUpperCase() as Platform;
 
-    const toneDescriptions: Record<string, string> = {
-      CASUAL:        "casual and friendly",
-      PROFESSIONAL:  "professional and formal",
-      INSPIRATIONAL: "motivational and inspiring",
-      HUMOROUS:      "funny and witty",
-    };
-
-    const prompt = `Generate a ${toneDescriptions[tone] || "casual"} social media caption for ${platform} about: "${topic}".
-Return ONLY a JSON object: { "caption": "...", "hashtags": ["#1", "#2"] }`;
-
-    // Upsert user — use DB record only, no extra Clerk call needed
+    // Upsert user
     const user = await prisma.user.upsert({
       where:  { clerkId: userId },
       update: {},
       create: {
-        clerkId:  userId,
-        email:    `user_${userId}@postsathi.app`,
-        plan:     "FREE",
+        clerkId: userId,
+        email:   `user_${userId}@postsathi.app`,
+        plan:    "FREE",
       },
     });
 
-    // Check daily caption limit (FREE = 10/day)
+    // Check daily caption limit
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (user.plan === "FREE") {
+      const planLimit = await prisma.planLimit.findUnique({ where: { plan: "FREE" } });
+      const dailyLimit = planLimit?.dailyCaptions ?? 10;
+
       const usage = await prisma.usage.findUnique({
         where: { userId_date: { userId: user.id, date: today } },
       });
-      if ((usage?.captionCount ?? 0) >= 10) {
+      if ((usage?.captionCount ?? 0) >= dailyLimit) {
         return NextResponse.json(
-          { error: "Daily caption limit reached (10/day). Upgrade to Pro for unlimited." },
-          { status: 403 }
+          { error: `Daily caption limit reached (${dailyLimit}/day). Upgrade to Pro for unlimited.` },
+          { status: 429 }
         );
       }
     }
 
-    // Call Groq
-    const completion = await groq.chat.completions.create({
-      model:       "llama-3.3-70b-versatile",
-      messages:    [{ role: "user", content: prompt }],
-      temperature: 0.7,
-    });
-
-    const content   = completion.choices[0]?.message?.content || "";
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid AI response");
-    const parsed = JSON.parse(jsonMatch[0]);
+    // Call fine-tuned model via Hugging Face Inference API
+    const { caption, hashtags } = await generateCaption({ topic, platform, tone });
 
     // Save generation
     await prisma.generation.create({
@@ -73,8 +55,8 @@ Return ONLY a JSON object: { "caption": "...", "hashtags": ["#1", "#2"] }`;
         userId:   user.id,
         topic,
         platform: safePlatform,
-        caption:  parsed.caption,
-        hashtags: parsed.hashtags,
+        caption,
+        hashtags,
       },
     });
 
@@ -85,9 +67,16 @@ Return ONLY a JSON object: { "caption": "...", "hashtags": ["#1", "#2"] }`;
       create: { userId: user.id, date: today, captionCount: 1 },
     });
 
-    return NextResponse.json({ caption: parsed.caption, hashtags: parsed.hashtags });
+    return NextResponse.json({ caption, hashtags });
   } catch (err: any) {
     console.error(err);
+    // If model not deployed yet, return a clear message
+    if (err.message?.includes("Model not deployed yet")) {
+      return NextResponse.json(
+        { error: "Caption generation is not available yet. The model is being deployed." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

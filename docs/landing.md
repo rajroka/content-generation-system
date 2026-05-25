@@ -1,46 +1,140 @@
-## Landing Page — Documentation
+# PostSathi — Landing Page Documentation
 
-Overview
-- Purpose: the landing page showcases the product and converts visitors to sign-up. It is implemented with composable React components and Tailwind CSS in the Next.js `app` directory.
+## Overview
 
-Where to find files
-- Page entry: [app/(landing)/page.tsx](app/(landing)/page.tsx)
-- Page layout: [app/(landing)/layout.tsx](app/(landing)/layout.tsx)
-- Landing components: [componentss/landing/Hero.tsx](componentss/landing/Hero.tsx), [componentss/landing/Marquee.tsx](componentss/landing/Marquee.tsx), [componentss/landing/Features.tsx](componentss/landing/Features.tsx), [componentss/landing/Pricing.tsx](componentss/landing/Pricing.tsx), [componentss/landing/Testimonials.tsx](componentss/landing/Testimonials.tsx), [componentss/landing/Footer.tsx](componentss/landing/Footer.tsx)
-- Shared UI: [componentss/shared/Navbar.tsx](componentss/shared/Navbar.tsx) (used by the landing layout)
+The landing page showcases PostSathi and converts visitors to sign-up. It is built with composable React components and Tailwind CSS in the Next.js App Router.
 
-Quick component notes (editable spots)
-- `Hero.tsx`: headline, subcopy, CTA links, `metrics` and `queue` arrays at top — edit these arrays to update visible stats and sample queue items.
-- `Marquee.tsx`: `marqueeItems` array — edit labels/icons for the scrolling capabilities list.
-- `Features.tsx`: `features` array and the two highlighted blocks — edit `title` / `desc` for each feature card.
-- `Pricing.tsx`: `plans` array — price, blurb, features, CTA labels. The component accepts an optional `currentPlan?: string` prop to show logged-in states.
-- `Testimonials.tsx`: `testimonials` array — update photo URLs, `name`, `role`, `quote`.
-- `Footer.tsx`: `footerLinks` and `socials` objects — edit links, labels, or social icons.
+---
 
-How layout & routing works
-- `app/(landing)/layout.tsx` composes the landing layout (`Navbar` + `children` + `Footer`). Edit this file to change global wrappers for the landing section.
-- The landing page is implemented under `app/(landing)/page.tsx`. To change section order, add/remove imports here and change the JSX order.
+## File Locations
 
-Styling
-- Styling is Tailwind CSS classes applied directly in each component. For visual tweaks, edit class names in the JSX.
-- Dark mode: components use `dark:` utility classes; the project uses `next-themes` so theme toggling is supported in the shared components.
+| File | Purpose |
+|------|---------|
+| `app/(landing)/page.tsx` | Page entry — section order defined here |
+| `app/(landing)/layout.tsx` | Layout wrapper — Navbar + children + Footer |
+| `componentss/landing/Hero.tsx` | Hero section with person image and CTA |
+| `componentss/landing/SocialConnect.tsx` | Social platform icons section |
+| `componentss/landing/Features.tsx` | Features section with dashboard mock |
+| `componentss/landing/Pricing.tsx` | Pricing cards (Free / Premium) |
+| `componentss/landing/Testimonials.tsx` | Testimonials with tilted cards |
+| `componentss/landing/Footer.tsx` | Footer with links and social icons |
+| `componentss/shared/Navbar.tsx` | Navigation bar (used by landing layout) |
 
-Editing guidance
-- Copy/text changes: modify text strings or arrays at the top of each component file (examples above).
-- New section: create a new file under `componentss/landing/`, export the section (React function), then import and add it in [app/(landing)/page.tsx](app/(landing)/page.tsx).
-- Images: components mostly use external URLs or uploaded assets. For local/static images, add files to `public/` and reference with `/your-path`.
+---
 
-Previewing locally
-- Start the dev server and open the app in a browser:
+## Section Order
+
+```tsx
+// app/(landing)/page.tsx
+<Hero />
+<SocialConnect />
+<Features />
+<Pricing />
+<Testimonials />
+```
+
+To change section order, reorder the imports in `app/(landing)/page.tsx`.
+
+---
+
+## Component Notes
+
+### Hero.tsx
+- Displays tagline "Create once. Post everywhere."
+- Right side shows `/public/newheroimage.png` — replace this file to change the hero image
+- `metrics` array at top controls the 3 stat cards (social channels, caption drafts, scheduled queue)
+- CTA buttons link to `/sign-up` and `/sign-in`
+
+### SocialConnect.tsx
+- Shows brand icons from Simple Icons CDN (`cdn.simpleicons.org`)
+- `platforms` array — add/remove platforms or change icon colors
+- Title uses italic Georgia font — edit the `<p>` tag to change text
+
+### Features.tsx
+- `features` array — edit `title` and `desc` for each feature card
+- Dashboard mock UI is hardcoded in JSX — edit directly for visual changes
+- `platforms` and `queue` arrays control the mock composer and publishing queue
+
+### Pricing.tsx
+- `plans` array — edit `label`, `price`, `blurb`, `features`, `featuresLabel`, CTA labels
+- Accepts optional `currentPlan?: string` prop to show logged-in states (Current Plan / Upgrade / Manage Billing)
+- Highlighted card (Premium) uses `highlighted: true`
+
+### Testimonials.tsx
+- `testimonials` array — update `photo` (pravatar.cc URL), `name`, `handle`, `rating`, `quote`
+- Side cards are tilted via inline `style={{ transform: "rotate(±2.5deg)" }}`
+- Center card scales up slightly with `scale(1.03)`
+
+### Footer.tsx
+- `footerLinks` object — edit categories and links
+- `socials` array — edit social icon links
+
+---
+
+## Styling
+
+- All styling uses Tailwind CSS utility classes directly in JSX
+- Dark mode: uses `dark:` utility classes throughout; theme is managed by `next-themes`
+- Primary color: `#0d7c8a` (teal) used for CTA buttons
+- Font: Inter (set globally in `app/layout.tsx`)
+- Dark mode foreground: pure white; secondary text: cool blue-gray `hsl(220 20% 65%)`
+
+---
+
+## Adding a New Section
+
+1. Create `componentss/landing/NewSection.tsx`
+2. Export a React function component
+3. Import and add it in `app/(landing)/page.tsx`
+
+---
+
+## Images
+
+- Hero image: `public/newheroimage.png` — replace with your own (recommended: 900×1000px PNG)
+- Logo: `public/logo.png` — used in Navbar and auth layout
+- Social icons: served from `cdn.simpleicons.org` CDN (no local files needed)
+
+---
+
+## Local Development
 
 ```bash
 pnpm dev
-# then open http://localhost:3000
+# open http://localhost:3000
 ```
 
-Notes & next steps
-- `Pricing.tsx` contains logic for logged-in vs logged-out CTA labels; if you need to wire current plan data, pass `currentPlan` from server or client props.
-- Consider centralizing editable copy in a small `data/landing.ts` file if you expect non-developer editors to update content frequently.
+---
 
-Contact
-- If you want, I can update copy for any section, add screenshots, or centralize the strings into a single data file.
+## Caption Generation
+
+Captions are generated via a fine-tuned **Phi-2** model hosted on Hugging Face Inference API.
+
+**To activate when model is deployed:**
+1. Upload your fine-tuned Phi-2 model to Hugging Face Hub
+2. Add to `.env.local`:
+   ```
+   HF_MODEL_ID=your-org/phi2-postsathi
+   HF_API_KEY=hf_xxxxxxxxxxxx
+   ```
+3. The caption route at `/api/generate/caption` will call your model automatically
+
+**Until deployed:** the API returns HTTP 503 with a friendly message.
+
+Model client: `lib/model.ts`
+Caption route: `app/api/generate/caption/route.ts`
+
+---
+
+## Supported Platforms
+
+PostSathi supports the following social media platforms:
+
+| Platform | OAuth Route | Callback |
+|----------|------------|---------|
+| Facebook | `/api/auth/facebook` | `/api/auth/facebook/callback` |
+| Instagram | `/api/auth/instagram` | `/api/auth/instagram/callback` |
+| YouTube | `/api/auth/youtube` | `/api/auth/youtube/callback` |
+| TikTok | `/api/auth/tiktok` | `/api/auth/tiktok/callback` |
+
+All OAuth flows use the Zernio API (`@zernio/node`).
