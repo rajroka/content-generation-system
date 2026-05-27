@@ -16,8 +16,6 @@ enum Plan {
 enum Platform {
   INSTAGRAM
   FACEBOOK
-  TWITTER
-  LINKEDIN
   YOUTUBE
   TIKTOK
 }
@@ -37,9 +35,7 @@ enum ScheduleStatus {
 enum SocialPlatform {
   INSTAGRAM
   FACEBOOK
-  TWITTER
   YOUTUBE
-  LINKEDIN
   TIKTOK
 }
 

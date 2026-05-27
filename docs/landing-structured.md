@@ -1,89 +1,137 @@
 # Landing — Structured Reference
 
-Purpose
-- This document catalogs the landing page implementation: components, props/data, editable text/assets, styling notes, routing, and run instructions.
+## Purpose
+This document catalogs the landing page implementation: components, props/data, editable text/assets, styling notes, routing, and run instructions.
 
-Summary
-- Entry page: [app/(landing)/page.tsx](app/(landing)/page.tsx)
-- Layout: [app/(landing)/layout.tsx](app/(landing)/layout.tsx)
-- Navbar: [componentss/shared/Navbar.tsx](componentss/shared/Navbar.tsx)
-- Landing components: located under [componentss/landing/](componentss/landing/) — `Hero.tsx`, `Marquee.tsx`, `Features.tsx`, `Pricing.tsx`, `Testimonials.tsx`, `Footer.tsx`.
+## Summary
 
-Component reference (fields, defaults, notes)
+- Entry page: `app/(landing)/page.tsx`
+- Layout: `app/(landing)/layout.tsx`
+- Navbar: `componentss/shared/Navbar.tsx`
+- Landing components: `componentss/landing/` — `Hero.tsx`, `SocialConnect.tsx`, `Features.tsx`, `Pricing.tsx`, `Testimonials.tsx`, `Footer.tsx`
 
-- `Hero` — `componentss/landing/Hero.tsx`
-  - Purpose: primary hero block with headline, subcopy, CTAs, metrics, and sample publishing preview.
-  - Exports: `Hero()` React component (client).
-  - Data arrays:
-    - `metrics`: [{ value: "4+", label: "social channels" }, { value: "10s", label: "caption drafts" }, { value: "24/7", label: "scheduled queue" }]
-    - `queue`: sample publishing items with `{ platform, time, color }` — used to render the preview queue.
-    - `platform list` (inline): Instagram, LinkedIn, X, Add media (with icons and `active` flags).
-    - `tags` (inline): `#ContentMarketing`, `#CreatorTools`, `#LaunchDay`.
-  - CTAs: `href` to `/sign-up` and `/sign-in` (change to alter flow).
-  - Styling: heavy Tailwind usage; hero background gradients and responsive grid. Edit classnames for visual changes.
+**Note:** `Marquee.tsx` has been removed from the landing page.
 
-- `Marquee` — `componentss/landing/Marquee.tsx`
-  - Purpose: scrolling feature list.
-  - Exports: `Marquee()`.
-  - Data: `marqueeItems` array of `{ icon, label }` — duplicated for continuous marquee.
-  - Animation: uses `animate-[marquee_30s_linear_infinite]` CSS utility keyframe.
+---
 
-- `Features` — `componentss/landing/Features.tsx`
-  - Purpose: feature grid and highlighted composer block.
-  - Exports: `Features()`.
-  - Data: `features` array of `{ icon, title, desc }` (6 items). Also platform names array ["Instagram","Facebook","LinkedIn","X"].
-  - Notes: first large block is multi-platform composer; second is a small dashboard pitch block.
+## Component Reference
 
-- `Pricing` — `componentss/landing/Pricing.tsx`
-  - Purpose: pricing grid with CTA logic for logged-in state.
-  - Exports: `Pricing({ currentPlan?: string })` (optional prop).
-  - Data: `plans` array, each plan contains `label`, `price`, `period?`, `blurb`, `features[]`, `cta`, `ctaLoggedInFree`, `ctaLoggedInPro`, `href`, `planKey`, `highlighted`.
-  - CTA routing logic (derived from `currentPlan` and `planKey`) maps to `/user/dashboard`, `/api/billing-portal`, `/api/checkout`, or signup links.
-  - Styling: highlighted plan uses stronger border + shadow.
+### `Hero` — `componentss/landing/Hero.tsx`
+- Purpose: primary hero block with headline, CTAs, metrics, and hero person image.
+- Exports: `Hero()` (client component).
+- Image: `/public/newheroimage.png` — replace to change hero image.
+- Data: `metrics` array — `[{ value, label }]` for the 3 stat cards.
+- CTAs: `/sign-up` (Start creating) and `/sign-in` (Open dashboard).
 
-- `Testimonials` — `componentss/landing/Testimonials.tsx`
-  - Purpose: customer quotes grid.
-  - Exports: `Testimonials()`.
-  - Data: `testimonials` array: `{ photo, name, role, quote }`. Photos use external `https://i.pravatar.cc` placeholders.
+### `SocialConnect` — `componentss/landing/SocialConnect.tsx`
+- Purpose: decorative showcase of social platform brand icons (not a list of connectable platforms).
+- Exports: `SocialConnect()`.
+- Icons: served from `cdn.simpleicons.org` CDN.
+- Heading: "Connect your favorite accounts" (italic Georgia font).
+- Icons shown: Facebook, Instagram, X (Twitter), YouTube, TikTok, Threads, Telegram, Snapchat, WhatsApp.
+- **Note:** X (Twitter) appears here as a visual element only. The connectable platforms in the app are Instagram, Facebook, YouTube, and TikTok.
 
-- `Footer` — `componentss/landing/Footer.tsx`
-  - Purpose: site footer with link groups and socials.
-  - Exports: `Footer()`.
-  - Data:
-    - `footerLinks`: object with `Product`, `Resources`, `Company` arrays of `{ label, href }`.
-    - `socials`: `{ label, href, icon }` array.
-  - Uses shared `Logo` component from `componentss/shared/Logo.tsx`.
+### `Features` — `componentss/landing/Features.tsx`
+- Purpose: bento-grid feature showcase.
+- Exports: `Features()` (client component).
+- Cards:
+  1. Multi-Platform Scheduling — concentric arc with platform icons
+  2. Analytics & Reports — teal line chart, real-time follower count badge
+  3. Media Upload — "Choose Media" upload zone with progress bars
+  4. Caption Generator — Phi-2 model reference, tone selectors, sample output
+  5. Content Calendar — mini calendar with Published/Scheduled color coding
 
-Shared
-- `Navbar` — `componentss/shared/Navbar.tsx`
-  - Purpose: top navigation used across landing layout.
-  - Exports: `Navbar()`.
-  - Behavior: uses Clerk `useUser()` for sign-in state; displays `Dashboard` or `Get started` accordingly. Includes mobile menu, theme toggle (`ModeToggle`), and role-based admin detection using `user.publicMetadata.role`.
-  - Links: `navLinks` target `#features`, `#pricing`, `#testimonials` anchors on the landing page.
+### `Pricing` — `componentss/landing/Pricing.tsx`
+- Purpose: pricing cards with CTA logic for logged-in state.
+- Exports: `Pricing({ currentPlan?: string })`.
+- Plans: Free ($0) and Premium ($10/mo billed yearly).
+- Data: `plans` array — `label`, `price`, `period`, `blurb`, `features[]`, `featuresLabel`, CTAs, `planKey`, `highlighted`.
 
-Routing & layout
-- The landing route is in the `app` router under the `(landing)` group. Layout file [app/(landing)/layout.tsx](app/(landing)/layout.tsx) composes `Navbar` + page `children` + `Footer`.
-- To reorder sections, edit [app/(landing)/page.tsx](app/(landing)/page.tsx) where sections are imported and placed in JSX.
+### `Testimonials` — `componentss/landing/Testimonials.tsx`
+- Purpose: 3 customer quote cards with tilted side cards.
+- Exports: `Testimonials()`.
+- Data: `testimonials` array — `{ photo, name, handle, rating, quote }`.
+- Layout: left card rotates -2.5deg, right card +2.5deg, center scales 1.03.
 
-Styling & theme
-- Tailwind CSS classes are used inline in JSX.
-- Dark mode support via `dark:` utilities; `next-themes` is present in dependencies for switching themes.
+### `Footer` — `componentss/landing/Footer.tsx`
+- Purpose: site footer with link groups and social icons.
+- Exports: `Footer()`.
+- Data: `footerLinks` (Product, Resources, Company) and `socials` arrays.
 
-Assets & images
-- Most images are external or decorative (avatars use `i.pravatar.cc`). To use local images, add them to `public/` and reference `/path` in components.
+---
 
-Run & build
-- Dev server: `pnpm dev` (see `package.json` script). Open http://localhost:3000.
-- Build: `pnpm build` runs `prisma generate && next build`.
+## Shared
 
-Recommendations / next steps
-- Centralize editable copy: move arrays and strings to `data/landing.ts` and import into components for easier editing (and potential CMS integration).
-- Add tests or storybook stories for each section if you want visual regression checks.
-- Replace placeholder avatars with real customer photos and add alt text metadata for accessibility.
+### `Navbar` — `componentss/shared/Navbar.tsx`
+- Uses Clerk `useUser()` for sign-in state.
+- Nav links: `#features`, `#pricing`, `#testimonials` (hash anchors).
+- Text color: `text-slate-400` at rest, `hover:text-foreground` on hover.
+- Includes `ModeToggle` for dark/light theme switching.
+- Mobile: hamburger menu with full nav links.
 
-Where I saved this
-- Structured doc: `docs/landing-structured.md` (this file)
+---
 
-If you'd like, I can now:
-- move the component data into `data/landing.ts` and update imports, or
-- generate a small markdown with screenshots for designers.
+## Routing & Layout
+
+- Landing route group: `app/(landing)/`
+- Layout: `Navbar` + page children + `Footer`
+- Section order in `app/(landing)/page.tsx`:
+  ```tsx
+  <Hero />
+  <SocialConnect />
+  <Features />
+  <Pricing />
+  <Testimonials />
+  ```
+
+---
+
+## Styling & Theme
+
+- Tailwind CSS inline classes throughout.
+- Dark mode: `dark:` utilities + `next-themes`.
+- Primary color: `#0d7c8a` (teal) for CTAs and accents.
+- Font: Inter (set globally via `--font-inter` CSS variable in `app/layout.tsx`).
+- Dark mode foreground: pure white `hsl(0 0% 100%)`.
+- Secondary text: cool blue-gray `hsl(220 20% 65%)`.
+
+---
+
+## Caption Generation
+
+- Model: fine-tuned Phi-2 on Hugging Face Inference API.
+- Client: `lib/model.ts`.
+- Route: `app/api/generate/caption/route.ts`.
+- Env vars needed: `HF_MODEL_ID`, `HF_API_KEY`.
+- Returns HTTP 503 until model is deployed.
+
+---
+
+## Supported Platforms
+
+| Platform  | OAuth Route              |
+|-----------|--------------------------|
+| Instagram | `/api/auth/instagram`    |
+| Facebook  | `/api/auth/facebook`     |
+| YouTube   | `/api/auth/youtube`      |
+| TikTok    | `/api/auth/tiktok`       |
+
+> LinkedIn and Twitter/X are NOT connectable platforms. They do not have backend OAuth implementation.
+
+---
+
+## Assets
+
+- Hero image: `public/newheroimage.png`
+- Logo: `public/logo.png`
+- Social icons: `cdn.simpleicons.org` CDN
+- Testimonial avatars: `i.pravatar.cc` placeholders
+
+---
+
+## Run & Build
+
+```bash
+pnpm dev    # http://localhost:3000
+pnpm build  # prisma generate + next build
+```

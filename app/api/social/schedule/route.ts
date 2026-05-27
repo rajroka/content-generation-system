@@ -65,6 +65,9 @@ export async function POST(req: Request) {
       const monthStart = startOfMonth(new Date());
       const monthEnd   = endOfMonth(new Date());
 
+      // Check PlanLimit DB row first, fall back to hardcoded 15
+      const monthlyLimit = 15; // PlanLimit table has no monthlySchedules column — hardcoded
+
       const monthlyCount = await prisma.scheduledPost.count({
         where: {
           userId:    user.id,
@@ -73,10 +76,10 @@ export async function POST(req: Request) {
         },
       });
 
-      if (monthlyCount >= 15) {
+      if (monthlyCount >= monthlyLimit) {
         return NextResponse.json(
-          { error: "Monthly schedule limit reached (15/month). Upgrade to Pro for unlimited." },
-          { status: 403 }
+          { error: `Monthly schedule limit reached (${monthlyLimit}/month on FREE plan). Upgrade to Pro for unlimited.` },
+          { status: 429 }
         );
       }
     }

@@ -36,39 +36,47 @@ app/
 │   ├── page.tsx
 │   ├── analytics/
 │   ├── users/
-│   └── subscriptions/
+│   ├── content/
+│   ├── subscriptions/
+│   └── activity/
 ├── user/                           # Authenticated user area
 │   ├── layout.tsx
 │   ├── dashboard/
-│   ├── generate/                   # Main AI content composer
+│   ├── generate/                   # Main content composer with caption generation
 │   ├── history/
 │   ├── analytics/
 │   ├── calendar/                   # Scheduled posts calendar
 │   └── platforms/                  # Social account connections
 └── api/                            # API route handlers
     ├── generate/
-    │   ├── caption/route.ts
-    │   └── image/route.ts
+    │   └── caption/route.ts        # Caption generation via fine-tuned Phi-2 model
     ├── social/
     │   ├── publish/route.ts
     │   ├── schedule/route.ts
-    │   ├── scheduled/route.ts
+    │   ├── scheduled/route.ts      # GET/PATCH/DELETE for scheduled posts
     │   ├── connections/route.ts
     │   ├── disconnect/route.ts
     │   └── toggle-active/route.ts
     ├── upload/                     # ImageKit upload (image + video)
-    ├── auth/                       # OAuth flows: facebook, instagram, twitter, linkedin
+    ├── auth/                       # OAuth flows: facebook, instagram, youtube, tiktok
     │   └── {platform}/
-    │       ├── route.ts            # Initiate OAuth
-    │       └── callback/route.ts   # Handle OAuth callback
+    │       ├── route.ts            # Initiate OAuth via Zernio
+    │       └── callback/route.ts   # Handle OAuth callback, store SocialAccount
     ├── admin/                      # Admin CRUD endpoints
     │   ├── users/
+    │   │   ├── route.ts
+    │   │   ├── toggle-active/route.ts
+    │   │   └── update-plan/route.ts
     │   ├── generations/
-    │   ├── analytics/
-    │   └── activity/
+    │   │   ├── route.ts
+    │   │   ├── flag/route.ts
+    │   │   └── delete/route.ts
+    │   ├── analytics/route.ts
+    │   ├── subscriptions/route.ts
+    │   └── activity/route.ts
     ├── user/                       # User profile, usage, plan, notifications
     ├── checkout/route.ts           # Stripe checkout session
-    ├── billing-portal/route.ts     # Stripe billing portal
+    ├── billing-portal/route.ts     # ⚠️ Currently a duplicate Stripe webhook — Billing Portal redirect not yet implemented
     └── webhooks/
         ├── clerk/route.ts
         └── stripe/route.ts
@@ -89,11 +97,11 @@ componentss/
 │   └── UpgradeNotifier.tsx
 ├── landing/
 │   ├── Hero.tsx
+│   ├── SocialConnect.tsx
 │   ├── Features.tsx
 │   ├── Pricing.tsx
 │   ├── Testimonials.tsx
-│   ├── Footer.tsx
-│   └── Marquee.tsx
+│   └── Footer.tsx
 ├── shared/
 │   ├── Navbar.tsx
 │   ├── Logo.tsx
@@ -112,10 +120,12 @@ Auto-generated shadcn/ui components (Button, Card, Badge, Dialog, Select, Tabs, 
 ```
 lib/
 ├── prisma.ts           # Prisma client singleton (always import from here)
-├── groq.ts             # Groq AI helpers: generateTitles, generateCaptions, generateHashtags, generatePostingPlan
+├── model.ts            # Caption generation client — fine-tuned Phi-2 via Hugging Face Inference API
 ├── stripe.ts           # Stripe client singleton
+├── zernio.ts           # Zernio API client singleton (reads ZERNIO_API_KEY)
 ├── admin.ts            # makeUserAdmin / removeAdminRole Clerk helpers
 ├── user.ts             # getUserByClerkId helper
+├── email.ts            # Resend email helpers — sendPostPublishedEmail, sendPostFailedEmail (not yet called)
 ├── utils.ts            # cn() — clsx + tailwind-merge
 └── generated/prisma/   # Prisma-generated client (do not edit manually; regenerate with `pnpm prisma generate`)
 ```
@@ -126,6 +136,13 @@ Central file for shared TypeScript interfaces and type aliases: `Platform`, `Ton
 
 Prisma-generated enums (from `lib/generated/prisma`) are used directly in DB operations; `types/index.ts` mirrors them for UI/API layer use.
 
+## Charts
+
+- **User analytics** (`app/user/analytics/page.tsx`) — uses `@mui/x-charts` (`BarChart`, `LineChart`, `PieChart`)
+- **Admin analytics** (`app/admin/analytics/page.tsx`) — uses `recharts` (`LineChart`, `BarChart`, `PieChart`, `ResponsiveContainer`)
+
+Both libraries are installed. Do not mix them within the same page.
+
 ## Key Conventions
 
 - **Server Components by default** — use `"use client"` only when interactivity or browser APIs are needed.
@@ -135,3 +152,4 @@ Prisma-generated enums (from `lib/generated/prisma`) are used directly in DB ope
 - **Prisma enums** — import from `@/lib/generated/prisma`, not from `@prisma/client`.
 - **Path alias** — `@/` maps to the project root. Use it for all internal imports.
 - **No test framework** — there is no Jest/Vitest setup; do not assume tests exist.
+- **Clerk role values** — stored as lowercase strings in `publicMetadata.role`: `"admin"` or `"user"`. Admin checks compare against lowercase `"admin"`.

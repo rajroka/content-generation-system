@@ -1,4 +1,4 @@
-export type Platform = "INSTAGRAM" | "FACEBOOK" | "TWITTER" | "LINKEDIN";
+export type Platform = "INSTAGRAM" | "FACEBOOK" | "YOUTUBE" | "TIKTOK";
 export type Tone = "PROFESSIONAL" | "CASUAL" | "INSPIRATIONAL" | "HUMOROUS";
 export type Plan = "FREE" | "PRO";
 export type Role = "USER" | "ADMIN";

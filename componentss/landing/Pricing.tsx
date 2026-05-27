@@ -132,19 +132,32 @@ export function Pricing({ currentPlan }: PricingProps) {
                   {plan.blurb}
                 </p>
 
-                {/* CTA */}
-                <Link
-                  href={ctaHref}
-                  className={
-                    isCurrentPlan
-                      ? "mt-6 inline-flex h-11 w-full pointer-events-none items-center justify-center rounded-lg border border-border text-sm font-black text-muted-foreground"
-                      : plan.highlighted
-                      ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#0d7c8a] text-sm font-black text-white shadow-lg transition hover:bg-[#0b6a75] active:scale-[0.98]"
-                      : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-black text-foreground transition hover:bg-muted"
-                  }
-                >
-                  {ctaLabel}
-                </Link>
+                {/* CTA — use <a> for API routes so the browser follows the server redirect */}
+                {ctaHref.startsWith("/api/") ? (
+                  <a
+                    href={ctaHref}
+                    className={
+                      plan.highlighted
+                        ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#0d7c8a] text-sm font-black text-white shadow-lg transition hover:bg-[#0b6a75] active:scale-[0.98]"
+                        : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-black text-foreground transition hover:bg-muted"
+                    }
+                  >
+                    {ctaLabel}
+                  </a>
+                ) : (
+                  <Link
+                    href={ctaHref}
+                    className={
+                      isCurrentPlan
+                        ? "mt-6 inline-flex h-11 w-full pointer-events-none items-center justify-center rounded-lg border border-border text-sm font-black text-muted-foreground"
+                        : plan.highlighted
+                        ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#0d7c8a] text-sm font-black text-white shadow-lg transition hover:bg-[#0b6a75] active:scale-[0.98]"
+                        : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-black text-foreground transition hover:bg-muted"
+                    }
+                  >
+                    {ctaLabel}
+                  </Link>
+                )}
 
                 {/* Features label */}
                 <p className="mt-6 mb-3 text-xs font-semibold text-muted-foreground">

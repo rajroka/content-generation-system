@@ -16,8 +16,6 @@ const isPublicRoute = createRouteMatcher([
   "/api/auth/facebook(.*)",
   "/api/auth/youtube(.*)",
   "/api/auth/tiktok(.*)",
-  "/api/auth/twitter(.*)",
-  "/api/auth/linkedin(.*)",
 ]);
 
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);

@@ -13,14 +13,14 @@ export const PLAN_LIMITS = {
   },
   PRO: {
     dailyCaptions: 999,
-    platforms: ["INSTAGRAM", "FACEBOOK", "TWITTER", "LINKEDIN"],
+    platforms: ["INSTAGRAM", "FACEBOOK", "YOUTUBE", "TIKTOK"],
     tones: ["PROFESSIONAL", "CASUAL", "INSPIRATIONAL", "HUMOROUS"],
   },
 };
 
 export const PLATFORM_LIMITS = {
   INSTAGRAM: 2200,
-  FACEBOOK: 63206,
-  TWITTER: 280,
-  LINKEDIN: 3000,
+  FACEBOOK:  63206,
+  YOUTUBE:   5000,
+  TIKTOK:    2200,
 };

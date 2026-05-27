@@ -275,11 +275,19 @@ export default async function DashboardPage({
                 <p className="text-sm font-bold text-foreground">
                   {isUnlimited ? `${plan} Plan` : "Free Plan"}
                 </p>
-                <Link href={isUnlimited ? "/api/billing-portal" : "/pricing"}>
-                  <Button size="sm" className="mt-3 bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-xs font-bold h-8 px-4 rounded-lg">
-                    {isUnlimited ? "Manage Plan" : "Upgrade Now"}
-                  </Button>
-                </Link>
+                {isUnlimited ? (
+                  <a href="/api/billing-portal">
+                    <Button size="sm" className="mt-3 bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-xs font-bold h-8 px-4 rounded-lg">
+                      Manage Plan
+                    </Button>
+                  </a>
+                ) : (
+                  <a href="/api/checkout">
+                    <Button size="sm" className="mt-3 bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-xs font-bold h-8 px-4 rounded-lg">
+                      Upgrade Now
+                    </Button>
+                  </a>
+                )}
               </div>
             </CardContent>
           </Card>

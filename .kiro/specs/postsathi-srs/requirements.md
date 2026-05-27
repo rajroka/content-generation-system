@@ -12,7 +12,7 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 - **User**: An authenticated individual with the USER role who accesses the dashboard and content features.
 - **Admin**: An authenticated individual with the ADMIN role who accesses the admin panel.
 - **Caption_Generator**: The subsystem responsible for producing captions and hashtags via the fine-tuned Phi-2 model hosted on Hugging Face Inference API.
-- **Scheduler**: The subsystem responsible for creating, storing, and managing scheduled and draft posts.
+- **Scheduler**: The subsystem responsible for creating, storing, and managing scheduled posts.
 - **Publisher**: The subsystem responsible for immediately publishing posts to connected social platforms via the Zernio API.
 - **Usage_Enforcer**: The subsystem responsible for tracking and enforcing per-user daily and monthly usage limits.
 - **Auth_Service**: Clerk — the external service handling user authentication, session management, and role assignment.
@@ -20,10 +20,10 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 - **ImageKit**: The CDN service used for storing and serving uploaded images and videos.
 - **Stripe**: The payment processor used for subscription billing and checkout.
 - **Generation**: A single content generation event, producing a caption and hashtags, stored in the `Generation` database model.
-- **ScheduledPost**: A database record representing a post in DRAFT, SCHEDULED, PUBLISHED, FAILED, or CANCELLED state.
+- **ScheduledPost**: A database record representing a post in SCHEDULED, PUBLISHED, FAILED, or CANCELLED state.
 - **SocialAccount**: A database record linking a User to a connected social media platform account via Zernio.
 - **Plan**: A subscription tier — FREE or PRO — that determines usage limits and feature access.
-- **PlanLimit**: A database record defining the daily caption and monthly schedule limits for each Plan.
+- **PlanLimit**: A database record defining the daily caption limit for each Plan. Note: the `monthlySchedules` limit is hardcoded in application logic, not stored in this table.
 - **Usage**: A database record tracking a User's daily consumption of captions, images, and posts.
 - **Platform**: One of INSTAGRAM, FACEBOOK, YOUTUBE, or TIKTOK.
 - **Tone**: One of PROFESSIONAL, CASUAL, INSPIRATIONAL, or HUMOROUS — the stylistic register for generated content.
@@ -57,10 +57,10 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 #### Acceptance Criteria
 
-1. THE System SHALL recognize exactly two roles: USER and ADMIN, stored in Clerk `publicMetadata.role`.
-2. WHEN a request is made to any route under `/admin/*`, THE System SHALL verify the authenticated user's role is ADMIN by querying the Clerk client directly.
+1. THE System SHALL recognize exactly two roles: USER and ADMIN, stored in Clerk `publicMetadata.role` as lowercase strings (`"user"`, `"admin"`).
+2. WHEN a request is made to any route under `/admin/*`, THE System SHALL verify the authenticated user's role is `"admin"` by querying the Clerk client directly in `app/admin/layout.tsx`.
 3. IF a User with the USER role attempts to access any route under `/admin/*`, THEN THE System SHALL redirect the request to `/user/dashboard`.
-4. WHEN a User completes sign-in, THE System SHALL redirect the User to `/admin` if the role is ADMIN, or to `/user/dashboard` if the role is USER.
+4. WHEN a User completes sign-in, THE System SHALL redirect the User to `/admin` if the role is `"admin"`, or to `/user/dashboard` if the role is `"user"`, via the `/auth/redirect` route.
 5. THE System SHALL not rely solely on session claims for admin authorization; THE System SHALL re-verify the role via a fresh Clerk client call in `app/admin/layout.tsx`.
 6. THE Admin SHALL be able to assign or revoke the ADMIN role for any User via the admin panel.
 
@@ -76,8 +76,8 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 2. THE Caption_Generator SHALL use a fine-tuned Phi-2 model hosted on Hugging Face Inference API (`lib/model.ts`) for caption and hashtag generation.
 3. THE Caption_Generator SHALL tailor the caption style and length to the specified Platform.
 4. THE Caption_Generator SHALL tailor the caption register to the specified Tone.
-5. WHEN a caption is successfully generated, THE System SHALL persist a Generation record with `userId`, `topic`, `platform`, `caption`, and `hashtags`.
-6. WHEN a User on the FREE plan has reached the daily caption limit, THE Usage_Enforcer SHALL reject the generation request with HTTP 429 and a descriptive error message.
+5. WHEN a caption is successfully generated, THE System SHALL persist a Generation record with `userId`, `topic`, `platform`, `caption`, and `hashtags`. Note: the `tone` field is accepted as input but is not persisted to the Generation record.
+6. WHEN a User on the FREE plan has reached the daily caption limit, THE Usage_Enforcer SHALL reject the generation request with HTTP 429 and a descriptive error message indicating the limit and plan.
 7. WHEN a caption generation request is rejected due to usage limits, THE System SHALL not create a Generation record or increment the usage counter.
 8. WHEN a caption is successfully generated, THE Usage_Enforcer SHALL increment `captionCount` in the User's Usage record for the current date.
 9. IF the model API is unavailable or not yet deployed, THEN THE Caption_Generator SHALL return HTTP 503 with a descriptive error message.
@@ -86,42 +86,24 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 ---
 
-### Requirement 4: Media Upload
-
-**User Story:** As a User, I want to upload my own images and videos to attach to posts, so that I can use custom media alongside generated content.
-
-#### Acceptance Criteria
-
-1. WHEN a User uploads an image file via `/api/upload/image`, THE System SHALL upload the file to ImageKit and return the CDN_URL.
-2. WHEN a User uploads a video file via `/api/upload/video`, THE System SHALL upload the file to ImageKit and return the CDN_URL.
-3. THE System SHALL accept image files in JPEG, PNG, GIF, and WebP formats with a maximum size of 20MB.
-4. THE System SHALL accept video files in MP4, MOV, and WebM formats with a maximum size of 100MB.
-5. WHEN a file is uploading, THE System SHALL display an upload progress indicator in the media grid.
-6. WHEN a file upload completes, THE System SHALL display the uploaded media as a thumbnail in the media grid.
-7. THE System SHALL allow a User to post with caption-only, media-only, or both caption and media.
-8. IF an unauthenticated request is made to `/api/upload/image` or `/api/upload/video`, THEN THE System SHALL reject the request with HTTP 401.
-
----
-
-### Requirement 5: Social Account OAuth Connection
+### Requirement 4: Social Account OAuth Connection
 
 **User Story:** As a User, I want to connect my social media accounts, so that I can publish and schedule posts directly from PostSathi.
 
 #### Acceptance Criteria
 
 1. WHEN a User initiates a connection for a Platform, THE System SHALL call `zernio.connect.getConnectUrl()` and redirect the User to the Zernio OAuth authorization URL.
-2. WHEN the Zernio OAuth callback is received at `/api/auth/{platform}/callback`, THE System SHALL store a SocialAccount record with `userId`, `platform`, `accountId`, `accountName`, and `isActive: true`.
+2. WHEN the Zernio OAuth callback is received at `/api/auth/{platform}/callback`, THE System SHALL upsert a SocialAccount record with `userId`, `platform`, `accountId`, `accountName`, and `isActive: true`.
 3. IF a SocialAccount record already exists for the same `userId` and `platform`, THEN THE System SHALL update the existing record rather than creating a duplicate.
-4. WHEN a User disconnects a Platform, THE System SHALL call `zernio.accounts.deleteAccount(accountId)` and then delete the corresponding SocialAccount record from the database.
-5. THE System SHALL support OAuth connection for INSTAGRAM, FACEBOOK, YOUTUBE, and TIKTOK platforms.
+4. WHEN a User disconnects a Platform, THE System SHALL call `zernio.accounts.deleteAccount(accountId)` (best-effort) and then delete the corresponding SocialAccount record from the database regardless of the Zernio API result.
+5. THE System SHALL support OAuth connection for INSTAGRAM, FACEBOOK, YOUTUBE, and TIKTOK platforms only.
 6. WHEN a User requests the list of connected accounts via `/api/social/connections`, THE System SHALL return all SocialAccount records for that User from the local database.
 7. IF the Zernio OAuth callback contains an error parameter, THEN THE System SHALL display a descriptive error message to the User.
-8. EACH connected platform card SHALL display a "Change Preview" button that navigates to the generate page with that platform's preview pre-selected.
-9. THE System SHALL allow a User to toggle auto-publishing on or off for each connected platform via a Switch control.
+8. THE System SHALL allow a User to toggle auto-publishing on or off for each connected platform via a Switch control, updating `isActive` on the SocialAccount record.
 
 ---
 
-### Requirement 6: Immediate Post Publishing
+### Requirement 5: Immediate Post Publishing
 
 **User Story:** As a User, I want to publish a post immediately to one or more connected social platforms, so that I can share content in real time.
 
@@ -129,31 +111,32 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. WHEN a User submits a publish request with a `caption` and/or `mediaUrls` and one or more `platforms`, THE Publisher SHALL call `zernio.posts.createPost({ publishNow: true, platforms: [...] })` using the stored Zernio account IDs.
 2. WHEN a post is successfully published, THE System SHALL create a ScheduledPost record with `status: PUBLISHED` and `publishedAt` set to the current timestamp.
-3. IF the Zernio API returns an error during publishing, THEN THE System SHALL create a ScheduledPost record with `status: FAILED` and store the error message in `failureReason`.
-4. IF a User attempts to publish to a Platform for which no active SocialAccount exists, THEN THE System SHALL reject the request with HTTP 400 and a descriptive error message.
-5. THE System SHALL allow posting with caption-only, media-only, or both.
+3. IF the Zernio API returns an error during publishing, THEN THE System SHALL return an error response with the Zernio error message.
+4. IF a User attempts to publish to a Platform for which no active SocialAccount exists, THEN THE System SHALL reject the request with HTTP 400 and a descriptive error message listing the missing platforms.
+5. THE System SHALL allow posting with caption-only, media-only, or both caption and media.
 6. WHEN a publish request is made, THE Usage_Enforcer SHALL increment `postCount` in the User's Usage record for the current date.
 7. IF an unauthenticated request is made to `/api/social/publish`, THEN THE System SHALL reject the request with HTTP 401.
+8. WHEN publishing to Instagram with a portrait image (aspect ratio below 0.75), THE System SHALL automatically set the content type to `"story"` in the Zernio request.
 
 ---
 
-### Requirement 7: Post Scheduling and Drafts
+### Requirement 6: Post Scheduling
 
-**User Story:** As a User, I want to schedule posts for a future date and time or save them as drafts, so that I can plan my content calendar in advance.
+**User Story:** As a User, I want to schedule posts for a future date and time, so that I can plan my content calendar in advance.
 
 #### Acceptance Criteria
 
 1. WHEN a User submits a schedule request with a `caption`, `platforms`, and a future `scheduledFor` datetime, THE Scheduler SHALL call `zernio.posts.createPost({ scheduledFor: "...", platforms: [...] })` and create a ScheduledPost record with `status: SCHEDULED`.
-2. WHEN a User submits a draft request without a `scheduledFor` datetime, THE Scheduler SHALL create a ScheduledPost record with `status: DRAFT` and SHALL NOT call the Zernio API.
-3. THE System SHALL store `caption`, `hashtags`, `imageUrl`, `imageUrls`, `platforms`, `scheduledFor`, and `status` on the ScheduledPost record.
-4. WHEN a ScheduledPost is successfully created with `status: SCHEDULED`, THE Usage_Enforcer SHALL increment `scheduleCount` in the User's Usage record for the current calendar month.
-5. WHEN a User on the FREE plan has reached 15 scheduled posts in the current calendar month, THE Usage_Enforcer SHALL reject the schedule request with HTTP 429 and a descriptive error message.
-6. IF the `scheduledFor` datetime is in the past, THEN THE System SHALL reject the schedule request with HTTP 400 and a descriptive error message.
-7. IF an unauthenticated request is made to `/api/social/schedule`, THEN THE System SHALL reject the request with HTTP 401.
+2. THE System SHALL store `caption`, `hashtags`, `imageUrl`, `imageUrls`, `platforms`, `scheduledFor`, and `status` on the ScheduledPost record.
+3. WHEN a ScheduledPost is successfully created with `status: SCHEDULED`, THE Usage_Enforcer SHALL increment `scheduleCount` in the User's Usage record for the current calendar day.
+4. WHEN a User on the FREE plan has reached 15 scheduled posts in the current calendar month (counting SCHEDULED and PUBLISHED statuses), THE Usage_Enforcer SHALL reject the schedule request with HTTP 429 and a descriptive error message.
+5. IF the `scheduledFor` datetime is in the past or invalid, THEN THE System SHALL reject the schedule request with HTTP 400 and a descriptive error message.
+6. IF an unauthenticated request is made to `/api/social/schedule`, THEN THE System SHALL reject the request with HTTP 401.
+7. IF a User attempts to schedule to a Platform for which no active SocialAccount exists, THEN THE System SHALL reject the request with HTTP 400 listing the missing platforms.
 
 ---
 
-### Requirement 8: Post Preview
+### Requirement 7: Post Preview
 
 **User Story:** As a User, I want to preview how my post will look on different platforms before publishing, so that I can ensure the content looks correct.
 
@@ -161,28 +144,27 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. THE generate page SHALL display a live preview panel that updates in real time as the User types a caption or uploads media.
 2. THE System SHALL provide a platform preview selector with the following options: Facebook Post, Facebook Reel, Instagram.
-3. THE preview selector SHALL only show options for platforms the User has connected.
-4. WHEN a User selects a preview type, THE System SHALL render a mock UI matching that platform's post format.
-5. WHEN a User has connected a Facebook account, THE System SHALL fetch and display the Facebook profile photo in the preview.
-6. THE preview SHALL display the full media without cropping, using `object-contain` layout.
-7. WHEN a User navigates from the connections page using the "Change Preview" button, THE generate page SHALL pre-select that platform's preview.
+3. WHEN a User selects a preview type, THE System SHALL render a mock UI matching that platform's post format.
+4. WHEN a User has connected a Facebook account, THE System SHALL fetch and display the Facebook profile photo in the preview.
+5. THE preview SHALL display the full media without cropping, using `object-contain` layout.
+6. WHEN a User navigates from the connections page using the "Change Preview" button, THE generate page SHALL pre-select that platform's preview.
 
 ---
 
-### Requirement 9: Usage Limit Display
+### Requirement 8: Usage Limit Display
 
 **User Story:** As a User, I want to see my current usage against my plan limits, so that I know how many captions and schedules I have remaining.
 
 #### Acceptance Criteria
 
 1. THE generate page SHALL display real-time usage badges showing `captions used / caption limit` and `schedules used / schedule limit`.
-2. THE System SHALL fetch usage data from `/api/user/usage` which returns `captions`, `schedules`, `captionLimit`, and `scheduleLimit`.
-3. WHEN a User is on the PRO plan, THE System SHALL display `∞` as the limit for both captions and schedules.
-4. THE usage limits SHALL be read from the `PlanLimit` database table, not hardcoded in application logic.
+2. THE System SHALL fetch usage data from `/api/user/usage` which returns `captions`, `schedules`, `posts`, `plan`, `captionLimit`, and `scheduleLimit`.
+3. WHEN a User is on the PRO plan, THE System SHALL return `null` for `captionLimit` and `scheduleLimit`, and the UI SHALL display `∞` as the limit.
+4. THE daily caption limit SHALL be read from the `PlanLimit` database table when available, falling back to the hardcoded default of 10 for FREE users. The monthly schedule limit of 15 for FREE users is hardcoded in application logic.
 
 ---
 
-### Requirement 10: Content Calendar
+### Requirement 9: Content Calendar
 
 **User Story:** As a User, I want to view all my scheduled and published posts in a calendar view, so that I can manage my posting schedule visually.
 
@@ -190,13 +172,15 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. THE System SHALL provide a calendar view at `/user/calendar` displaying all ScheduledPost records for the authenticated User.
 2. WHEN the calendar is rendered, THE System SHALL display posts grouped by their `scheduledFor` date.
-3. THE System SHALL visually distinguish posts by their `status` (DRAFT, SCHEDULED, PUBLISHED, FAILED) using distinct color-coded badges.
+3. THE System SHALL visually distinguish posts by their `status` (SCHEDULED, PUBLISHED, FAILED, CANCELLED) using distinct color-coded badges.
 4. WHEN a User selects a date on the calendar, THE System SHALL display all ScheduledPost records for that date.
 5. THE System SHALL display the `caption`, `platforms`, and `status` for each post in the calendar view.
+6. THE calendar SHALL poll for updates every 60 seconds to reflect status changes.
+7. THE System SHALL allow a User to reschedule, publish immediately, or delete a scheduled post from the calendar via a post detail drawer.
 
 ---
 
-### Requirement 11: Generation History
+### Requirement 10: Generation History
 
 **User Story:** As a User, I want to view my past generated content, so that I can reuse or review previous generations.
 
@@ -209,24 +193,23 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 ---
 
-### Requirement 12: User Dashboard
+### Requirement 11: User Dashboard
 
-**User Story:** As a User, I want a dashboard overview of my activity, so that I can quickly see my recent posts, upcoming scheduled posts, and drafts.
+**User Story:** As a User, I want a dashboard overview of my activity, so that I can quickly see my recent posts, upcoming scheduled posts, and plan status.
 
 #### Acceptance Criteria
 
-1. THE System SHALL provide a dashboard at `/user/dashboard` with the following sections: Quick Actions, Recent Posts, Upcoming Posts, Recent Drafts, and Plan Banner.
+1. THE System SHALL provide a dashboard at `/user/dashboard` with the following sections: Quick Actions, Recent Posts, Upcoming Posts, and Plan Banner.
 2. THE Quick Actions section SHALL provide direct navigation links to: Create Post (`/user/generate`), View Calendar (`/user/calendar`), and Analytics (`/user/analytics`).
-3. THE Recent Posts section SHALL display the last 5 posts with caption preview, status badge, platform icons, and date.
+3. THE Recent Posts section SHALL display the last 5 ScheduledPost records with caption preview, status badge, platform icons, and date.
 4. THE Upcoming Posts section SHALL display the next 3 scheduled posts with thumbnail, caption preview, scheduled time, and platform icon.
-5. THE Recent Drafts section SHALL display the last 3 drafts with caption preview and last updated time.
-6. THE Plan Banner SHALL display the User's current plan and a link to manage or upgrade the plan.
-7. THE status badges SHALL use dark colored backgrounds (dark green for Published, dark blue for Scheduled, dark gray for Draft) with white text.
-8. THE platform column SHALL display real brand SVG icons instead of text abbreviations.
+5. THE Plan Banner SHALL display the User's current plan with an "Upgrade Now" link to `/api/checkout` for FREE users and a "Manage Plan" link to `/api/billing-portal` for PRO users.
+6. THE status badges SHALL use dark colored backgrounds (dark green for Published, dark blue for Scheduled) with white text.
+7. THE platform column SHALL display real brand SVG icons instead of text abbreviations.
 
 ---
 
-### Requirement 13: User Analytics
+### Requirement 12: User Analytics
 
 **User Story:** As a User, I want to see analytics about my content generation and posting activity, so that I can understand my usage patterns.
 
@@ -234,68 +217,73 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. THE System SHALL provide an analytics view at `/user/analytics` displaying usage statistics for the authenticated User.
 2. THE System SHALL display the total number of captions generated and posts published.
-3. THE System SHALL display usage trend data over the past 30 days using a chart visualization.
+3. THE System SHALL display usage trend data over the past 30 days using chart visualizations powered by `@mui/x-charts`.
 4. THE System SHALL display a breakdown of Generation records by Platform.
 
 ---
 
-### Requirement 14: Usage Limit Enforcement
+### Requirement 13: Usage Limit Enforcement
 
 **User Story:** As a platform operator, I want usage limits enforced per plan tier, so that free users do not exceed their allocation and paid users receive their entitled capacity.
 
 #### Acceptance Criteria
 
-1. THE Usage_Enforcer SHALL enforce the following daily caption limits: FREE plan — 10 captions per calendar day; PRO plan — unlimited.
-2. THE Usage_Enforcer SHALL enforce the following monthly scheduled post limits: FREE plan — 15 scheduled posts per calendar month; PRO plan — unlimited.
+1. THE Usage_Enforcer SHALL enforce the following daily caption limits: FREE plan — 10 captions per calendar day (read from `PlanLimit` DB table when available, hardcoded as fallback); PRO plan — unlimited.
+2. THE Usage_Enforcer SHALL enforce the following monthly scheduled post limits: FREE plan — 15 scheduled posts per calendar month (hardcoded); PRO plan — unlimited.
 3. WHEN a User's daily usage resets at midnight UTC, THE Usage_Enforcer SHALL allow the User to generate content up to the daily limit again.
-4. THE System SHALL read plan limits from the PlanLimit database table, not from hardcoded values in application logic.
-5. WHEN a limit is reached, THE System SHALL return HTTP 429 with a message indicating the limit type and the User's current Plan.
+4. WHEN a caption limit is reached, THE System SHALL return HTTP 429 with a message indicating the limit and the User's current Plan.
+5. WHEN a schedule limit is reached, THE System SHALL return HTTP 429 with a message indicating the limit and the User's current Plan.
+6. PRO users SHALL have no caption or schedule limit checks applied.
 
 ---
 
-### Requirement 15: Subscription Billing
+### Requirement 14: Subscription Billing
 
-**User Story:** As a User, I want to upgrade my plan via a secure checkout, so that I can access higher usage limits and additional features.
+**User Story:** As a User, I want to upgrade my plan via a secure checkout and manage my subscription, so that I can access higher usage limits.
 
 #### Acceptance Criteria
 
-1. WHEN a User initiates a plan upgrade, THE System SHALL create a Stripe Checkout Session via `/api/checkout` and redirect the User to the Stripe-hosted checkout page.
-2. WHEN a Stripe `checkout.session.completed` webhook is received, THE System SHALL update the User's `plan`, `stripeCustomerId`, and `stripeSubscriptionId` in the database.
-3. WHEN a Stripe `customer.subscription.deleted` webhook is received, THE System SHALL downgrade the User's `plan` to FREE.
-4. THE System SHALL verify the Stripe webhook signature using `STRIPE_WEBHOOK_SECRET` before processing any webhook event.
-5. WHEN a User requests access to the Stripe billing portal via `/api/billing-portal`, THE System SHALL create a Stripe Billing Portal Session and redirect the User to it.
-6. THE System SHALL support the following plan tiers: FREE (no charge), PRO ($10/month billed yearly).
+1. WHEN a FREE User initiates a plan upgrade, THE System SHALL create a Stripe Checkout Session via `/api/checkout` at $10/month and redirect the User to the Stripe-hosted checkout page.
+2. IF a User is already PRO and visits `/api/checkout`, THE System SHALL redirect them to the Stripe Billing Portal instead.
+3. WHEN a Stripe `checkout.session.completed` webhook is received, THE System SHALL update the User's `plan` to `PRO` and store `stripeCustomerId` and `stripeSubscriptionId` in the database.
+4. WHEN a Stripe `invoice.payment_succeeded` webhook is received, THE System SHALL keep the User's `plan` as `PRO`.
+5. WHEN a Stripe `invoice.payment_failed` webhook is received, THE System SHALL downgrade the User's `plan` to `FREE`.
+6. WHEN a Stripe `customer.subscription.deleted` webhook is received, THE System SHALL downgrade the User's `plan` to `FREE` and clear `stripeSubscriptionId`.
+7. WHEN a Stripe `customer.subscription.updated` webhook is received, THE System SHALL set `plan` to `PRO` if the subscription status is `active` or `trialing`, otherwise `FREE`.
+8. THE System SHALL verify the Stripe webhook signature using `STRIPE_WEBHOOK_SECRET` before processing any webhook event, rejecting invalid signatures with HTTP 400.
+9. WHEN a PRO User visits `/api/billing-portal`, THE System SHALL create a Stripe Billing Portal session and redirect the User to manage their subscription. If the User has no `stripeCustomerId`, THE System SHALL redirect to `/pricing`.
+10. THE System SHALL support the following plan tiers: FREE ($0), PRO ($10/month).
 
 ---
 
-### Requirement 16: Admin User Management
+### Requirement 15: Admin User Management
 
 **User Story:** As an Admin, I want to view and manage all users, so that I can maintain platform health and enforce policies.
 
 #### Acceptance Criteria
 
 1. THE System SHALL provide an admin users view at `/admin/users` listing all User records with `name`, `email`, `plan`, `role`, `isActive`, and `createdAt`.
-2. WHEN an Admin toggles a User's active status, THE System SHALL update `isActive` on the User record.
-3. WHEN an Admin updates a User's plan, THE System SHALL update the `plan` field on the User record immediately without requiring a Stripe transaction.
+2. WHEN an Admin toggles a User's active status, THE System SHALL update `isActive` on the User record via `/api/admin/users/toggle-active`.
+3. WHEN an Admin updates a User's plan, THE System SHALL update the `plan` field on the User record immediately via `/api/admin/users/update-plan` without requiring a Stripe transaction.
 4. THE System SHALL allow the Admin to search users by `email` or `name`.
 
 ---
 
-### Requirement 17: Admin Content Moderation
+### Requirement 16: Admin Content Moderation
 
 **User Story:** As an Admin, I want to flag and delete inappropriate generated content, so that I can enforce the platform's content policy.
 
 #### Acceptance Criteria
 
-1. THE System SHALL provide an admin content view listing all Generation records where `isDeleted` is `false`.
-2. WHEN an Admin flags a Generation record, THE System SHALL set `isFlagged` to `true` on that record.
-3. WHEN an Admin deletes a Generation record, THE System SHALL set `isDeleted` to `true` on that record.
+1. THE System SHALL provide an admin content view at `/admin/content` listing all Generation records where `isDeleted` is `false`.
+2. WHEN an Admin flags a Generation record, THE System SHALL set `isFlagged` to `true` on that record via `/api/admin/generations/flag`.
+3. WHEN an Admin deletes a Generation record, THE System SHALL set `isDeleted` to `true` on that record via `/api/admin/generations/delete`.
 4. WHEN a Generation record has `isDeleted` set to `true`, THE System SHALL exclude it from all User-facing history views.
 5. IF an unauthenticated or non-ADMIN request is made to any `/api/admin/*` endpoint, THEN THE System SHALL reject the request with HTTP 403.
 
 ---
 
-### Requirement 18: Admin Analytics
+### Requirement 17: Admin Analytics
 
 **User Story:** As an Admin, I want to view platform-wide analytics, so that I can monitor growth, usage, and revenue.
 
@@ -305,7 +293,19 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 2. THE System SHALL display a breakdown of Users by Plan (FREE, PRO).
 3. THE System SHALL display a breakdown of Generations by Platform.
 4. THE System SHALL display recent platform activity including new user registrations and recent generations.
-5. THE System SHALL display usage trend data over a configurable time range using chart visualizations.
+5. THE System SHALL display usage trend data using chart visualizations powered by `recharts`.
+
+---
+
+### Requirement 18: Admin Subscriptions
+
+**User Story:** As an Admin, I want to view subscription and billing data for all users, so that I can monitor revenue and manage plan overrides.
+
+#### Acceptance Criteria
+
+1. THE System SHALL provide an admin subscriptions view at `/admin/subscriptions` displaying summary cards for total users, PRO users, FREE users, and estimated monthly recurring revenue (MRR).
+2. THE System SHALL display a billing table listing users with their `plan`, `stripeCustomerId`, `stripeSubscriptionId`, and `createdAt`.
+3. WHEN an Admin upgrades or downgrades a User's plan from the subscriptions view, THE System SHALL update the `plan` field on the User record immediately.
 
 ---
 
@@ -333,11 +333,11 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. THE landing page SHALL include the following sections in order: Hero, Social Connect, Features, Pricing, Testimonials, Footer.
 2. THE Hero section SHALL display the tagline "Create once. Post everywhere." with CTA buttons linking to sign-up and sign-in.
-3. THE Social Connect section SHALL display brand icons for supported platforms (Facebook, Instagram, YouTube, TikTok, Telegram, Snapchat, WhatsApp, Threads, X) with the heading "Connect your favorite accounts".
-4. THE Pricing section SHALL display Free ($0) and Premium ($10/mo) plan cards with feature lists in a centered vertical layout.
+3. THE Social Connect section SHALL display brand icons for social platforms (Facebook, Instagram, X, YouTube, TikTok, Threads, Telegram, Snapchat, WhatsApp) as a decorative showcase with the heading "Connect your favorite accounts". Note: X (Twitter) appears here as a visual element only — it is not a connectable platform in the app.
+4. THE Pricing section SHALL display Free ($0) and Premium ($10/mo) plan cards with feature lists.
 5. THE Testimonials section SHALL display 3 cards with the side cards tilted and the center card scaled up.
 6. THE landing page SHALL be fully responsive and dark mode compatible.
-7. THE navigation bar SHALL display links to Features, Pricing, and Customers sections with `text-slate-400` color and `hover:text-foreground` on hover.
+7. THE navigation bar SHALL display links to Features, Pricing, and Testimonials sections with `text-slate-400` color and `hover:text-foreground` on hover.
 
 ---
 

@@ -2,12 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart } from "@mui/x-charts/BarChart";
-import { LineChart } from "@mui/x-charts/LineChart";
-import { PieChart } from "@mui/x-charts/PieChart";
 import { Loader2 } from "lucide-react";
 import { FaFacebook, FaYoutube } from "react-icons/fa";
 import { SiInstagram, SiTiktok } from "react-icons/si";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 type DateRange = "7d" | "30d" | "90d";
 
@@ -59,22 +71,12 @@ const PLATFORM_META = {
   YOUTUBE:   { label: "YouTube",   color: "#FF0000", Icon: FaYoutube },
 } as const;
 
-const STATUS_META: Record<string, { label: string; color: string }> = {
-  PUBLISHED: { label: "Published", color: "#169B7F" },
-  SCHEDULED: { label: "Scheduled", color: "#4F86C6" },
-};
-
 const EMPTY_TOTALS: AnalyticsData["totals"] = {
   totalCaptionsGenerated: 0,
   postsPublished: 0,
   scheduledPosts: 0,
   connectedAccounts: 0,
 };
-
-const EMPTY_STATUS_DISTRIBUTION: AnalyticsData["postStatusDistribution"] = [
-  { status: "PUBLISHED", count: 0 },
-  { status: "SCHEDULED", count: 0 },
-];
 
 function platformMeta(platform: string) {
   return PLATFORM_META[platform.toUpperCase() as keyof typeof PLATFORM_META] ?? null;
@@ -84,10 +86,6 @@ function formatPlatform(platform: string) {
   const meta = platformMeta(platform);
   if (meta) return meta.label;
   return platform.charAt(0).toUpperCase() + platform.slice(1).toLowerCase();
-}
-
-function formatStatus(status: string) {
-  return STATUS_META[status]?.label ?? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 }
 
 function PlatformIcon({ platform, className = "w-4 h-4" }: { platform: string; className?: string }) {
@@ -100,11 +98,9 @@ function PlatformIcon({ platform, className = "w-4 h-4" }: { platform: string; c
 function StatCard({
   title,
   value,
-  description,
 }: {
   title: string;
   value: number | null;
-  description: string;
 }) {
   return (
     <Card className="border-none shadow-sm rounded-lg">
@@ -115,7 +111,6 @@ function StatCard({
         ) : (
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{value}</p>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   );
@@ -123,18 +118,14 @@ function StatCard({
 
 function ChartCard({
   title,
-  subtitle,
   children,
 }: {
   title: string;
-  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <h2 className="text-base font-bold text-foreground mb-1">{title}</h2>
-      {subtitle && <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>}
-      {!subtitle && <div className="mb-3" />}
+      <h2 className="text-base font-bold text-foreground mb-3">{title}</h2>
       <Card className="border-none shadow-sm rounded-lg">
         <CardContent className="p-4">{children}</CardContent>
       </Card>
@@ -144,8 +135,35 @@ function ChartCard({
 
 function EmptyChart({ message }: { message: string }) {
   return (
-    <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+    <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
       {message}
+    </div>
+  );
+}
+
+// Custom tooltip for recharts
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-md text-xs">
+      <p className="font-semibold text-foreground mb-1">{label}</p>
+      {payload.map((entry: any) => (
+        <p key={entry.dataKey} style={{ color: entry.color }}>
+          {entry.name}: <span className="font-bold">{entry.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function PieTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-md text-xs">
+      <p style={{ color: payload[0].payload.color }} className="font-semibold">
+        {payload[0].name}
+      </p>
+      <p className="text-foreground font-bold">{payload[0].value} posts</p>
     </div>
   );
 }
@@ -163,8 +181,8 @@ export default function AnalyticsPage() {
     setError(null);
 
     Promise.all([
-      fetch(`/api/dashboard/analytics?range=${dateRange}`).then((response) => response.json()),
-      fetch("/api/social/connections").then((response) => response.json()),
+      fetch(`/api/dashboard/analytics?range=${dateRange}`).then((r) => r.json()),
+      fetch("/api/social/connections").then((r) => r.json()),
     ])
       .then(([analyticsPayload, connectionsPayload]) => {
         if (analyticsPayload.error) throw new Error(analyticsPayload.error);
@@ -180,60 +198,43 @@ export default function AnalyticsPage() {
         if (!ignore) setIsLoading(false);
       });
 
-    return () => {
-      ignore = true;
-    };
+    return () => { ignore = true; };
   }, [dateRange]);
 
-  const chartSx = {
-    "& .MuiChartsAxis-tickLabel": { fill: "var(--color-muted-foreground) !important", fontSize: 11 },
-    "& .MuiChartsAxis-line": { stroke: "var(--color-border) !important" },
-    "& .MuiChartsAxis-tick": { stroke: "var(--color-border) !important" },
-    "& .MuiChartsGrid-line": { stroke: "var(--color-border)", strokeDasharray: "4 4" },
-    "& .MuiChartsLegend-label": { fill: "var(--color-foreground) !important", fontSize: 12 },
-  };
-
-  const selectedRange = DATE_RANGES.find((range) => range.value === dateRange) ?? DATE_RANGES[1];
+  const selectedRange = DATE_RANGES.find((r) => r.value === dateRange) ?? DATE_RANGES[1];
   const hasConnectedAccounts = connections.length > 0;
+
   const displayTotals = hasConnectedAccounts && data
     ? { ...data.totals, connectedAccounts: connections.length }
     : EMPTY_TOTALS;
-  const displayCaptionTrend = hasConnectedAccounts ? data?.captionTrend ?? [] : [];
+
   const displayPublishingActivity = hasConnectedAccounts ? data?.publishingActivity ?? [] : [];
-  const displayPostStatusDistribution = hasConnectedAccounts
-    ? data?.postStatusDistribution ?? EMPTY_STATUS_DISTRIBUTION
-    : EMPTY_STATUS_DISTRIBUTION;
+
   const platformEngagement = hasConnectedAccounts
-    ? data?.platformEngagement ?? connections.map((account) => ({ platform: account.platform, engagement: 0 }))
+    ? data?.platformEngagement ?? connections.map((a) => ({ platform: a.platform, engagement: 0 }))
     : [];
-  const totalPlatformEngagement = platformEngagement.reduce((sum, entry) => sum + entry.engagement, 0);
+
+  const totalPlatformEngagement = platformEngagement.reduce((sum, e) => sum + e.engagement, 0);
+
   const platformPieData = platformEngagement.map((entry, index) => {
     const meta = platformMeta(entry.platform);
     return {
-      id: entry.platform,
+      name: formatPlatform(entry.platform),
       value: entry.engagement,
-      label: formatPlatform(entry.platform),
       color: meta?.color ?? ["#64748b", "#94a3b8", "#cbd5e1"][index % 3],
+      platform: entry.platform,
     };
   });
-  const statusChartData = displayPostStatusDistribution
-    .filter((entry) => entry.count > 0)
-    .map((entry) => ({
-      id: entry.status,
-      value: entry.count,
-      label: formatStatus(entry.status),
-      color: STATUS_META[entry.status]?.color ?? "#64748b",
-    })) ?? [];
+
+  // Thinned x-axis labels for readability
+  const activityLabels = displayPublishingActivity.map((d) => d.label);
+  const tickInterval = activityLabels.length > 14 ? Math.ceil(activityLabels.length / 10) : 1;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">Analytics</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Track content output, publishing, platform mix, and scheduling health.
-          </p>
-        </div>
+      {/* Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <h1 className="text-xl font-bold text-foreground">Analytics</h1>
 
         <div className="inline-flex w-full sm:w-auto rounded-lg border border-border bg-card p-1">
           {DATE_RANGES.map((range) => (
@@ -260,26 +261,23 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <StatCard
               title="Total Captions Generated"
               value={isLoading ? null : displayTotals.totalCaptionsGenerated}
-              description={selectedRange.label}
             />
             <StatCard
               title="Posts Published"
               value={isLoading ? null : displayTotals.postsPublished}
-              description={selectedRange.label}
             />
             <StatCard
               title="Scheduled Posts"
               value={isLoading ? null : displayTotals.scheduledPosts}
-              description={`Next ${selectedRange.shortLabel}`}
             />
             <StatCard
               title="Connected Accounts"
               value={isLoading ? null : displayTotals.connectedAccounts}
-              description={selectedRange.label}
             />
           </div>
 
@@ -289,145 +287,118 @@ export default function AnalyticsPage() {
             </div>
           ) : data ? (
             <>
-              <ChartCard title="Caption Generation Trend">
-                <LineChart
-                  height={300}
-                  dataset={displayCaptionTrend}
-                  margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
-                  xAxis={[{ scaleType: "point", dataKey: "label" }]}
-                  yAxis={[{ min: 0 }]}
-                  series={[
-                    {
-                      dataKey: "count",
-                      label: "Captions generated",
-                      color: TEAL,
-                      curve: "monotoneX",
-                      showMark: false,
-                    },
-                  ]}
-                  grid={{ horizontal: true }}
-                  sx={chartSx}
-                />
+              {/* Publishing Activity — full width, large */}
+              <ChartCard title="Publishing Activity">
+                {displayPublishingActivity.length === 0 ? (
+                  <EmptyChart message="No publishing activity in this range." />
+                ) : (
+                  <ResponsiveContainer width="100%" height={360}>
+                    <LineChart
+                      data={displayPublishingActivity}
+                      margin={{ top: 10, right: 16, bottom: 8, left: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="4 4" stroke="var(--color-border)" />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                        tickLine={false}
+                        axisLine={{ stroke: "var(--color-border)" }}
+                        interval={tickInterval - 1}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                        width={28}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend
+                        wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                        formatter={(value) => (
+                          <span style={{ color: "var(--color-foreground)" }}>{value}</span>
+                        )}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="captionsGenerated"
+                        name="Captions Generated"
+                        stroke={TEAL}
+                        strokeWidth={2.5}
+                        dot={false}
+                        activeDot={{ r: 5, fill: TEAL }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="postsPublished"
+                        name="Posts Published"
+                        stroke={PUBLISHED_COLOR}
+                        strokeWidth={2.5}
+                        dot={false}
+                        activeDot={{ r: 5, fill: PUBLISHED_COLOR }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </ChartCard>
 
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                <ChartCard title="Publishing Activity">
-                  <BarChart
-                    height={300}
-                    dataset={displayPublishingActivity}
-                    margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
-                    xAxis={[{ scaleType: "band", dataKey: "label" }]}
-                    yAxis={[{ min: 0 }]}
-                    series={[
-                      { dataKey: "captionsGenerated", label: "Captions generated", color: TEAL },
-                      { dataKey: "postsPublished", label: "Posts published", color: PUBLISHED_COLOR },
-                    ]}
-                    grid={{ horizontal: true }}
-                    borderRadius={6}
-                    sx={chartSx}
-                  />
-                </ChartCard>
-
-                <ChartCard title="Platform Breakdown" subtitle="Engagement by platform">
-                  {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
-                    <EmptyChart message="No engagement by platform in this range." />
-                  ) : (
-                    <div className="grid gap-4 md:grid-cols-[minmax(220px,280px)_1fr] md:items-center">
-                      <PieChart
-                        height={280}
-                        series={[
-                          {
-                            data: platformPieData,
-                            innerRadius: 58,
-                            outerRadius: 104,
-                            paddingAngle: 3,
-                            cornerRadius: 4,
-                          },
-                        ]}
-                        colors={platformPieData.map((entry) => entry.color)}
-                        hideLegend
-                      />
-
-                      <div className="min-w-0 space-y-3">
-                        {platformEngagement.map((entry) => {
-                          const pct = totalPlatformEngagement > 0
-                            ? Math.round((entry.engagement / totalPlatformEngagement) * 100)
-                            : 0;
-                          const meta = platformMeta(entry.platform);
-                          const color = meta?.color ?? "#64748b";
-
-                          return (
-                            <div
-                              key={entry.platform}
-                              className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-3 text-sm"
-                            >
-                              <PlatformIcon platform={entry.platform} />
-                              <span className="min-w-0 truncate text-foreground">{formatPlatform(entry.platform)}</span>
-                              <span className="text-xs tabular-nums text-muted-foreground">{entry.engagement}</span>
-                              <span
-                                className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
-                                style={{ color, borderColor: `${color}55`, backgroundColor: `${color}12` }}
-                              >
-                                {pct}%
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </ChartCard>
-              </div>
-
-              <ChartCard title="Post Status Distribution">
-                {statusChartData.length === 0 ? (
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {displayPostStatusDistribution.map((entry) => {
-                      const meta = STATUS_META[entry.status] ?? { label: formatStatus(entry.status), color: "#64748b" };
-                      return (
-                        <div key={entry.status} className="rounded-lg border border-border bg-muted/30 p-4">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-2.5 w-2.5 rounded-full"
-                              style={{ backgroundColor: meta.color }}
-                            />
-                            <p className="text-xs font-medium text-muted-foreground">{meta.label}</p>
-                          </div>
-                          <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">0</p>
-                        </div>
-                      );
-                    })}
-                  </div>
+              {/* Platform Breakdown */}
+              <ChartCard title="Platform Breakdown">
+                {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
+                  <EmptyChart message="No platform data in this range." />
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-[minmax(220px,300px)_1fr] md:items-center">
-                    <PieChart
-                      height={280}
-                      series={[
-                        {
-                          data: statusChartData,
-                          innerRadius: 58,
-                          outerRadius: 104,
-                          paddingAngle: 3,
-                          cornerRadius: 4,
-                        },
-                      ]}
-                      colors={statusChartData.map((entry) => entry.color)}
-                      hideLegend
-                    />
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                    <div className="flex-shrink-0 flex justify-center">
+                      <ResponsiveContainer width={260} height={260}>
+                        <PieChart>
+                          <Pie
+                            data={platformPieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={68}
+                            outerRadius={110}
+                            paddingAngle={3}
+                            dataKey="value"
+                          >
+                            {platformPieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<PieTooltip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {displayPostStatusDistribution.map((entry) => {
-                        const meta = STATUS_META[entry.status] ?? { label: formatStatus(entry.status), color: "#64748b" };
+                    <div className="flex-1 space-y-3 min-w-0">
+                      {platformEngagement.map((entry) => {
+                        const pct = totalPlatformEngagement > 0
+                          ? Math.round((entry.engagement / totalPlatformEngagement) * 100)
+                          : 0;
+                        const meta = platformMeta(entry.platform);
+                        const color = meta?.color ?? "#64748b";
+
                         return (
-                          <div key={entry.status} className="rounded-lg border border-border bg-muted/30 p-4">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="h-2.5 w-2.5 rounded-full"
-                                style={{ backgroundColor: meta.color }}
-                              />
-                              <p className="text-xs font-medium text-muted-foreground">{meta.label}</p>
-                            </div>
-                            <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{entry.count}</p>
+                          <div
+                            key={entry.platform}
+                            className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-3 text-sm"
+                          >
+                            <PlatformIcon platform={entry.platform} />
+                            <span className="min-w-0 truncate text-foreground">
+                              {formatPlatform(entry.platform)}
+                            </span>
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {entry.engagement}
+                            </span>
+                            <span
+                              className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
+                              style={{
+                                color,
+                                borderColor: `${color}55`,
+                                backgroundColor: `${color}12`,
+                              }}
+                            >
+                              {pct}%
+                            </span>
                           </div>
                         );
                       })}
