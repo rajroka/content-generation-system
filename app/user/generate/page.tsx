@@ -7,7 +7,6 @@ import { useUser } from "@clerk/nextjs";
 import { format, startOfToday } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar as DatePickerCalendar } from "@/components/ui/calendar";
@@ -19,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check, Send, Film } from "lucide-react";
+import { Wand2, Plus, X, ImageIcon, Loader2, MoreHorizontal, Calendar, Check, Send, Film } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +53,9 @@ const LinkedInIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="#0A66C2" xmlns="http://www.w3.org/2000/svg">
     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
   </svg>
-); = ({ className }: { className?: string }) => (
+);
+
+const YouTubeIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="#FF0000" xmlns="http://www.w3.org/2000/svg">
     <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
   </svg>
@@ -362,17 +363,6 @@ export default function GeneratePage() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl md:text-xl font-bold tracking-tight">Generate & Compose</h1>
-            
-          </div>
-          <div className="flex items-center w-full md:w-auto gap-3">
-            <div className="hidden sm:flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs font-semibold">
-                {usage.captions}/{usage.captionLimit ?? "∞"} captions
-              </Badge>
-              <Badge variant="secondary" className="text-xs font-semibold">
-                {usage.schedules}/{usage.scheduleLimit ?? "∞"} schedules
-              </Badge>
-            </div>
           </div>
         </header>
 
@@ -382,8 +372,8 @@ export default function GeneratePage() {
           <div className="lg:col-span-7 space-y-6">
 
             {/* Platform Selector */}
-            <div className="space-y-4">
-              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Publish to</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-muted-foreground">Publish to</Label>
               <div className="flex flex-wrap gap-3">
                 {PLATFORMS.map(({ id, label, Icon }) => {
                   const isActive = selectedPlatforms.includes(id);
@@ -414,7 +404,7 @@ export default function GeneratePage() {
             {/* Caption */}
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Content & Hashtags</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Caption & hashtags</Label>
                 <span className="text-[10px] text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
                   {caption.length} chars
                 </span>
@@ -430,24 +420,24 @@ export default function GeneratePage() {
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="Topic: e.g., AI fitness app features"
-                  className="w-full h-12 px-5 bg-card border rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0D7C8A]/20 transition-all"
+                  className="w-full h-10 px-4 bg-card border rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0D7C8A]/20 transition-all"
                 />
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating}
                   style={{ backgroundColor: "#0D7C8A" }}
-                  className="h-12 px-8 rounded-xl hover:opacity-90 text-white font-bold flex gap-2 w-full sm:w-auto shrink-0 shadow-lg shadow-[#0D7C8A]/10"
+                  className="h-10 px-5 rounded-xl hover:opacity-90 text-white font-semibold flex gap-2 w-full sm:w-auto shrink-0"
                 >
-                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
                   Generate
                 </Button>
               </div>
             </div>
 
             {/* Media Upload — images & videos */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex justify-between items-end">
-                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Media Assets</Label>
+                <Label className="text-sm font-medium text-muted-foreground">Media</Label>
                 {mediaFiles.length > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {mediaFiles.length} file{mediaFiles.length > 1 ? "s" : ""}
@@ -497,7 +487,7 @@ export default function GeneratePage() {
                   className="aspect-square rounded-xl border-2 border-dashed border-muted hover:border-[#0D7C8A] hover:bg-[#0D7C8A]/5 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50"
                 >
                   <Plus className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-[10px] font-bold uppercase text-muted-foreground">Add</span>
+                  <span className="text-[10px] text-muted-foreground">Add</span>
                 </button>
                 <input
                   ref={fileInputRef}
@@ -513,22 +503,21 @@ export default function GeneratePage() {
                   Click a thumbnail to switch the preview. All {mediaFiles.length} files will be saved.
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Images (JPEG, PNG, WebP, GIF) · Videos (MP4, MOV, WebM) · Max 20MB / 100MB
-              </p>
             </div>
 
             {/* Publish actions */}
             <div className="space-y-4 rounded-[8px] border bg-card p-4 shadow-sm">
-              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Schedule & Publish</Label>
+              <Label className="text-sm font-medium text-muted-foreground">Schedule & publish</Label>
               <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
                 <Popover open={isSchedulePickerOpen} onOpenChange={setIsSchedulePickerOpen}>
                   <PopoverTrigger
                     render={
-                      <Button variant="outline" className="h-11 w-full justify-start gap-2 rounded-[8px]">
-                        <Calendar className="size-4 text-muted-foreground" />
-                        {scheduleDate ? formatDate(scheduleDate) : "Pick a date"}
-                      </Button>
+                      <button className="h-11 w-full flex items-center gap-2 rounded-[8px] border-2 border-[#0D7C8A]/40 bg-[#0D7C8A]/5 px-3 text-sm text-left hover:bg-[#0D7C8A]/10 hover:border-[#0D7C8A] transition-colors">
+                        <Calendar className="size-4 text-[#0D7C8A] shrink-0" />
+                        <span className={scheduleDate ? "text-foreground font-medium" : "text-muted-foreground"}>
+                          {scheduleDate ? formatDate(scheduleDate) : "Pick a date"}
+                        </span>
+                      </button>
                     }
                   />
                   <PopoverContent align="start" className="w-auto p-0">
@@ -540,6 +529,7 @@ export default function GeneratePage() {
                         if (date) setIsSchedulePickerOpen(false);
                       }}
                       disabled={{ before: startOfToday() }}
+                      className="[--primary:#0D7C8A] [--primary-foreground:#ffffff]"
                     />
                   </PopoverContent>
                 </Popover>
@@ -547,7 +537,7 @@ export default function GeneratePage() {
                   type="time"
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
-                  className="h-11 rounded-[8px] border bg-background px-3 text-sm outline-none transition-all focus:ring-2 focus:ring-[#0D7C8A]/20 dark:[color-scheme:dark]"
+                  className="h-11 rounded-[8px] border-2 border-[#0D7C8A]/40 bg-[#0D7C8A]/5 px-3 text-sm outline-none transition-all focus:ring-2 focus:ring-[#0D7C8A]/30 focus:border-[#0D7C8A] hover:border-[#0D7C8A] dark:[color-scheme:dark]"
                 />
               </div>
               <div className="grid gap-2 sm:grid-cols-2">

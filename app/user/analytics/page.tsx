@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { FaFacebook, FaYoutube } from "react-icons/fa";
 import { SiInstagram, SiTiktok } from "react-icons/si";
+import { toast } from "react-hot-toast";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -168,12 +167,114 @@ function PieTooltip({ active, payload }: any) {
   );
 }
 
+interface UsageData {
+  captions: number;
+  captionLimit: number | null;
+  schedules: number;
+  scheduleLimit: number | null;
+  plan: string;
+}
+
+// ── Circular gauge ────────────────────────────────────────────────────────────
+function CircularGauge({
+  used,
+  limit,
+  color,
+  isPro,
+  label,
+}: {
+  used: number;
+  limit: number | null;
+  color: string;
+  isPro: boolean;
+  label: string;
+}) {
+  const size = 120;
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const fullCirc = 2 * Math.PI * radius;
+
+  const gapDeg = 60;
+  const sweepDeg = 360 - gapDeg;
+  const arcLen = (sweepDeg / 360) * fullCirc;
+
+  const pct = isPro ? 1 : limit ? Math.min(used / limit, 1) : 0;
+  const filledArc = pct * arcLen;
+
+  const svgRotation = 150;
+
+  const dotAngleRad = ((svgRotation + pct * sweepDeg) * Math.PI) / 180;
+  const dotCx = size / 2 + radius * Math.cos(dotAngleRad);
+  const dotCy = size / 2 + radius * Math.sin(dotAngleRad);
+
+  const centerLabel = isPro ? "∞" : String(used);
+  const subLabel = isPro ? "Unlimited" : limit !== null ? `/ ${limit}` : "";
+
+  return (
+    <div className="flex flex-col items-center gap-2 min-w-0">
+      <div className="relative flex items-center justify-center flex-shrink-0" style={{ width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          style={{ transform: `rotate(${svgRotation}deg)` }}
+          className="absolute inset-0"
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#e2e8f0"
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${arcLen} ${fullCirc}`}
+            strokeLinecap="round"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${filledArc} ${fullCirc}`}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dasharray 0.7s cubic-bezier(.4,0,.2,1)" }}
+          />
+          {filledArc > 2 && (
+            <circle cx={dotCx} cy={dotCy} r={strokeWidth / 2 + 1} fill={color} />
+          )}
+        </svg>
+
+        <div className="flex flex-col items-center z-10 select-none">
+          <span className="text-xl font-bold leading-none text-foreground tabular-nums">
+            {centerLabel}
+          </span>
+          {subLabel && (
+            <span className="text-xs text-muted-foreground mt-1 tabular-nums leading-none">
+              {subLabel}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <span className="text-xs text-muted-foreground text-center leading-tight">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [connections, setConnections] = useState<ConnectedAccount[]>([]);
+  const [usage, setUsage] = useState<UsageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Track whether we've already shown the limit-hit toast this session
+  const captionLimitToastShown = useRef(false);
+  const scheduleLimitToastShown = useRef(false);
 
   useEffect(() => {
     let ignore = false;
@@ -183,12 +284,50 @@ export default function AnalyticsPage() {
     Promise.all([
       fetch(`/api/dashboard/analytics?range=${dateRange}`).then((r) => r.json()),
       fetch("/api/social/connections").then((r) => r.json()),
+      fetch("/api/user/usage").then((r) => r.json()),
     ])
-      .then(([analyticsPayload, connectionsPayload]) => {
+      .then(([analyticsPayload, connectionsPayload, usagePayload]) => {
         if (analyticsPayload.error) throw new Error(analyticsPayload.error);
         if (!ignore) {
           setData(analyticsPayload);
           setConnections(Array.isArray(connectionsPayload) ? connectionsPayload : []);
+          if (!usagePayload.error) {
+            setUsage(usagePayload);
+
+            // Fire toast if caption limit is hit (FREE plan only)
+            if (
+              usagePayload.plan === "FREE" &&
+              usagePayload.captionLimit !== null &&
+              usagePayload.captions >= usagePayload.captionLimit &&
+              !captionLimitToastShown.current
+            ) {
+              captionLimitToastShown.current = true;
+              toast.error(
+                `Daily caption limit reached (${usagePayload.captionLimit}/day). Upgrade to Pro for unlimited captions.`,
+                {
+                  duration: 6000,
+                  icon: "🚫",
+                }
+              );
+            }
+
+            // Fire toast if schedule limit is hit (FREE plan only)
+            if (
+              usagePayload.plan === "FREE" &&
+              usagePayload.scheduleLimit !== null &&
+              usagePayload.schedules >= usagePayload.scheduleLimit &&
+              !scheduleLimitToastShown.current
+            ) {
+              scheduleLimitToastShown.current = true;
+              toast.error(
+                `Monthly schedule limit reached (${usagePayload.scheduleLimit}/month). Upgrade to Pro for unlimited scheduling.`,
+                {
+                  duration: 6000,
+                  icon: "📅",
+                }
+              );
+            }
+          }
         }
       })
       .catch((err) => {
@@ -342,70 +481,130 @@ export default function AnalyticsPage() {
                 )}
               </ChartCard>
 
-              {/* Platform Breakdown */}
-              <ChartCard title="Platform Breakdown">
-                {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
-                  <EmptyChart message="No platform data in this range." />
-                ) : (
-                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                    <div className="flex-shrink-0 flex justify-center">
-                      <ResponsiveContainer width={260} height={260}>
-                        <PieChart>
-                          <Pie
-                            data={platformPieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={68}
-                            outerRadius={110}
-                            paddingAngle={3}
-                            dataKey="value"
-                          >
-                            {platformPieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<PieTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="flex-1 space-y-3 min-w-0">
-                      {platformEngagement.map((entry) => {
-                        const pct = totalPlatformEngagement > 0
-                          ? Math.round((entry.engagement / totalPlatformEngagement) * 100)
-                          : 0;
-                        const meta = platformMeta(entry.platform);
-                        const color = meta?.color ?? "#64748b";
-
-                        return (
-                          <div
-                            key={entry.platform}
-                            className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-3 text-sm"
-                          >
-                            <PlatformIcon platform={entry.platform} />
-                            <span className="min-w-0 truncate text-foreground">
-                              {formatPlatform(entry.platform)}
-                            </span>
-                            <span className="text-xs tabular-nums text-muted-foreground">
-                              {entry.engagement}
-                            </span>
-                            <span
-                              className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
-                              style={{
-                                color,
-                                borderColor: `${color}55`,
-                                backgroundColor: `${color}12`,
-                              }}
+              {/* Platform Breakdown + Caption Limit — side by side */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Platform Breakdown */}
+                <ChartCard title="Platform Breakdown">
+                  {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
+                    <EmptyChart message="No platform data in this range." />
+                  ) : (
+                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                      <div className="flex-shrink-0 flex justify-center">
+                        <ResponsiveContainer width={220} height={220}>
+                          <PieChart>
+                            <Pie
+                              data={platformPieData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={58}
+                              outerRadius={95}
+                              paddingAngle={3}
+                              dataKey="value"
                             >
-                              {pct}%
-                            </span>
-                          </div>
-                        );
-                      })}
+                              {platformPieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<PieTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      <div className="flex-1 space-y-3 min-w-0">
+                        {platformEngagement.map((entry) => {
+                          const pct = totalPlatformEngagement > 0
+                            ? Math.round((entry.engagement / totalPlatformEngagement) * 100)
+                            : 0;
+                          const meta = platformMeta(entry.platform);
+                          const color = meta?.color ?? "#64748b";
+
+                          return (
+                            <div
+                              key={entry.platform}
+                              className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-3 text-sm"
+                            >
+                              <PlatformIcon platform={entry.platform} />
+                              <span className="min-w-0 truncate text-foreground">
+                                {formatPlatform(entry.platform)}
+                              </span>
+                              <span className="text-xs tabular-nums text-muted-foreground">
+                                {entry.engagement}
+                              </span>
+                              <span
+                                className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
+                                style={{
+                                  color,
+                                  borderColor: `${color}55`,
+                                  backgroundColor: `${color}12`,
+                                }}
+                              >
+                                {pct}%
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
+                  )}
+                </ChartCard>
+
+                {/* Caption Limit */}
+                <ChartCard title="Caption Limit">
+                  <div className="flex flex-col gap-4">
+                    {/* Two gauges side by side */}
+                    <div className="grid grid-cols-2 gap-2 divide-x divide-border">
+                      {/* Daily Caption gauge */}
+                      <div className="flex flex-col items-center py-4 px-2">
+                        <CircularGauge
+                          used={usage?.captions ?? 0}
+                          limit={usage?.captionLimit ?? null}
+                          color="#0D7C8A"
+                          isPro={usage?.plan === "PRO"}
+                          label="Daily captions"
+                        />
+                        {usage?.plan === "FREE" &&
+                          usage.captionLimit !== null &&
+                          usage.captions >= usage.captionLimit && (
+                            <button
+                              onClick={() => window.location.href = "/pricing"}
+                              className="mt-2 text-[10px] font-semibold text-[#0D7C8A] underline underline-offset-2 hover:opacity-80 transition-opacity"
+                            >
+                              Upgrade →
+                            </button>
+                          )}
+                      </div>
+
+                      {/* Monthly Schedule gauge */}
+                      <div className="flex flex-col items-center py-4 px-2">
+                        <CircularGauge
+                          used={usage?.schedules ?? 0}
+                          limit={usage?.scheduleLimit ?? null}
+                          color="#4F86C6"
+                          isPro={usage?.plan === "PRO"}
+                          label="Monthly schedules"
+                        />
+                        {usage?.plan === "FREE" &&
+                          usage.scheduleLimit !== null &&
+                          usage.schedules >= usage.scheduleLimit && (
+                            <button
+                              onClick={() => window.location.href = "/pricing"}
+                              className="mt-2 text-[10px] font-semibold text-[#4F86C6] underline underline-offset-2 hover:opacity-80 transition-opacity"
+                            >
+                              Upgrade →
+                            </button>
+                          )}
+                      </div>
+                    </div>
+
+                    {/* Reset note */}
+                    {usage?.plan === "FREE" && (
+                      <p className="text-center text-xs text-muted-foreground border-t border-border pt-3">
+                        Captions reset every 24h · Schedules reset monthly
+                      </p>
+                    )}
                   </div>
-                )}
-              </ChartCard>
+                </ChartCard>
+              </div>
             </>
           ) : null}
         </>

@@ -172,7 +172,8 @@ export default async function DashboardPage({
                 </div>
               ) : (
                 <div className="divide-y divide-border">
-                  <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="grid grid-cols-[36px_1fr_auto_auto_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground">
+                    <span></span>
                     <span>Post</span>
                     <span>Status</span>
                     <span>Platform</span>
@@ -180,8 +181,17 @@ export default async function DashboardPage({
                   </div>
                   {(recentPosts as any[]).map((post) => {
                     const platforms: string[] = Array.isArray(post.platforms) ? post.platforms : [];
+                    const thumb = post.imageUrl ?? (Array.isArray(post.imageUrls) && post.imageUrls[0]) ?? null;
                     return (
-                      <div key={post.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors">
+                      <div key={post.id} className="grid grid-cols-[36px_1fr_auto_auto_auto] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors">
+                        {/* Thumbnail */}
+                        <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden border border-border/50">
+                          {thumb ? (
+                            <img src={thumb} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <FileText size={14} className="text-muted-foreground/50" />
+                          )}
+                        </div>
                         <p className="text-sm font-medium text-foreground truncate">
                           {post.caption ? post.caption.slice(0, 50) + (post.caption.length > 50 ? "…" : "") : "Untitled post"}
                         </p>
