@@ -72,7 +72,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-semibold tracking-tight text-slate-400 hover:text-foreground transition-colors"
+              className="text-sm font-semibold tracking-tight text-slate-950 transition-colors hover:text-slate-500 dark:text-slate-100 dark:hover:text-slate-400"
             >
               {link.label}
             </Link>
@@ -98,14 +98,14 @@ export function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-slate-700 hover:bg-slate-100 font-semibold px-5 dark:text-slate-200 dark:hover:bg-white/10"
+                  className="h-9 min-w-[112px] rounded-lg px-5 text-sm font-semibold text-slate-950 hover:bg-slate-100 hover:text-slate-500 dark:text-slate-100 dark:hover:bg-white/10 dark:hover:text-slate-400"
                 >
                   Sign in
                 </Button>
               </SignInButton>
               <Link
                 href="/sign-up"
-                className="inline-flex items-center justify-center h-9 rounded-lg bg-teal-700 px-5 text-sm font-bold text-white transition hover:bg-teal-800 active:scale-95"
+                className="inline-flex h-9 min-w-[112px] items-center justify-center rounded-lg bg-teal-700 px-5 text-sm font-bold text-white transition hover:bg-teal-800 active:scale-95"
               >
                 Get started
               </Link>
@@ -136,7 +136,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-semibold text-slate-400 hover:text-foreground transition-colors"
+              className="text-sm font-semibold text-slate-950 transition-colors hover:text-slate-500 dark:text-slate-100 dark:hover:text-slate-400"
               onClick={() => setMobileOpen(false)}
             >
               {link.label}

@@ -45,7 +45,7 @@ interface ScheduledPost {
   caption:      string | null;
   platforms:    string[];
   scheduledFor: string | null;
-  status:       "DRAFT" | "SCHEDULED" | "PUBLISHED" | "FAILED" | "CANCELLED";
+  status:       "SCHEDULED" | "PUBLISHED" | "FAILED" | "CANCELLED";
   imageUrl:     string | null;
   imageUrls:    string[];
   hashtags:     string[];
@@ -54,19 +54,12 @@ interface ScheduledPost {
   failureReason: string | null;
 }
 
-interface Stats {
-  scheduled: number;
-  drafts:    number;
-  published: number;
-}
-
 type CalendarView = "week" | "month";
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
   SCHEDULED: "bg-[#0d7c8a] text-white",
-  DRAFT:     "bg-amber-500 text-white",
   PUBLISHED: "bg-emerald-600 text-white",
   FAILED:    "bg-red-500 text-white",
   CANCELLED: "bg-zinc-400 text-white",
@@ -76,7 +69,6 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: "Scheduled",
-  DRAFT:     "Draft Post",
   PUBLISHED: "Published",
   FAILED:    "Failed",
   CANCELLED: "Cancelled",
@@ -84,7 +76,6 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_TEXT: Record<string, string> = {
   SCHEDULED: "text-[#0d7c8a]",
-  DRAFT:     "text-amber-500",
   PUBLISHED: "text-emerald-600",
   FAILED:    "text-red-500",
   CANCELLED: "text-zinc-500",
@@ -169,9 +160,9 @@ function PostDrawer({
       : ""
   );
 
-  const canEdit   = post.status === "DRAFT" || post.status === "SCHEDULED";
+  const canEdit   = post.status === "SCHEDULED";
   const canDelete = post.status !== "PUBLISHED";
-  const canPublish = post.status === "DRAFT" || post.status === "SCHEDULED";
+  const canPublish = post.status === "SCHEDULED";
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -182,7 +173,6 @@ function PostDrawer({
         body:    JSON.stringify({
           caption,
           scheduledFor: scheduledFor || null,
-          isDraft:      scheduledFor ? false : post.status === "DRAFT",
         }),
       });
       const data = await res.json();
@@ -439,7 +429,6 @@ function PostCard({
       className={cn(
         "group w-full rounded-[6px] border bg-background px-2 py-1.5 text-left shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:border-[#0d7c8a]/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d7c8a]/30",
         post.status === "PUBLISHED" && "bg-emerald-50/60 dark:bg-emerald-950/20",
-        post.status === "DRAFT" && "bg-amber-50/70 dark:bg-amber-950/20",
         post.status === "FAILED" && "bg-red-50/70 dark:bg-red-950/20"
       )}
     >
@@ -476,7 +465,6 @@ function PostCard({
 
 export default function ContentCalendar() {
   const [posts,      setPosts]      = useState<ScheduledPost[]>([]);
-  const [stats,      setStats]      = useState<Stats>({ scheduled: 0, drafts: 0, published: 0 });
   const [isLoading,  setIsLoading]  = useState(true);
   const [showAll,    setShowAll]    = useState(false);
   const [selected,   setSelected]   = useState<ScheduledPost | null>(null);
@@ -490,7 +478,6 @@ export default function ContentCalendar() {
       const res  = await fetch(`/api/social/scheduled?all=${all}`);
       const data = await res.json();
       setPosts(Array.isArray(data.posts) ? data.posts : []);
-      if (data.stats) setStats(data.stats);
     } catch {
       toast.error("Failed to load posts");
     } finally {
@@ -717,31 +704,12 @@ export default function ContentCalendar() {
           onClose={() => setSelected(null)}
           onDeleted={(id) => {
             setPosts((prev) => prev.filter((p) => p.id !== id));
-            setStats((prev) => ({
-              ...prev,
-              scheduled: selected.status === "SCHEDULED" ? prev.scheduled - 1 : prev.scheduled,
-              drafts:    selected.status === "DRAFT"     ? prev.drafts - 1     : prev.drafts,
-            }));
           }}
           onUpdated={(updated) => {
             const nextPost = updated as ScheduledPost;
-            const previousStatus = selected.status;
-            const nextStatus = nextPost.status;
 
             setPosts((prev) => prev.map((p) => (p.id === nextPost.id ? nextPost : p)));
             setSelected(nextPost);
-            setStats((prev) => ({
-              ...prev,
-              scheduled: prev.scheduled
-                + (nextStatus === "SCHEDULED" ? 1 : 0)
-                - (previousStatus === "SCHEDULED" ? 1 : 0),
-              drafts: prev.drafts
-                + (nextStatus === "DRAFT" ? 1 : 0)
-                - (previousStatus === "DRAFT" ? 1 : 0),
-              published: prev.published
-                + (nextStatus === "PUBLISHED" ? 1 : 0)
-                - (previousStatus === "PUBLISHED" ? 1 : 0),
-            }));
           }}
         />
       )}

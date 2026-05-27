@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { endOfMonth, startOfMonth } from "date-fns";
 import prisma from "@/lib/prisma";
 import zernio from "@/lib/zernio";
 
@@ -156,7 +155,7 @@ export async function PATCH(
     if (!post) return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
     const body = await req.json();
-    const { caption, scheduledFor, platforms, imageUrls, imageUrl, isDraft, publishNow } = body;
+    const { caption, scheduledFor, platforms, imageUrls, imageUrl, publishNow } = body;
 
     if (publishNow === true) {
       if (post.status === "PUBLISHED") {
@@ -222,7 +221,7 @@ export async function PATCH(
       );
     }
 
-    const nextStatus = isDraft === true ? "DRAFT" : isDraft === false ? "SCHEDULED" : post.status;
+    const nextStatus = "SCHEDULED";
     const nextPlatforms = platforms !== undefined
       ? Array.isArray(platforms) ? platforms : []
       : post.platforms;
@@ -241,11 +240,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Select at least one platform" }, { status: 400 });
     }
 
-    const nextScheduledFor = nextStatus === "DRAFT"
-      ? null
-      : scheduledFor !== undefined
-        ? scheduledFor ? new Date(scheduledFor) : null
-        : post.scheduledFor;
+    const nextScheduledFor = scheduledFor !== undefined
+      ? scheduledFor ? new Date(scheduledFor) : null
+      : post.scheduledFor;
 
     if (nextStatus === "SCHEDULED") {
       if (!nextScheduledFor) {
@@ -259,30 +256,10 @@ export async function PATCH(
       }
     }
 
-    if (post.status === "DRAFT" && nextStatus === "SCHEDULED" && user.plan === "FREE") {
-      const monthlyCount = await prisma.scheduledPost.count({
-        where: {
-          userId: user.id,
-          status: { in: ["SCHEDULED", "PUBLISHED"] },
-          createdAt: { gte: startOfMonth(new Date()), lte: endOfMonth(new Date()) },
-        },
-      });
-
-      if (monthlyCount >= 15) {
-        return NextResponse.json(
-          { error: "Monthly schedule limit reached (15/month). Upgrade to Pro for unlimited." },
-          { status: 403 }
-        );
-      }
-    }
-
     const currentZernioPostId = getStoredZernioPostId(post);
     let nextZernioPostId = currentZernioPostId;
 
-    if (post.status === "SCHEDULED" && nextStatus === "DRAFT" && currentZernioPostId) {
-      await deleteZernioPost(currentZernioPostId);
-      nextZernioPostId = null;
-    } else if (nextStatus === "SCHEDULED" && nextScheduledFor) {
+    if (nextScheduledFor) {
       const remoteShapeChanged =
         post.status !== "SCHEDULED" ||
         platforms !== undefined ||
@@ -334,16 +311,6 @@ export async function PATCH(
         ...(post.failureReason?.startsWith("zernio:") && { failureReason: null }),
       },
     });
-
-    if (post.status === "DRAFT" && nextStatus === "SCHEDULED" && user.plan === "FREE") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      await prisma.usage.upsert({
-        where:  { userId_date: { userId: user.id, date: today } },
-        update: { scheduleCount: { increment: 1 } },
-        create: { userId: user.id, date: today, scheduleCount: 1 },
-      });
-    }
 
     return NextResponse.json({ success: true, post: updated });
   } catch (err: any) {

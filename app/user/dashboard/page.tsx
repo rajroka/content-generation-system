@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   PenLine, Calendar, ArrowRight, Zap,
-  BarChart3, FileText, Clock,
+  BarChart3, FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -107,11 +107,10 @@ export default async function DashboardPage({
   const [
     recentPosts,
     upcomingPosts,
-    recentDrafts,
   ] = user
     ? await Promise.all([
         prisma.scheduledPost.findMany({
-          where: { userId: user.id, status: { in: ["PUBLISHED", "SCHEDULED", "DRAFT"] } },
+          where: { userId: user.id, status: { in: ["PUBLISHED", "SCHEDULED"] } },
           orderBy: { createdAt: "desc" },
           take: 5,
         }),
@@ -120,13 +119,8 @@ export default async function DashboardPage({
           orderBy: { scheduledFor: "asc" },
           take: 3,
         }),
-        prisma.scheduledPost.findMany({
-          where: { userId: user.id, status: "DRAFT" },
-          orderBy: { updatedAt: "desc" },
-          take: 3,
-        }),
       ])
-    : [[], [], []];
+    : [[], []];
 
   const quickActions = [
     { label: "Create Post",   icon: PenLine,   href: "/user/generate"  },
@@ -200,7 +194,7 @@ export default async function DashboardPage({
                               : "bg-slate-600 text-white text-[10px] font-bold border-0"
                           }
                         >
-                          {post.status === "PUBLISHED" ? "Published" : post.status === "SCHEDULED" ? "Scheduled" : "Draft"}
+                          {post.status === "PUBLISHED" ? "Published" : "Scheduled"}
                         </Badge>
                         <div className="flex gap-1">
                           {platforms.slice(0, 2).map((p: string) => (
@@ -212,8 +206,6 @@ export default async function DashboardPage({
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {post.scheduledFor
                             ? format(new Date(post.scheduledFor), "MMM d, yyyy")
-                            : post.status === "DRAFT"
-                            ? "—"
                             : format(new Date(post.createdAt), "MMM d, yyyy")}
                         </span>
                       </div>
@@ -267,37 +259,6 @@ export default async function DashboardPage({
                         </div>
                       );
                     })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Drafts */}
-          <div>
-            <h2 className="text-base font-bold text-foreground mb-3">Recent Drafts</h2>
-            <Card className="border-none shadow-sm rounded-lg">
-              <CardContent className="p-0">
-                {(recentDrafts as any[]).length === 0 ? (
-                  <div className="p-4 text-sm text-muted-foreground text-center">No drafts yet.</div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {(recentDrafts as any[]).map((draft) => (
-                      <div key={draft.id} className="flex items-center gap-3 px-4 py-3">
-                        <div className="p-1.5 bg-muted rounded-lg shrink-0">
-                          <FileText size={14} className="text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">
-                            {draft.caption ? draft.caption.slice(0, 35) + (draft.caption.length > 35 ? "…" : "") : "Untitled draft"}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                            <Clock size={10} />
-                            {draft.updatedAt ? format(new Date(draft.updatedAt), "MMM d") : "—"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 )}
               </CardContent>

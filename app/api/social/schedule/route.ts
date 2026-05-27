@@ -22,7 +22,6 @@ export async function POST(req: Request) {
       scheduledFor,
       imageUrl,
       imageUrls,
-      isDraft,
     } = await req.json();
 
     const selectedPlatforms = Array.isArray(platforms) ? platforms : [];
@@ -36,16 +35,16 @@ export async function POST(req: Request) {
     if (!hasCaption && !hasImage)
       return NextResponse.json({ error: "Post must have a caption or media" }, { status: 400 });
 
-    if (!isDraft && !scheduledFor)
+    if (!scheduledFor)
       return NextResponse.json({ error: "Schedule time is required" }, { status: 400 });
     if (selectedPlatforms.length === 0)
       return NextResponse.json({ error: "Select at least one platform" }, { status: 400 });
 
-    const scheduleDate = !isDraft ? new Date(scheduledFor) : null;
-    if (scheduleDate && Number.isNaN(scheduleDate.getTime())) {
+    const scheduleDate = new Date(scheduledFor);
+    if (Number.isNaN(scheduleDate.getTime())) {
       return NextResponse.json({ error: "Invalid schedule time" }, { status: 400 });
     }
-    if (scheduleDate && scheduleDate <= new Date()) {
+    if (scheduleDate <= new Date()) {
       return NextResponse.json({ error: "Cannot schedule in the past" }, { status: 400 });
     }
 
@@ -62,8 +61,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // FREE plan: 15 scheduled posts per month (not drafts)
-    if (!isDraft && user.plan === "FREE") {
+    if (user.plan === "FREE") {
       const monthStart = startOfMonth(new Date());
       const monthEnd   = endOfMonth(new Date());
 
@@ -85,47 +83,44 @@ export async function POST(req: Request) {
 
     let zernioPostId: string | undefined;
 
-    // For non-draft posts, schedule via Zernio
-    if (!isDraft && scheduleDate) {
-      const socialAccounts = await prisma.socialAccount.findMany({
-        where: {
-          userId: user.id,
-          platform: { in: selectedPlatforms },
-          isActive: true,
-          accountId: { not: null },
-        },
-      });
+    const socialAccounts = await prisma.socialAccount.findMany({
+      where: {
+        userId: user.id,
+        platform: { in: selectedPlatforms },
+        isActive: true,
+        accountId: { not: null },
+      },
+    });
 
-      const connectedPlatforms = socialAccounts.map((account) => account.platform as string);
-      const missingPlatforms = selectedPlatforms.filter((platform: string) => !connectedPlatforms.includes(platform));
-      if (missingPlatforms.length > 0) {
-        return NextResponse.json(
-          { error: `Not connected to: ${missingPlatforms.join(", ")}. Go to Connections to link your accounts.` },
-          { status: 400 }
-        );
-      }
-
-      const zernioPlatforms = socialAccounts.map((account) => ({
-        platform:  account.platform.toLowerCase(),
-        accountId: account.accountId!,
-      }));
-
-      const mediaItems = allMedia.map((url) => ({
-        type: isVideo(url) ? "video" as const : "image" as const,
-        url,
-      }));
-
-      const result = await zernio.posts.createPost({
-        body: {
-          content:      hasCaption ? caption.trim() : "",
-          scheduledFor: scheduleDate.toISOString(),
-          platforms:    zernioPlatforms,
-          ...(mediaItems.length > 0 && { mediaItems }),
-        },
-      });
-
-      zernioPostId = result.data?.post?._id;
+    const connectedPlatforms = socialAccounts.map((account) => account.platform as string);
+    const missingPlatforms = selectedPlatforms.filter((platform: string) => !connectedPlatforms.includes(platform));
+    if (missingPlatforms.length > 0) {
+      return NextResponse.json(
+        { error: `Not connected to: ${missingPlatforms.join(", ")}. Go to Connections to link your accounts.` },
+        { status: 400 }
+      );
     }
+
+    const zernioPlatforms = socialAccounts.map((account) => ({
+      platform:  account.platform.toLowerCase(),
+      accountId: account.accountId!,
+    }));
+
+    const mediaItems = allMedia.map((url) => ({
+      type: isVideo(url) ? "video" as const : "image" as const,
+      url,
+    }));
+
+    const result = await zernio.posts.createPost({
+      body: {
+        content:      hasCaption ? caption.trim() : "",
+        scheduledFor: scheduleDate.toISOString(),
+        platforms:    zernioPlatforms,
+        ...(mediaItems.length > 0 && { mediaItems }),
+      },
+    });
+
+    zernioPostId = result.data?.post?._id;
 
     const post = await prisma.scheduledPost.create({
       data: {
@@ -133,15 +128,15 @@ export async function POST(req: Request) {
         caption:      hasCaption ? caption.trim() : null,
         hashtags:     hashtags || [],
         platforms:    selectedPlatforms,
-        scheduledFor: isDraft ? null : scheduleDate,
+        scheduledFor: scheduleDate,
         imageUrl:     allMedia[0] || null,
         imageUrls:    allMedia,
-        status:       isDraft ? "DRAFT" : "SCHEDULED",
+        status:       "SCHEDULED",
         ...(zernioPostId && { zernioPostId }),
       },
     });
 
-    if (!isDraft && user.plan === "FREE") {
+    if (user.plan === "FREE") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       await prisma.usage.upsert({

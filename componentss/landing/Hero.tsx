@@ -6,7 +6,7 @@ import { ArrowRight, Play } from "lucide-react";
 
 const metrics = [
   { value: "4+", label: "social channels" },
-  { value: "10s", label: "caption drafts" },
+  { value: "10s", label: "captions" },
   { value: "24/7", label: "scheduled queue" },
 ];
 
@@ -23,7 +23,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-8 text-slate-600 dark:text-slate-400 sm:text-lg">
-            PostSathi turns one idea into polished captions, hashtags, media-ready drafts, and scheduled posts for Instagram, Facebook, LinkedIn, and X.
+            PostSathi turns one idea into polished captions, hashtags, media-ready posts, and scheduled content for Instagram, Facebook, LinkedIn, and X.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">

@@ -7,7 +7,7 @@ const testimonials = [
     handle: "@james_mitchell",
     rating: 4.9,
     quote:
-      "I used to spend an hour writing captions. Now PostSathi gets the first draft ready before my coffee cools. The platform-specific tone is spot on every time.",
+      "I used to spend an hour writing captions. Now PostSathi gets the first caption ready before my coffee cools. The platform-specific tone is spot on every time.",
   },
   {
     photo: "https://i.pravatar.cc/120?img=32",
@@ -23,7 +23,7 @@ const testimonials = [
     handle: "@david_smm",
     rating: 4.9,
     quote:
-      "Running content for several clients is less scattered now. Drafts, media, and schedules stay in one workflow. It's the calmest my content process has ever been.",
+      "Running content for several clients is less scattered now. Captions, media, and schedules stay in one workflow. It's the calmest my content process has ever been.",
   },
 ];
 

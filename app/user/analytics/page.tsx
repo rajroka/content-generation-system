@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { PieChart } from "@mui/x-charts/PieChart";
@@ -27,7 +27,20 @@ interface AnalyticsData {
     postsPublished: number;
   }[];
   platformBreakdown: { platform: string; count: number }[];
+  platformEngagement?: PlatformEngagement[];
   postStatusDistribution: { status: string; count: number }[];
+}
+
+interface ConnectedAccount {
+  platform: string;
+  accountName: string | null;
+  isActive: boolean;
+  connectedAt: string;
+}
+
+interface PlatformEngagement {
+  platform: string;
+  engagement: number;
 }
 
 const TEAL = "#169B7F";
@@ -49,8 +62,19 @@ const PLATFORM_META = {
 const STATUS_META: Record<string, { label: string; color: string }> = {
   PUBLISHED: { label: "Published", color: "#169B7F" },
   SCHEDULED: { label: "Scheduled", color: "#4F86C6" },
-  DRAFT:     { label: "Draft",     color: "#A78BFA" },
 };
+
+const EMPTY_TOTALS: AnalyticsData["totals"] = {
+  totalCaptionsGenerated: 0,
+  postsPublished: 0,
+  scheduledPosts: 0,
+  connectedAccounts: 0,
+};
+
+const EMPTY_STATUS_DISTRIBUTION: AnalyticsData["postStatusDistribution"] = [
+  { status: "PUBLISHED", count: 0 },
+  { status: "SCHEDULED", count: 0 },
+];
 
 function platformMeta(platform: string) {
   return PLATFORM_META[platform.toUpperCase() as keyof typeof PLATFORM_META] ?? null;
@@ -84,11 +108,13 @@ function StatCard({
 }) {
   return (
     <Card className="border-none shadow-sm rounded-lg">
-      <CardContent className="p-5">
+      <CardContent className="p-4">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <p className="mt-2 text-3xl font-bold text-foreground tabular-nums">
-          {value === null ? "..." : value}
-        </p>
+        {value === null ? (
+          <div className="mt-3 h-8 w-20 animate-pulse rounded-lg bg-muted" />
+        ) : (
+          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{value}</p>
+        )}
         <p className="mt-2 text-xs text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
@@ -97,18 +123,22 @@ function StatCard({
 
 function ChartCard({
   title,
+  subtitle,
   children,
 }: {
   title: string;
+  subtitle?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Card className="border-none shadow-sm rounded-lg">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
+    <div>
+      <h2 className="text-base font-bold text-foreground mb-1">{title}</h2>
+      {subtitle && <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>}
+      {!subtitle && <div className="mb-3" />}
+      <Card className="border-none shadow-sm rounded-lg">
+        <CardContent className="p-4">{children}</CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -123,6 +153,7 @@ function EmptyChart({ message }: { message: string }) {
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [connections, setConnections] = useState<ConnectedAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,11 +162,16 @@ export default function AnalyticsPage() {
     setIsLoading(true);
     setError(null);
 
-    fetch(`/api/dashboard/analytics?range=${dateRange}`)
-      .then((response) => response.json())
-      .then((payload) => {
-        if (payload.error) throw new Error(payload.error);
-        if (!ignore) setData(payload);
+    Promise.all([
+      fetch(`/api/dashboard/analytics?range=${dateRange}`).then((response) => response.json()),
+      fetch("/api/social/connections").then((response) => response.json()),
+    ])
+      .then(([analyticsPayload, connectionsPayload]) => {
+        if (analyticsPayload.error) throw new Error(analyticsPayload.error);
+        if (!ignore) {
+          setData(analyticsPayload);
+          setConnections(Array.isArray(connectionsPayload) ? connectionsPayload : []);
+        }
       })
       .catch((err) => {
         if (!ignore) setError(err.message);
@@ -150,25 +186,37 @@ export default function AnalyticsPage() {
   }, [dateRange]);
 
   const chartSx = {
-    "& .MuiChartsAxis-tickLabel": { fill: "hsl(var(--muted-foreground)) !important", fontSize: 11 },
-    "& .MuiChartsAxis-line": { stroke: "hsl(var(--border)) !important" },
-    "& .MuiChartsAxis-tick": { stroke: "hsl(var(--border)) !important" },
-    "& .MuiChartsGrid-line": { stroke: "hsl(var(--border))", strokeDasharray: "4 4" },
-    "& .MuiChartsLegend-label": { fill: "hsl(var(--foreground)) !important", fontSize: 12 },
+    "& .MuiChartsAxis-tickLabel": { fill: "var(--color-muted-foreground) !important", fontSize: 11 },
+    "& .MuiChartsAxis-line": { stroke: "var(--color-border) !important" },
+    "& .MuiChartsAxis-tick": { stroke: "var(--color-border) !important" },
+    "& .MuiChartsGrid-line": { stroke: "var(--color-border)", strokeDasharray: "4 4" },
+    "& .MuiChartsLegend-label": { fill: "var(--color-foreground) !important", fontSize: 12 },
   };
 
   const selectedRange = DATE_RANGES.find((range) => range.value === dateRange) ?? DATE_RANGES[1];
-  const totalPlatformCount = data?.platformBreakdown.reduce((sum, entry) => sum + entry.count, 0) ?? 0;
-  const platformPieData = data?.platformBreakdown.map((entry, index) => {
+  const hasConnectedAccounts = connections.length > 0;
+  const displayTotals = hasConnectedAccounts && data
+    ? { ...data.totals, connectedAccounts: connections.length }
+    : EMPTY_TOTALS;
+  const displayCaptionTrend = hasConnectedAccounts ? data?.captionTrend ?? [] : [];
+  const displayPublishingActivity = hasConnectedAccounts ? data?.publishingActivity ?? [] : [];
+  const displayPostStatusDistribution = hasConnectedAccounts
+    ? data?.postStatusDistribution ?? EMPTY_STATUS_DISTRIBUTION
+    : EMPTY_STATUS_DISTRIBUTION;
+  const platformEngagement = hasConnectedAccounts
+    ? data?.platformEngagement ?? connections.map((account) => ({ platform: account.platform, engagement: 0 }))
+    : [];
+  const totalPlatformEngagement = platformEngagement.reduce((sum, entry) => sum + entry.engagement, 0);
+  const platformPieData = platformEngagement.map((entry, index) => {
     const meta = platformMeta(entry.platform);
     return {
       id: entry.platform,
-      value: entry.count,
+      value: entry.engagement,
       label: formatPlatform(entry.platform),
       color: meta?.color ?? ["#64748b", "#94a3b8", "#cbd5e1"][index % 3],
     };
-  }) ?? [];
-  const statusChartData = data?.postStatusDistribution
+  });
+  const statusChartData = displayPostStatusDistribution
     .filter((entry) => entry.count > 0)
     .map((entry) => ({
       id: entry.status,
@@ -178,11 +226,11 @@ export default function AnalyticsPage() {
     })) ?? [];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-xl font-bold text-foreground">Analytics</h1>
+          <p className="text-xs text-muted-foreground mt-1">
             Track content output, publishing, platform mix, and scheduling health.
           </p>
         </div>
@@ -215,22 +263,22 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               title="Total Captions Generated"
-              value={data?.totals.totalCaptionsGenerated ?? null}
+              value={isLoading ? null : displayTotals.totalCaptionsGenerated}
               description={selectedRange.label}
             />
             <StatCard
               title="Posts Published"
-              value={data?.totals.postsPublished ?? null}
+              value={isLoading ? null : displayTotals.postsPublished}
               description={selectedRange.label}
             />
             <StatCard
               title="Scheduled Posts"
-              value={data?.totals.scheduledPosts ?? null}
+              value={isLoading ? null : displayTotals.scheduledPosts}
               description={`Next ${selectedRange.shortLabel}`}
             />
             <StatCard
               title="Connected Accounts"
-              value={data?.totals.connectedAccounts ?? null}
+              value={isLoading ? null : displayTotals.connectedAccounts}
               description={selectedRange.label}
             />
           </div>
@@ -242,59 +290,49 @@ export default function AnalyticsPage() {
           ) : data ? (
             <>
               <ChartCard title="Caption Generation Trend">
-                {data.captionTrend.every((entry) => entry.count === 0) ? (
-                  <EmptyChart message="No captions generated in this range." />
-                ) : (
-                  <LineChart
-                    height={300}
-                    dataset={data.captionTrend}
-                    margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
-                    xAxis={[{ scaleType: "point", dataKey: "label" }]}
-                    yAxis={[{ min: 0 }]}
-                    series={[
-                      {
-                        dataKey: "count",
-                        label: "Captions generated",
-                        color: TEAL,
-                        curve: "monotoneX",
-                        showMark: false,
-                      },
-                    ]}
-                    grid={{ horizontal: true }}
-                    sx={chartSx}
-                  />
-                )}
+                <LineChart
+                  height={300}
+                  dataset={displayCaptionTrend}
+                  margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
+                  xAxis={[{ scaleType: "point", dataKey: "label" }]}
+                  yAxis={[{ min: 0 }]}
+                  series={[
+                    {
+                      dataKey: "count",
+                      label: "Captions generated",
+                      color: TEAL,
+                      curve: "monotoneX",
+                      showMark: false,
+                    },
+                  ]}
+                  grid={{ horizontal: true }}
+                  sx={chartSx}
+                />
               </ChartCard>
 
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <ChartCard title="Publishing Activity">
-                  {data.publishingActivity.every(
-                    (entry) => entry.captionsGenerated === 0 && entry.postsPublished === 0
-                  ) ? (
-                    <EmptyChart message="No publishing activity in this range." />
-                  ) : (
-                    <BarChart
-                      height={300}
-                      dataset={data.publishingActivity}
-                      margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
-                      xAxis={[{ scaleType: "band", dataKey: "label" }]}
-                      yAxis={[{ min: 0 }]}
-                      series={[
-                        { dataKey: "captionsGenerated", label: "Captions generated", color: TEAL },
-                        { dataKey: "postsPublished", label: "Posts published", color: PUBLISHED_COLOR },
-                      ]}
-                      grid={{ horizontal: true }}
-                      borderRadius={6}
-                      sx={chartSx}
-                    />
-                  )}
+                  <BarChart
+                    height={300}
+                    dataset={displayPublishingActivity}
+                    margin={{ top: 20, right: 24, bottom: 28, left: 28 }}
+                    xAxis={[{ scaleType: "band", dataKey: "label" }]}
+                    yAxis={[{ min: 0 }]}
+                    series={[
+                      { dataKey: "captionsGenerated", label: "Captions generated", color: TEAL },
+                      { dataKey: "postsPublished", label: "Posts published", color: PUBLISHED_COLOR },
+                    ]}
+                    grid={{ horizontal: true }}
+                    borderRadius={6}
+                    sx={chartSx}
+                  />
                 </ChartCard>
 
-                <ChartCard title="Platform Breakdown">
-                  {platformPieData.length === 0 ? (
-                    <EmptyChart message="No posts by platform in this range." />
+                <ChartCard title="Platform Breakdown" subtitle="Engagement by platform">
+                  {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
+                    <EmptyChart message="No engagement by platform in this range." />
                   ) : (
-                    <div className="grid gap-6 md:grid-cols-[minmax(220px,280px)_1fr] md:items-center">
+                    <div className="grid gap-4 md:grid-cols-[minmax(220px,280px)_1fr] md:items-center">
                       <PieChart
                         height={280}
                         series={[
@@ -311,9 +349,9 @@ export default function AnalyticsPage() {
                       />
 
                       <div className="min-w-0 space-y-3">
-                        {data.platformBreakdown.map((entry) => {
-                          const pct = totalPlatformCount > 0
-                            ? Math.round((entry.count / totalPlatformCount) * 100)
+                        {platformEngagement.map((entry) => {
+                          const pct = totalPlatformEngagement > 0
+                            ? Math.round((entry.engagement / totalPlatformEngagement) * 100)
                             : 0;
                           const meta = platformMeta(entry.platform);
                           const color = meta?.color ?? "#64748b";
@@ -325,7 +363,7 @@ export default function AnalyticsPage() {
                             >
                               <PlatformIcon platform={entry.platform} />
                               <span className="min-w-0 truncate text-foreground">{formatPlatform(entry.platform)}</span>
-                              <span className="text-xs tabular-nums text-muted-foreground">{entry.count}</span>
+                              <span className="text-xs tabular-nums text-muted-foreground">{entry.engagement}</span>
                               <span
                                 className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
                                 style={{ color, borderColor: `${color}55`, backgroundColor: `${color}12` }}
@@ -343,9 +381,25 @@ export default function AnalyticsPage() {
 
               <ChartCard title="Post Status Distribution">
                 {statusChartData.length === 0 ? (
-                  <EmptyChart message="No post status data in this range." />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {displayPostStatusDistribution.map((entry) => {
+                      const meta = STATUS_META[entry.status] ?? { label: formatStatus(entry.status), color: "#64748b" };
+                      return (
+                        <div key={entry.status} className="rounded-lg border border-border bg-muted/30 p-4">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: meta.color }}
+                            />
+                            <p className="text-xs font-medium text-muted-foreground">{meta.label}</p>
+                          </div>
+                          <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">0</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <div className="grid gap-6 md:grid-cols-[minmax(220px,300px)_1fr] md:items-center">
+                  <div className="grid gap-4 md:grid-cols-[minmax(220px,300px)_1fr] md:items-center">
                     <PieChart
                       height={280}
                       series={[
@@ -362,7 +416,7 @@ export default function AnalyticsPage() {
                     />
 
                     <div className="grid gap-3 sm:grid-cols-3">
-                      {data.postStatusDistribution.map((entry) => {
+                      {displayPostStatusDistribution.map((entry) => {
                         const meta = STATUS_META[entry.status] ?? { label: formatStatus(entry.status), color: "#64748b" };
                         return (
                           <div key={entry.status} className="rounded-lg border border-border bg-muted/30 p-4">

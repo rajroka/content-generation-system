@@ -73,7 +73,6 @@ export async function GET(req: Request) {
       generations,
       publishedPosts,
       platformPosts,
-      draftPostsCount,
     ] = await Promise.all([
       prisma.generation.count({
         where: {
@@ -125,13 +124,6 @@ export async function GET(req: Request) {
         },
         select: { platforms: true },
       }),
-      prisma.scheduledPost.count({
-        where: {
-          userId: user.id,
-          status: "DRAFT",
-          createdAt: { gte: rangeStart, lte: now },
-        },
-      }),
     ]);
 
     const captionDayMap = createDayMap(days, today);
@@ -175,7 +167,6 @@ export async function GET(req: Request) {
     const postStatusDistribution = [
       { status: "PUBLISHED", count: postsPublished },
       { status: "SCHEDULED", count: scheduledPosts },
-      { status: "DRAFT", count: draftPostsCount },
     ];
 
     return NextResponse.json({

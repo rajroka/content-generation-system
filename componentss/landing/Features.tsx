@@ -160,7 +160,7 @@ export function Features() {
           <div className="md:col-span-1 rounded-2xl border border-border bg-card p-6 flex flex-col gap-4">
             <div>
               <h3 className="text-base font-bold text-foreground">Analytics & Reports</h3>
-              <p className="text-sm text-muted-foreground mt-1">Real-time data to optimize strategy and boost engagement</p>
+              <p className="text-sm text-muted-foreground mt-1">Real-time follower count</p>
             </div>
             <div className="flex-1 relative min-h-[120px]">
               <svg viewBox="0 0 200 80" className="w-full h-full" preserveAspectRatio="none">
@@ -175,7 +175,7 @@ export function Features() {
                 <circle cx="200" cy="6" r="4" fill="#0d7c8a"/>
               </svg>
               <div className="absolute top-1 right-2 bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full">
-                +2.5k growth
+                +100 followers
               </div>
             </div>
           </div>
