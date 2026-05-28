@@ -4,14 +4,16 @@ import { cn } from "@/lib/utils";
 
 interface LogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
+  responsive?: boolean;
 }
 
-export function Logo({ className, size = "md" }: LogoProps) {
+export function Logo({ className, size = "md", responsive = false }: LogoProps) {
   const imgSizes = {
     sm: 80,
     md: 120,
     lg: 180,
+    xl: 220,
   };
 
   return (
@@ -21,7 +23,10 @@ export function Logo({ className, size = "md" }: LogoProps) {
         alt="PostSathi"
         width={imgSizes[size]}
         height={imgSizes[size]}
-        className="object-contain"
+        className={cn(
+          "object-contain",
+          responsive && "w-[160px] sm:w-[190px] md:w-[220px]"
+        )}
         priority
       />
     </Link>

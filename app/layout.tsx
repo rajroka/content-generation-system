@@ -37,7 +37,7 @@ export default function RootLayout({
                   fontWeight: 600,
                   maxWidth: "360px",
                 },
-                success: { iconTheme: { primary: "#0d7c8a", secondary: "#fff" } },
+                success: { iconTheme: { primary: "var(--color-primary)", secondary: "#fff" } },
               }}
             />
           </ThemeProvider>

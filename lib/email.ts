@@ -34,14 +34,14 @@ export async function sendPostPublishedEmail(data: PostPublishedEmailData) {
     subject: `✅ Your post went live on ${platformList}`,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
-        <h2 style="color:#169B7F;margin-bottom:4px">Post published!</h2>
+        <h2 style="color:#0D7C8A;margin-bottom:4px">Post published!</h2>
         <p style="color:#555;margin-top:0">Hi ${data.userName}, your scheduled post just went live.</p>
-        <div style="background:#f4f9fa;border-left:4px solid #169B7F;padding:12px 16px;border-radius:4px;margin:16px 0">
+        <div style="background:#f4f9fa;border-left:4px solid #0D7C8A;padding:12px 16px;border-radius:4px;margin:16px 0">
           <p style="margin:0;font-size:14px;color:#333">${preview}</p>
         </div>
         <p style="color:#555;font-size:14px">Published to: <strong>${platformList}</strong></p>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/user/history"
-           style="display:inline-block;background:#169B7F;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:8px">
+           style="display:inline-block;background:#0D7C8A;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:8px">
           View in History
         </a>
         <p style="color:#aaa;font-size:12px;margin-top:24px">PostSathi · Unsubscribe</p>
@@ -70,7 +70,7 @@ export async function sendPostFailedEmail(data: PostFailedEmailData) {
         <p style="color:#555;font-size:14px">Attempted platforms: <strong>${platformList}</strong></p>
         <p style="color:#555;font-size:14px">Reason: <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px">${data.failureReason}</code></p>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/user/generate"
-           style="display:inline-block;background:#169B7F;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:8px">
+           style="display:inline-block;background:#0D7C8A;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:8px">
           Create a new post
         </a>
         <p style="color:#aaa;font-size:12px;margin-top:24px">PostSathi · Unsubscribe</p>

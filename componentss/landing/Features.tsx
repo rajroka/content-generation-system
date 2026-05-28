@@ -166,13 +166,13 @@ export function Features() {
               <svg viewBox="0 0 200 80" className="w-full h-full" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0d7c8a" stopOpacity="0.25"/>
-                    <stop offset="100%" stopColor="#0d7c8a" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.25"/>
+                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0"/>
                   </linearGradient>
                 </defs>
-                <path d="M0,70 C20,65 40,60 60,50 C80,40 90,55 110,42 C130,30 150,18 170,12 C185,8 195,7 200,6" fill="none" stroke="#0d7c8a" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M0,70 C20,65 40,60 60,50 C80,40 90,55 110,42 C130,30 150,18 170,12 C185,8 195,7 200,6" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round"/>
                 <path d="M0,70 C20,65 40,60 60,50 C80,40 90,55 110,42 C130,30 150,18 170,12 C185,8 195,7 200,6 L200,80 L0,80 Z" fill="url(#chart-fill)"/>
-                <circle cx="200" cy="6" r="4" fill="#0d7c8a"/>
+                <circle cx="200" cy="6" r="4" fill="var(--color-primary)"/>
               </svg>
               <div className="absolute top-1 right-2 bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full">
                 +100 followers
@@ -202,7 +202,7 @@ export function Features() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-foreground truncate">{f.name}</p>
                     <div className="h-1 bg-muted rounded-full mt-1 overflow-hidden">
-                      <div className="h-full bg-[#0d7c8a] rounded-full" style={{ width: `${f.progress}%` }} />
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${f.progress}%` }} />
                     </div>
                   </div>
                   <span className="text-[10px] text-muted-foreground shrink-0">{f.progress}%</span>
@@ -224,7 +224,7 @@ export function Features() {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <button className="flex items-center gap-2 bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">
+                <button className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition">
                   <Sparkles className="h-4 w-4" />
                   Generate Caption
                 </button>
@@ -235,10 +235,10 @@ export function Features() {
                 ))}
               </div>
               <div className="rounded-xl bg-muted/50 border border-border p-3 flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-[#0d7c8a] shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-xs text-foreground leading-relaxed">
                   🚀 Big news! Our latest product is here and it's everything you've been waiting for. Don't miss out — limited stock available. Tap the link in bio to grab yours now!{" "}
-                  <span className="text-[#0d7c8a]">#ProductLaunch #NewArrival #MustHave</span>
+                  <span className="text-primary">#ProductLaunch #NewArrival #MustHave</span>
                 </p>
               </div>
             </div>
@@ -260,7 +260,7 @@ export function Features() {
                     key={d}
                     className={`text-[11px] rounded-md py-0.5 font-medium ${
                       [3, 7, 12, 18, 24, 28].includes(d)
-                        ? "bg-[#0d7c8a] text-white"
+                        ? "bg-primary text-white"
                         : [10, 15, 22].includes(d)
                         ? "bg-amber-400 text-slate-950"
                         : "text-muted-foreground"
@@ -272,7 +272,7 @@ export function Features() {
               </div>
               <div className="flex gap-3 mt-1">
                 <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <span className="h-2 w-2 rounded-full bg-[#0d7c8a]" />Published
+                  <span className="h-2 w-2 rounded-full bg-primary" />Published
                 </span>
                 <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <span className="h-2 w-2 rounded-full bg-amber-400" />Scheduled

@@ -38,23 +38,10 @@ interface AnalyticsData {
     postsPublished: number;
   }[];
   platformBreakdown: { platform: string; count: number }[];
-  platformEngagement?: PlatformEngagement[];
   postStatusDistribution: { status: string; count: number }[];
 }
 
-interface ConnectedAccount {
-  platform: string;
-  accountName: string | null;
-  isActive: boolean;
-  connectedAt: string;
-}
-
-interface PlatformEngagement {
-  platform: string;
-  engagement: number;
-}
-
-const TEAL = "#169B7F";
+const TEAL = "var(--color-primary)";
 const PUBLISHED_COLOR = "#4F86C6";
 
 const DATE_RANGES: { value: DateRange; label: string; shortLabel: string }[] = [
@@ -69,13 +56,6 @@ const PLATFORM_META = {
   TIKTOK:    { label: "TikTok",    color: "#69C9D0", Icon: SiTiktok },
   YOUTUBE:   { label: "YouTube",   color: "#FF0000", Icon: FaYoutube },
 } as const;
-
-const EMPTY_TOTALS: AnalyticsData["totals"] = {
-  totalCaptionsGenerated: 0,
-  postsPublished: 0,
-  scheduledPosts: 0,
-  connectedAccounts: 0,
-};
 
 function platformMeta(platform: string) {
   return PLATFORM_META[platform.toUpperCase() as keyof typeof PLATFORM_META] ?? null;
@@ -267,7 +247,6 @@ function CircularGauge({
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [data, setData] = useState<AnalyticsData | null>(null);
-  const [connections, setConnections] = useState<ConnectedAccount[]>([]);
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -283,14 +262,12 @@ export default function AnalyticsPage() {
 
     Promise.all([
       fetch(`/api/dashboard/analytics?range=${dateRange}`).then((r) => r.json()),
-      fetch("/api/social/connections").then((r) => r.json()),
       fetch("/api/user/usage").then((r) => r.json()),
     ])
-      .then(([analyticsPayload, connectionsPayload, usagePayload]) => {
+      .then(([analyticsPayload, usagePayload]) => {
         if (analyticsPayload.error) throw new Error(analyticsPayload.error);
         if (!ignore) {
           setData(analyticsPayload);
-          setConnections(Array.isArray(connectionsPayload) ? connectionsPayload : []);
           if (!usagePayload.error) {
             setUsage(usagePayload);
 
@@ -340,34 +317,30 @@ export default function AnalyticsPage() {
     return () => { ignore = true; };
   }, [dateRange]);
 
-  const selectedRange = DATE_RANGES.find((r) => r.value === dateRange) ?? DATE_RANGES[1];
-  const hasConnectedAccounts = connections.length > 0;
+  const publishingActivity = data?.publishingActivity ?? [];
+  const tickInterval = publishingActivity.length > 14 ? Math.ceil(publishingActivity.length / 10) : 1;
+  const hasAnyActivity = publishingActivity.some(
+    (d) => d.captionsGenerated > 0 || d.postsPublished > 0
+  );
 
-  const displayTotals = hasConnectedAccounts && data
-    ? { ...data.totals, connectedAccounts: connections.length }
-    : EMPTY_TOTALS;
-
-  const displayPublishingActivity = hasConnectedAccounts ? data?.publishingActivity ?? [] : [];
-
-  const platformEngagement = hasConnectedAccounts
-    ? data?.platformEngagement ?? connections.map((a) => ({ platform: a.platform, engagement: 0 }))
-    : [];
-
-  const totalPlatformEngagement = platformEngagement.reduce((sum, e) => sum + e.engagement, 0);
-
-  const platformPieData = platformEngagement.map((entry, index) => {
-    const meta = platformMeta(entry.platform);
-    return {
-      name: formatPlatform(entry.platform),
-      value: entry.engagement,
-      color: meta?.color ?? ["#64748b", "#94a3b8", "#cbd5e1"][index % 3],
-      platform: entry.platform,
-    };
-  });
-
-  // Thinned x-axis labels for readability
-  const activityLabels = displayPublishingActivity.map((d) => d.label);
-  const tickInterval = activityLabels.length > 14 ? Math.ceil(activityLabels.length / 10) : 1;
+  const platformPieData = (() => {
+    const breakdown = data?.platformBreakdown ?? [];
+    const countMap: Record<string, number> = {};
+    for (const entry of breakdown) {
+      countMap[entry.platform.toUpperCase()] = entry.count;
+    }
+    // Always show all 4 platforms, even with 0 count
+    return (["INSTAGRAM", "FACEBOOK", "TIKTOK", "YOUTUBE"] as const).map((platform) => {
+      const meta = platformMeta(platform);
+      return {
+        name: formatPlatform(platform),
+        value: countMap[platform] ?? 0,
+        color: meta?.color ?? "#64748b",
+        platform,
+      };
+    });
+  })();
+  const totalPlatformCount = platformPieData.reduce((sum, e) => sum + e.value, 0);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -384,7 +357,7 @@ export default function AnalyticsPage() {
               className={[
                 "rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
                 dateRange === range.value
-                  ? "bg-[#169B7F] text-white"
+                  ? "bg-primary text-white"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               ].join(" ")}
             >
@@ -404,19 +377,19 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <StatCard
               title="Total Captions Generated"
-              value={isLoading ? null : displayTotals.totalCaptionsGenerated}
+              value={isLoading ? null : data?.totals.totalCaptionsGenerated ?? 0}
             />
             <StatCard
               title="Posts Published"
-              value={isLoading ? null : displayTotals.postsPublished}
+              value={isLoading ? null : data?.totals.postsPublished ?? 0}
             />
             <StatCard
               title="Scheduled Posts"
-              value={isLoading ? null : displayTotals.scheduledPosts}
+              value={isLoading ? null : data?.totals.scheduledPosts ?? 0}
             />
             <StatCard
               title="Connected Accounts"
-              value={isLoading ? null : displayTotals.connectedAccounts}
+              value={isLoading ? null : data?.totals.connectedAccounts ?? 0}
             />
           </div>
 
@@ -428,56 +401,65 @@ export default function AnalyticsPage() {
             <>
               {/* Publishing Activity — full width, large */}
               <ChartCard title="Publishing Activity">
-                {displayPublishingActivity.length === 0 ? (
-                  <EmptyChart message="No publishing activity in this range." />
+                {publishingActivity.length === 0 ? (
+                  <EmptyChart message="No activity data available." />
                 ) : (
-                  <ResponsiveContainer width="100%" height={360}>
-                    <LineChart
-                      data={displayPublishingActivity}
-                      margin={{ top: 10, right: 16, bottom: 8, left: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="4 4" stroke="var(--color-border)" />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                        tickLine={false}
-                        axisLine={{ stroke: "var(--color-border)" }}
-                        interval={tickInterval - 1}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                        tickLine={false}
-                        axisLine={false}
-                        allowDecimals={false}
-                        width={28}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend
-                        wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
-                        formatter={(value) => (
-                          <span style={{ color: "var(--color-foreground)" }}>{value}</span>
-                        )}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="captionsGenerated"
-                        name="Captions Generated"
-                        stroke={TEAL}
-                        strokeWidth={2.5}
-                        dot={false}
-                        activeDot={{ r: 5, fill: TEAL }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="postsPublished"
-                        name="Posts Published"
-                        stroke={PUBLISHED_COLOR}
-                        strokeWidth={2.5}
-                        dot={false}
-                        activeDot={{ r: 5, fill: PUBLISHED_COLOR }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="relative">
+                    <ResponsiveContainer width="100%" height={360}>
+                      <LineChart
+                        data={publishingActivity}
+                        margin={{ top: 10, right: 16, bottom: 8, left: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="4 4" stroke="var(--color-border)" />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                          tickLine={false}
+                          axisLine={{ stroke: "var(--color-border)" }}
+                          interval={tickInterval - 1}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                          width={28}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend
+                          wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                          formatter={(value) => (
+                            <span style={{ color: "var(--color-foreground)" }}>{value}</span>
+                          )}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="captionsGenerated"
+                          name="Captions Generated"
+                          stroke={TEAL}
+                          strokeWidth={2.5}
+                          dot={false}
+                          activeDot={{ r: 5, fill: TEAL }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="postsPublished"
+                          name="Posts Published"
+                          stroke={PUBLISHED_COLOR}
+                          strokeWidth={2.5}
+                          dot={false}
+                          activeDot={{ r: 5, fill: PUBLISHED_COLOR }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    {!hasAnyActivity && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <p className="text-sm text-muted-foreground bg-card/80 px-3 py-1.5 rounded-md">
+                          No activity yet in this range
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </ChartCard>
 
@@ -485,67 +467,68 @@ export default function AnalyticsPage() {
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Popular Platforms */}
                 <ChartCard title="Popular Platforms">
-                  {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
-                    <EmptyChart message="No platform data in this range." />
-                  ) : (
-                    <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                      <div className="flex-shrink-0 flex justify-center">
-                        <ResponsiveContainer width={220} height={220}>
-                          <PieChart>
-                            <Pie
-                              data={platformPieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={58}
-                              outerRadius={95}
-                              paddingAngle={3}
-                              dataKey="value"
-                            >
-                              {platformPieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip content={<PieTooltip />} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-
-                      <div className="flex-1 space-y-3 min-w-0">
-                        {platformEngagement.map((entry) => {
-                          const pct = totalPlatformEngagement > 0
-                            ? Math.round((entry.engagement / totalPlatformEngagement) * 100)
-                            : 0;
-                          const meta = platformMeta(entry.platform);
-                          const color = meta?.color ?? "#64748b";
-
-                          return (
-                            <div
-                              key={entry.platform}
-                              className="grid grid-cols-[20px_minmax(0,1fr)_auto_auto] items-center gap-3 text-sm"
-                            >
-                              <PlatformIcon platform={entry.platform} />
-                              <span className="min-w-0 truncate text-foreground">
-                                {formatPlatform(entry.platform)}
-                              </span>
-                              <span className="text-xs tabular-nums text-muted-foreground">
-                                {entry.engagement}
-                              </span>
-                              <span
-                                className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
-                                style={{
-                                  color,
-                                  borderColor: `${color}55`,
-                                  backgroundColor: `${color}12`,
-                                }}
-                              >
-                                {pct}%
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                    <div className="flex-shrink-0 flex justify-center">
+                      <ResponsiveContainer width={220} height={220}>
+                        <PieChart>
+                          <Pie
+                            data={
+                              totalPlatformCount === 0
+                                ? [{ name: "No data", value: 1, color: "var(--color-muted)" }]
+                                : platformPieData
+                            }
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={58}
+                            outerRadius={95}
+                            paddingAngle={totalPlatformCount === 0 ? 0 : 3}
+                            dataKey="value"
+                          >
+                            {(totalPlatformCount === 0
+                              ? [{ color: "var(--color-muted)" }]
+                              : platformPieData
+                            ).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          {totalPlatformCount > 0 && <Tooltip content={<PieTooltip />} />}
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                  )}
+
+                    <div className="flex-1 space-y-3 min-w-0">
+                      {platformPieData.map((entry) => (
+                        <div
+                          key={entry.platform}
+                          className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-3 text-sm"
+                        >
+                          <PlatformIcon platform={entry.platform} />
+                          <span className="min-w-0 truncate text-foreground">
+                            {entry.name}
+                          </span>
+                          <span
+                            className="min-w-[46px] rounded-md border px-2 py-0.5 text-center text-xs font-semibold tabular-nums"
+                            style={
+                              entry.value > 0
+                                ? {
+                                    color: entry.color,
+                                    borderColor: `${entry.color}55`,
+                                    backgroundColor: `${entry.color}12`,
+                                  }
+                                : undefined
+                            }
+                          >
+                            {entry.value}
+                          </span>
+                        </div>
+                      ))}
+                      {totalPlatformCount === 0 && (
+                        <p className="text-xs text-muted-foreground pt-1">
+                          Publish posts to see platform breakdown
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </ChartCard>
 
                 {/* Caption Limit */}
@@ -558,7 +541,7 @@ export default function AnalyticsPage() {
                         <CircularGauge
                           used={usage?.captions ?? 0}
                           limit={usage?.captionLimit ?? null}
-                          color="#0D7C8A"
+                          color="var(--color-primary)"
                           isPro={usage?.plan === "PRO"}
                           label="Daily captions"
                         />
@@ -567,7 +550,7 @@ export default function AnalyticsPage() {
                           usage.captions >= usage.captionLimit && (
                             <button
                               onClick={() => window.location.href = "/pricing"}
-                              className="mt-2 text-[10px] font-semibold text-[#0D7C8A] underline underline-offset-2 hover:opacity-80 transition-opacity"
+                              className="mt-2 text-[10px] font-semibold text-primary underline underline-offset-2 hover:opacity-80 transition-opacity"
                             >
                               Upgrade →
                             </button>

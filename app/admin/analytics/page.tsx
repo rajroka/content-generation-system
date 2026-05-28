@@ -65,7 +65,7 @@ interface AdminAnalyticsData {
   }[];
 }
 
-const TEAL = "#169B7F";
+const TEAL = "var(--color-primary)";
 const BLUE = "#4F86C6";
 const AMBER = "#F59E0B";
 const ROSE = "#E11D48";

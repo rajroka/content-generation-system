@@ -202,7 +202,7 @@ export default function ConnectionsPage() {
                       size="sm"
                       onClick={() => handleConnect(platform.slug, platform.name, platform.authUrl)}
                       disabled={isConnecting}
-                      className="bg-[#0D7C8A] hover:bg-[#0b6b78] text-white text-xs font-semibold h-8 px-3 shrink-0"
+                      className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold h-8 px-3 shrink-0"
                     >
                       {isConnecting ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />

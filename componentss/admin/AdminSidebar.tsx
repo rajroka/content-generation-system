@@ -54,7 +54,7 @@ export function AdminSidebar() {
 
       <div className={cn("h-16 flex items-center px-4 shrink-0", collapsed && "justify-center")}>
         <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#0d7c8a] rounded-lg flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <Shield className="w-4 h-4 text-white" />
           </div>
           {!collapsed && <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>}

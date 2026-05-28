@@ -234,7 +234,7 @@ export default async function DashboardPage({
           {/* Plan Banner */}
           <Card className="border-none shadow-sm rounded-lg">
             <CardContent className="p-4 flex items-start gap-3">
-              <div className="w-9 h-9 bg-[#0d7c8a] rounded-lg flex items-center justify-center text-white shrink-0">
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-white shrink-0">
                 <Zap size={16} fill="white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -243,13 +243,13 @@ export default async function DashboardPage({
                 </p>
                 {isUnlimited ? (
                   <a href="/api/billing-portal">
-                    <Button size="sm" className="mt-3 bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-xs font-bold h-8 px-4 rounded-lg">
+                    <Button size="sm" className="mt-3 bg-primary hover:bg-primary/90 text-white text-xs font-bold h-8 px-4 rounded-lg">
                       Manage Plan
                     </Button>
                   </a>
                 ) : (
                   <a href="/api/checkout">
-                    <Button size="sm" className="mt-3 bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-xs font-bold h-8 px-4 rounded-lg">
+                    <Button size="sm" className="mt-3 bg-primary hover:bg-primary/90 text-white text-xs font-bold h-8 px-4 rounded-lg">
                       Upgrade Now
                     </Button>
                   </a>

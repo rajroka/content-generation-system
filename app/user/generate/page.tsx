@@ -25,15 +25,16 @@ import { PLATFORMS } from "@/lib/platforms";
 
 const PREVIEW_OPTIONS: { value: PreviewType; label: string; platform: string }[] = [
   { value: "facebook-post", label: "Facebook post preview", platform: "FACEBOOK" },
-  { value: "facebook-reel", label: "Facebook reel preview", platform: "FACEBOOK" },
   { value: "instagram",     label: "Instagram preview",     platform: "INSTAGRAM" },
+  { value: "tiktok",        label: "TikTok preview",        platform: "TIKTOK"    },
+  { value: "youtube",       label: "YouTube preview",       platform: "YOUTUBE"   },
 ];
 
 const formatDate = (date: Date) => format(date, "MMM d, yyyy");
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-type PreviewType = "facebook-post" | "facebook-reel" | "instagram";
+type PreviewType = "facebook-post" | "instagram" | "tiktok" | "youtube";
 
 interface ConnectedAccount {
   platform: string;
@@ -68,6 +69,8 @@ export default function GeneratePage() {
     const p = searchParams.get("preview");
     if (p === "facebook") setPreviewType("facebook-post");
     else if (p === "instagram") setPreviewType("instagram");
+    else if (p === "tiktok") setPreviewType("tiktok");
+    else if (p === "youtube") setPreviewType("youtube");
   }, [searchParams]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +93,8 @@ export default function GeneratePage() {
         // Auto-set preview to first connected platform
         if (platforms.includes("FACEBOOK")) setPreviewType("facebook-post");
         else if (platforms.includes("INSTAGRAM")) setPreviewType("instagram");
+        else if (platforms.includes("TIKTOK")) setPreviewType("tiktok");
+        else if (platforms.includes("YOUTUBE")) setPreviewType("youtube");
       })
       .catch(() => {});
   }, []);
@@ -334,13 +339,13 @@ export default function GeneratePage() {
                       className={cn(
                         "group relative flex items-center justify-center w-11 h-11 rounded-xl border-2 transition-all",
                         isActive
-                          ? "border-[#0D7C8A] bg-[#0D7C8A]/10 scale-105"
+                          ? "border-primary bg-primary/10 scale-105"
                           : "border-muted hover:border-muted-foreground"
                       )}
                     >
                       <Icon className="w-5 h-5" />
                       {isActive && (
-                        <div className="absolute -top-2 -right-2 bg-[#0D7C8A] text-white rounded-full p-0.5 shadow-lg">
+                        <div className="absolute -top-2 -right-2 bg-primary text-white rounded-full p-0.5 shadow-lg">
                           <Check className="w-3 h-3 stroke-[3px]" />
                         </div>
                       )}
@@ -362,20 +367,19 @@ export default function GeneratePage() {
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="What's on your mind? AI can help with the caption and hashtags..."
-                className="min-h-[250px] rounded-2xl border-muted bg-card p-6 text-base focus-visible:ring-[#0D7C8A] transition-all shadow-sm resize-none"
+                className="min-h-[250px] rounded-2xl border-muted bg-card p-6 text-base focus-visible:ring-primary transition-all shadow-sm resize-none"
               />
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <input
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="Topic: e.g., AI fitness app features"
-                  className="w-full h-10 px-4 bg-card border rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0D7C8A]/20 transition-all"
+                  className="w-full h-10 px-4 bg-card border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 />
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  style={{ backgroundColor: "#0D7C8A" }}
-                  className="h-10 px-5 rounded-xl hover:opacity-90 text-white font-semibold flex gap-2 w-full sm:w-auto shrink-0"
+                  className="h-10 px-5 rounded-xl bg-primary hover:opacity-90 text-white font-semibold flex gap-2 w-full sm:w-auto shrink-0"
                 >
                   {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
                   Generate
@@ -401,7 +405,7 @@ export default function GeneratePage() {
                     onClick={() => setActivePreviewIndex(i)}
                     className={cn(
                       "group relative aspect-square rounded-xl overflow-hidden border-2 bg-muted cursor-pointer transition-all",
-                      activePreviewIndex === i ? "border-[#0D7C8A] scale-105" : "border-transparent"
+                      activePreviewIndex === i ? "border-primary scale-105" : "border-transparent"
                     )}
                   >
                     {media.type === "video" ? (
@@ -424,7 +428,7 @@ export default function GeneratePage() {
                       <X className="w-3 h-3" />
                     </button>
                     {activePreviewIndex === i && media.cdnUrl && (
-                      <div className="absolute bottom-1 left-1 bg-[#0D7C8A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                      <div className="absolute bottom-1 left-1 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                         Preview
                       </div>
                     )}
@@ -433,7 +437,7 @@ export default function GeneratePage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="aspect-square rounded-xl border-2 border-dashed border-muted hover:border-[#0D7C8A] hover:bg-[#0D7C8A]/5 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50"
+                  className="aspect-square rounded-xl border-2 border-dashed border-muted hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-1 disabled:opacity-50"
                 >
                   <Plus className="w-5 h-5 text-muted-foreground" />
                   <span className="text-[10px] text-muted-foreground">Add</span>
@@ -461,8 +465,8 @@ export default function GeneratePage() {
                 <Popover open={isSchedulePickerOpen} onOpenChange={setIsSchedulePickerOpen}>
                   <PopoverTrigger
                     render={
-                      <button className="h-11 w-full flex items-center gap-2 rounded-[8px] border-2 border-[#0D7C8A]/40 bg-[#0D7C8A]/5 px-3 text-sm text-left hover:bg-[#0D7C8A]/10 hover:border-[#0D7C8A] transition-colors">
-                        <Calendar className="size-4 text-[#0D7C8A] shrink-0" />
+                      <button className="h-11 w-full flex items-center gap-2 rounded-[8px] border-2 border-primary/40 bg-primary/5 px-3 text-sm text-left hover:bg-primary/10 hover:border-primary transition-colors">
+                        <Calendar className="size-4 text-primary shrink-0" />
                         <span className={scheduleDate ? "text-foreground font-medium" : "text-muted-foreground"}>
                           {scheduleDate ? formatDate(scheduleDate) : "Pick a date"}
                         </span>
@@ -478,7 +482,7 @@ export default function GeneratePage() {
                         if (date) setIsSchedulePickerOpen(false);
                       }}
                       disabled={{ before: startOfToday() }}
-                      className="[--primary:#0D7C8A] [--primary-foreground:#ffffff]"
+                      className="[--primary:var(--color-primary)] [--primary-foreground:#ffffff]"
                     />
                   </PopoverContent>
                 </Popover>
@@ -486,19 +490,19 @@ export default function GeneratePage() {
                   type="time"
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
-                  className="h-11 rounded-[8px] border-2 border-[#0D7C8A]/40 bg-[#0D7C8A]/5 px-3 text-sm outline-none transition-all focus:ring-2 focus:ring-[#0D7C8A]/30 focus:border-[#0D7C8A] hover:border-[#0D7C8A] dark:[color-scheme:dark]"
+                  className="h-11 rounded-[8px] border-2 border-primary/40 bg-primary/5 px-3 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/30 focus:border-primary hover:border-primary dark:[color-scheme:dark]"
                 />
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Button
                   onClick={handleSchedule}
                   disabled={isScheduling}
-                  className="h-10 rounded-[8px] bg-[#0D7C8A] text-white hover:bg-[#0b6b78] font-bold"
+                  className="h-10 rounded-[8px] bg-primary text-white hover:bg-primary/90 font-bold"
                 >
                   {isScheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Schedule"}
                 </Button>
                 <Button
-                  className="h-10 rounded-[8px] bg-[#0D7C8A] text-white hover:bg-[#0b6b78] font-bold gap-2"
+                  className="h-10 rounded-[8px] bg-primary text-white hover:bg-primary/90 font-bold gap-2"
                   onClick={handlePostNow}
                   disabled={isPosting}
                 >
@@ -532,43 +536,85 @@ export default function GeneratePage() {
                 </Select>
               </div>
 
-              {/* ── Facebook Reel Preview ── */}
-              {previewType === "facebook-reel" && (
-                <div className="relative w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden bg-zinc-900 shadow-xl" style={{ aspectRatio: "9/16" }}>
+              {/* ── TikTok Preview ── */}
+              {previewType === "tiktok" && (
+                <div className="relative w-full max-w-[280px] mx-auto rounded-2xl overflow-hidden bg-black shadow-xl" style={{ aspectRatio: "9/16" }}>
                   {activeMedia ? (
-                    renderPreviewMedia("absolute inset-0 w-full h-full object-cover opacity-70")
+                    renderPreviewMedia("absolute inset-0 w-full h-full object-cover opacity-80")
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-b from-zinc-700 to-zinc-900" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-zinc-800 to-black" />
                   )}
-                  <div className="absolute top-0 left-0 right-0 px-3 pt-3 flex items-center justify-between z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/60 shrink-0 bg-[#1877F2]/20">
-                        {fbPhoto ? <img src={fbPhoto} alt={userName} className="w-full h-full object-cover" />
-                          : userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center bg-[#1877F2]"><span className="text-white text-xs font-bold">{userName.charAt(0)}</span></div>}
+                  {/* Top bar */}
+                  <div className="absolute top-0 left-0 right-0 px-3 pt-4 flex items-center justify-center z-10">
+                    <span className="text-white text-xs font-semibold opacity-80">Following</span>
+                    <span className="text-white/40 mx-2 text-xs">|</span>
+                    <span className="text-white text-xs font-bold border-b-2 border-white pb-0.5">For You</span>
+                  </div>
+                  {/* Right action bar */}
+                  <div className="absolute right-2 bottom-20 flex flex-col items-center gap-4 z-10">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white bg-zinc-700">
+                        {userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center bg-zinc-600"><span className="text-white text-xs font-bold">{userName.charAt(0)}</span></div>}
                       </div>
-                      <div>
-                        <p className="text-white text-xs font-bold leading-none">{userName}</p>
-                        <p className="text-white/60 text-[10px] mt-0.5">Reels · Just now · 🌍</p>
+                      <div className="w-4 h-4 rounded-full bg-[#FE2C55] flex items-center justify-center -mt-2 ring-1 ring-black">
+                        <span className="text-white text-[8px] font-black">+</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 text-white">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-2xl">❤️</span>
+                      <span className="text-white text-[10px]">0</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-2xl">💬</span>
+                      <span className="text-white text-[10px]">0</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-2xl">↗</span>
+                      <span className="text-white text-[10px]">Share</span>
                     </div>
                   </div>
-                  <div className="absolute bottom-12 left-0 right-0 px-3 z-10">
-                    <p className="text-white text-xs leading-relaxed line-clamp-3">
+                  {/* Bottom info */}
+                  <div className="absolute bottom-0 left-0 right-10 px-3 pb-4 z-10">
+                    <p className="text-white text-xs font-bold mb-1">@{userName.replace(/\s+/g, "").toLowerCase()}</p>
+                    <p className="text-white text-xs leading-relaxed line-clamp-3 opacity-90">
                       {caption || <span className="text-white/50">Your caption will appear here...</span>}
                     </p>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between z-10 bg-gradient-to-t from-black/60 to-transparent">
-                    <div className="flex items-center gap-1.5 text-white/80">
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v9.28a4 4 0 00-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/></svg>
-                      <span className="text-[10px] font-semibold">{userName} · Original audio</span>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="text-white text-[10px]">🎵</span>
+                      <span className="text-white text-[10px] opacity-70">Original sound · {userName}</span>
                     </div>
-                    <span className="text-white/60 text-[10px]">{userName.slice(0, 8)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* ── YouTube Preview ── */}
+              {previewType === "youtube" && (
+                <div className="mx-auto w-full max-w-[420px] rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
+                  {/* Thumbnail */}
+                  {activeMedia ? (
+                    renderPreviewMedia("w-full aspect-video object-cover bg-black")
+                  ) : (
+                    <div className="aspect-video bg-zinc-900 flex items-center justify-center">
+                      <svg className="w-12 h-12 text-white/20" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      </svg>
+                    </div>
+                  )}
+                  {/* Video info */}
+                  <div className="p-3 flex gap-3">
+                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-red-600/10 ring-1 ring-border">
+                      {userImage ? <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center bg-red-600"><span className="text-white text-xs font-bold">{userName.charAt(0)}</span></div>}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
+                        {caption || <span className="text-muted-foreground">Your video title / caption...</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{userName}</p>
+                      <p className="text-xs text-muted-foreground">0 views · Just now</p>
+                    </div>
+                    <MoreHorizontal className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
                   </div>
                 </div>
               )}

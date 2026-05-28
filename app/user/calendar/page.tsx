@@ -58,7 +58,7 @@ type CalendarView = "week" | "month";
 // ── Status helpers ────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
-  SCHEDULED: "bg-[#0d7c8a] text-white",
+  SCHEDULED: "bg-primary text-white",
   PUBLISHED: "bg-emerald-600 text-white",
   FAILED:    "bg-red-500 text-white",
   CANCELLED: "bg-zinc-400 text-white",
@@ -74,7 +74,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_TEXT: Record<string, string> = {
-  SCHEDULED: "text-[#0d7c8a]",
+  SCHEDULED: "text-primary",
   PUBLISHED: "text-emerald-600",
   FAILED:    "text-red-500",
   CANCELLED: "text-zinc-500",
@@ -254,7 +254,7 @@ function PostDrawer({
               <Textarea
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
-                className="min-h-[140px] text-sm resize-none focus-visible:ring-[#0d7c8a]"
+                className="min-h-[140px] text-sm resize-none focus-visible:ring-primary"
                 placeholder="Write your caption..."
               />
             ) : (
@@ -300,7 +300,7 @@ function PostDrawer({
                 type="datetime-local"
                 value={scheduledFor}
                 onChange={(e) => setScheduledFor(e.target.value)}
-                className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#0d7c8a]/30 dark:[color-scheme:dark]"
+                className="w-full h-10 px-3 bg-muted/50 border border-border rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/30 dark:[color-scheme:dark]"
               />
             </div>
           )}
@@ -345,7 +345,7 @@ function PostDrawer({
                 Cancel
               </Button>
               <Button
-                className="flex-1 bg-[#0d7c8a] hover:bg-[#0b6b78] text-white"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white"
                 onClick={handleSave}
                 disabled={isSaving}
               >
@@ -365,7 +365,7 @@ function PostDrawer({
               )}
               {canPublish && (
                 <Button
-                  className="w-full gap-2 justify-center bg-[#0d7c8a] text-white hover:bg-[#0b6b78]"
+                  className="w-full gap-2 justify-center bg-primary text-white hover:bg-primary/90"
                   onClick={handlePublishNow}
                   disabled={isPublishing}
                 >
@@ -405,7 +405,7 @@ function PostCard({
     <button
       onClick={onClick}
       className={cn(
-        "group w-full rounded-[6px] border bg-background px-2 py-1.5 text-left shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:border-[#0d7c8a]/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d7c8a]/30",
+        "group w-full rounded-[6px] border bg-background px-2 py-1.5 text-left shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
         post.status === "PUBLISHED" && "bg-emerald-50/60 dark:bg-emerald-950/20",
         post.status === "FAILED" && "bg-red-50/70 dark:bg-red-950/20"
       )}
@@ -526,7 +526,7 @@ export default function ContentCalendar() {
             </div>
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
               <Link href="/user/generate" className="w-full sm:w-auto">
-                <Button className="h-9 w-full gap-2 bg-[#0d7c8a] text-white shadow-sm hover:bg-[#0b6b78] sm:w-auto">
+                <Button className="h-9 w-full gap-2 bg-primary text-white shadow-sm hover:bg-primary/90 sm:w-auto">
                   <Plus className="size-4" /> New Post
                 </Button>
               </Link>
@@ -621,7 +621,7 @@ export default function ContentCalendar() {
                   className={cn(
                     "min-h-[190px] border-b border-r bg-background p-2.5 lg:min-h-[150px]",
                     outsideMonth && "bg-muted/20 text-muted-foreground",
-                    today && "bg-[#0d7c8a]/10"
+                    today && "bg-primary/10"
                   )}
                 >
                   <div className="mb-2 flex items-center justify-between">
@@ -631,7 +631,7 @@ export default function ContentCalendar() {
                     <span
                       className={cn(
                         "flex size-7 items-center justify-center rounded-[6px] text-sm font-bold",
-                        today ? "bg-[#0d7c8a] text-white" : "text-foreground"
+                        today ? "bg-primary text-white" : "text-foreground"
                       )}
                     >
                       {format(day, "d")}
@@ -662,7 +662,7 @@ export default function ContentCalendar() {
                     )}
 
                     {!isLoading && today && dayPosts.length === 0 && (
-                      <Link href="/user/generate" className="mt-8 flex items-center justify-center gap-2 text-xs font-semibold text-[#0d7c8a]">
+                      <Link href="/user/generate" className="mt-8 flex items-center justify-center gap-2 text-xs font-semibold text-primary">
                         <Plus className="size-3.5" />
                         Create Post
                       </Link>

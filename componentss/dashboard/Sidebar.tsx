@@ -57,7 +57,7 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
       {/* Brand Logo */}
       <div className={cn("h-16 flex items-center px-4 shrink-0", collapsed && "justify-center")}>
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-[#0d7c8a] rounded-lg flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
           </div>
           {!collapsed && <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>}

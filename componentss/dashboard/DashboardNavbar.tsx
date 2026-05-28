@@ -29,7 +29,7 @@ export function DashboardNavbar({ plan = "FREE" }: { plan?: string }) {
               {/* Brand Logo */}
               <div className="h-16 flex items-center px-4 border-b border-border">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 bg-[#0d7c8a] rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
                     <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
                   </div>
                   <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>
@@ -38,7 +38,7 @@ export function DashboardNavbar({ plan = "FREE" }: { plan?: string }) {
 
               {/* New Post Button */}
               <div className="px-3 py-4">
-                <Link href="/user/generate" className="flex items-center justify-center gap-2 w-full bg-[#0d7c8a] hover:bg-[#0b6a75] text-white text-[13px] font-semibold rounded-lg py-2 transition-all">
+                <Link href="/user/generate" className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-white text-[13px] font-semibold rounded-lg py-2 transition-all">
                   <Plus size={16} />
                   <span>New Post</span>
                 </Link>

@@ -2,32 +2,21 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function ModeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // Avoid hydration mismatch — only render icon after mount
-  useEffect(() => setMounted(true), []);
-
-  const isDark = resolvedTheme === "dark";
+  const { theme, setTheme } = useTheme();
 
   return (
-    <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-9 w-9 text-muted-foreground hover:text-foreground"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       aria-label="Toggle theme"
-      className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:text-white"
     >
-      {mounted ? (
-        isDark ? (
-          <Sun className="h-4 w-4" />
-        ) : (
-          <Moon className="h-4 w-4" />
-        )
-      ) : (
-        <span className="h-4 w-4" />
-      )}
-    </button>
+      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+    </Button>
   );
 }

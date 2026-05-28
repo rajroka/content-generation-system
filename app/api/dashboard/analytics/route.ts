@@ -98,7 +98,6 @@ export async function GET(req: Request) {
       prisma.socialAccount.count({
         where: {
           userId: user.id,
-          createdAt: { gte: rangeStart, lte: now },
         },
       }),
       prisma.generation.findMany({
