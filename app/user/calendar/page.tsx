@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,7 @@ function PlatformIcon({
 }) {
   const Icon = getPlatformIcon(platform);
   const color = getPlatformColor(platform);
-  return <Icon className={className} style={{ color }} />;
+  return <span style={{ color }} className="inline-flex"><Icon className={className} /></span>;
 }
 
 function PlatformIcons({ platforms }: { platforms: string[] }) {
