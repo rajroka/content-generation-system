@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreVertical, Eye, Crown, Ban, Mail, RefreshCw } from "lucide-react";
+import { Search, MoreVertical, Eye, Ban, Mail, RefreshCw, Users, ShieldCheck, UserX } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface User {
@@ -68,36 +68,11 @@ export default function AdminUsersPage() {
         console.error("API did not return an array of users:", data);
         setUsers([]);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch users");
       setUsers([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleUpdatePlan = async (userId: string, plan: string) => {
-    setUpdatingId(userId);
-    try {
-      const response = await fetch("/api/admin/users/update-plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, plan }),
-      });
-
-      if (response.ok) {
-        toast.success(`User plan updated to ${plan}`);
-        setUsers((current) =>
-          current.map((user) => (user.id === userId ? { ...user, plan } : user))
-        );
-        setSelectedUser((current) => (current?.id === userId ? { ...current, plan } : current));
-      } else {
-        throw new Error("Failed to update");
-      }
-    } catch (error) {
-      toast.error("Failed to update plan");
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -121,14 +96,18 @@ export default function AdminUsersPage() {
       } else {
         throw new Error("Failed to update");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to update user status");
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const safeUsers = Array.isArray(users) ? users : [];
+  const safeUsers = useMemo(() => (Array.isArray(users) ? users : []), [users]);
+  const activeUsers = safeUsers.filter((user) => user.isActive).length;
+  const adminUsers = safeUsers.filter((user) => user.role === "ADMIN").length;
+  const suspendedUsers = safeUsers.length - activeUsers;
+
   const filteredUsers = useMemo(() => {
     const query = search.toLowerCase();
 
@@ -143,28 +122,61 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-10 bg-muted rounded w-1/4" />
-          <div className="h-64 bg-muted rounded" />
+          <div className="h-8 bg-muted rounded w-40" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="h-24 bg-muted rounded-lg" />
+            ))}
+          </div>
+          <div className="h-64 bg-muted rounded-lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Users</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage all registered users and their accounts
-        </p>
+    <div className="p-4 sm:p-6 space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-foreground">Users</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Manage account access, status, and support actions.</p>
       </div>
 
-      <Card>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">{safeUsers.length}</p>
+            </div>
+            <Users className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Admins</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">{adminUsers}</p>
+            </div>
+            <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Suspended</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">{suspendedUsers}</p>
+            </div>
+            <UserX className="h-5 w-5 text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-sm rounded-lg">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle>All Users ({users.length})</CardTitle>
+            <CardTitle className="text-base font-bold">All Users ({filteredUsers.length})</CardTitle>
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -249,20 +261,6 @@ export default function AdminUsersPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          disabled={user.plan === "PRO" || updatingId === user.id}
-                          onClick={() => handleUpdatePlan(user.id, "PRO")}
-                        >
-                          <Crown className="w-4 h-4 mr-2" />
-                          Upgrade to Pro
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={user.plan === "FREE" || updatingId === user.id}
-                          onClick={() => handleUpdatePlan(user.id, "FREE")}
-                        >
-                          Downgrade to Free
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
                           disabled={updatingId === user.id}
                           onClick={() => handleToggleActive(user.id, user.isActive)}
                         >
@@ -286,7 +284,7 @@ export default function AdminUsersPage() {
       </Card>
 
       {selectedUser && (
-        <Card className="mt-6">
+        <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               <CardTitle>User Details</CardTitle>
@@ -323,21 +321,6 @@ export default function AdminUsersPage() {
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                disabled={selectedUser.plan === "PRO" || updatingId === selectedUser.id}
-                onClick={() => handleUpdatePlan(selectedUser.id, "PRO")}
-              >
-                Upgrade to Pro
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={selectedUser.plan === "FREE" || updatingId === selectedUser.id}
-                onClick={() => handleUpdatePlan(selectedUser.id, "FREE")}
-              >
-                Downgrade to Free
-              </Button>
               <Button
                 size="sm"
                 variant={selectedUser.isActive ? "destructive" : "default"}

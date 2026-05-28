@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { AlertTriangle, Eye, FileText, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, FileText, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,43 +138,58 @@ export default function AdminContentPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-10 w-1/4 rounded bg-muted" />
-          <div className="h-80 rounded bg-muted" />
+          <div className="h-8 w-40 rounded bg-muted" />
+          <div className="h-80 rounded-lg bg-muted" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Content</h1>
-          <p className="mt-1 text-muted-foreground">Review generated posts, flags, and moderation actions</p>
+          <h1 className="text-xl font-bold text-foreground">Content</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Review generated posts, flags, and moderation actions.</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:w-80">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold">{generations.length}</p>
+        <div className="grid grid-cols-1 gap-3 sm:w-[520px] sm:grid-cols-3">
+          <Card className="border-none shadow-sm rounded-lg">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums">{generations.length}</p>
+              </div>
+              <FileText className="h-5 w-5 text-muted-foreground" />
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Flagged</p>
-              <p className="text-2xl font-bold text-red-600">{flaggedCount}</p>
+          <Card className="border-none shadow-sm rounded-lg">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Clear</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums">{generations.length - flaggedCount}</p>
+              </div>
+              <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+          <Card className="border-none shadow-sm rounded-lg">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Flagged</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-red-600">{flaggedCount}</p>
+              </div>
+              <AlertTriangle className="h-5 w-5 text-muted-foreground" />
             </CardContent>
           </Card>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <CardTitle>Generated Content ({filteredGenerations.length})</CardTitle>
+              <CardTitle className="text-base font-bold">Generated Content ({filteredGenerations.length})</CardTitle>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -185,11 +200,21 @@ export default function AdminContentPage() {
                     onChange={(event) => setSearch(event.target.value)}
                   />
                 </div>
-                <div className="flex rounded-lg border p-1">
-                  <Button variant={filter === "all" ? "default" : "ghost"} size="sm" onClick={() => setFilter("all")}>
+                <div className="flex rounded-lg border border-border bg-card p-1">
+                  <Button
+                    className={filter === "all" ? "bg-[#169B7F] text-white hover:bg-[#138a71]" : ""}
+                    variant={filter === "all" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setFilter("all")}
+                  >
                     All
                   </Button>
-                  <Button variant={filter === "flagged" ? "default" : "ghost"} size="sm" onClick={() => setFilter("flagged")}>
+                  <Button
+                    className={filter === "flagged" ? "bg-[#169B7F] text-white hover:bg-[#138a71]" : ""}
+                    variant={filter === "flagged" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setFilter("flagged")}
+                  >
                     Flagged
                   </Button>
                 </div>
@@ -255,9 +280,9 @@ export default function AdminContentPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
-            <CardTitle>Content Details</CardTitle>
+            <CardTitle className="text-base font-bold">Content Details</CardTitle>
           </CardHeader>
           <CardContent>
             {selected ? (

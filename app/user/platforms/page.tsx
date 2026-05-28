@@ -3,12 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
 import {
   Instagram, Facebook, Youtube,
-  Link2, Unlink, Loader2, CheckCircle2, Music2, Eye,
+  Link2, Unlink, Loader2, Music2,
 } from "lucide-react";
 
 interface ConnectedAccount {
@@ -19,20 +17,17 @@ interface ConnectedAccount {
 }
 
 const PLATFORMS = [
-  { id: "instagram", name: "Instagram", icon: Instagram, authUrl: "/api/auth/instagram", color: "text-pink-600" },
-  { id: "facebook",  name: "Facebook",  icon: Facebook,  authUrl: "/api/auth/facebook",  color: "text-blue-600" },
+  { id: "instagram", name: "Instagram", icon: Instagram, authUrl: "/api/auth/instagram", color: "text-pink-500" },
+  { id: "facebook",  name: "Facebook",  icon: Facebook,  authUrl: "/api/auth/facebook",  color: "text-blue-500" },
   { id: "tiktok",    name: "TikTok",    icon: Music2,    authUrl: "/api/auth/tiktok",    color: "text-foreground" },
-  { id: "youtube",   name: "YouTube",   icon: Youtube,   authUrl: "/api/auth/youtube",   color: "text-red-600"  },
+  { id: "youtube",   name: "YouTube",   icon: Youtube,   authUrl: "/api/auth/youtube",   color: "text-red-500"  },
 ];
 
 export default function ConnectionsPage() {
   const [accounts, setAccounts]     = useState<ConnectedAccount[]>([]);
   const [loading, setLoading]       = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
-  const [toggling, setToggling]     = useState<string | null>(null);
-  const router = useRouter();
 
-  // Keep a ref so interval callbacks always see the latest accounts list
   const accountsRef = useRef<ConnectedAccount[]>([]);
   accountsRef.current = accounts;
 
@@ -73,12 +68,10 @@ export default function ConnectionsPage() {
       return;
     }
 
-    // Snapshot connected state BEFORE the OAuth flow starts (using ref — always fresh)
     const wasConnected = accountsRef.current.some(
       (a) => a.platform === platformId.toUpperCase(),
     );
 
-    // postMessage listener — fires if the callback page can reach window.opener
     const onMessage = (e: MessageEvent) => {
       if (e.data?.platform?.toLowerCase() !== platformId) return;
 
@@ -88,7 +81,6 @@ export default function ConnectionsPage() {
         setConnecting(null);
       } else if (e.data.type === "SOCIAL_CONNECTED") {
         cleanup();
-        // Give the DB write a moment to settle, then refresh once
         setTimeout(async () => {
           const fresh = await fetchConnections();
           const nowConnected = fresh.some((a) => a.platform === platformId.toUpperCase());
@@ -99,16 +91,14 @@ export default function ConnectionsPage() {
     };
     window.addEventListener("message", onMessage);
 
-    // Popup-closed poller — reliable fallback when opener is cleared by redirects
     let retries = 0;
     const MAX_RETRIES = 8;
 
     const popupPoll = setInterval(() => {
-      if (!popup.closed) return; // popup still open — keep waiting
+      if (!popup.closed) return;
       clearInterval(popupPoll);
       window.removeEventListener("message", onMessage);
 
-      // Retry fetching until the platform appears or we give up
       const retryPoll = setInterval(async () => {
         retries++;
         const fresh = await fetchConnections();
@@ -118,9 +108,6 @@ export default function ConnectionsPage() {
           clearInterval(retryPoll);
           setConnecting(null);
           if (!wasConnected && nowConnected) toast.success(`${platformName} connected`);
-          else if (!nowConnected && retries >= MAX_RETRIES) {
-            // Don't show an error — user may have just closed the popup
-          }
         }
       }, 800);
     }, 500);
@@ -150,165 +137,88 @@ export default function ConnectionsPage() {
         return;
       }
 
-      // Optimistically remove from state immediately, then confirm with server
       setAccounts((prev) => prev.filter((a) => a.platform !== platformId.toUpperCase()));
       toast.success(`${platformName} disconnected`);
-      await fetchConnections(); // sync with server
+      await fetchConnections();
     } catch {
       toast.dismiss(tid);
       toast.error("Network error — please try again");
     }
   }, [fetchConnections]);
 
-  // ─── Toggle active ──────────────────────────────────────────────────────────
-  const handleToggle = useCallback(async (platformId: string, currentActive: boolean) => {
-    setToggling(platformId);
-    // Optimistic update
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.platform === platformId.toUpperCase() ? { ...a, isActive: !currentActive } : a,
-      ),
-    );
-    try {
-      const res = await fetch("/api/social/toggle-active", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ platform: platformId.toUpperCase(), isActive: !currentActive }),
-      });
-      if (!res.ok) {
-        // Revert on failure
-        setAccounts((prev) =>
-          prev.map((a) =>
-            a.platform === platformId.toUpperCase() ? { ...a, isActive: currentActive } : a,
-          ),
-        );
-        toast.error("Failed to update setting");
-      } else {
-        toast.success(`Auto-publishing ${!currentActive ? "enabled" : "disabled"}`);
-      }
-    } catch {
-      setAccounts((prev) =>
-        prev.map((a) =>
-          a.platform === platformId.toUpperCase() ? { ...a, isActive: currentActive } : a,
-        ),
-      );
-      toast.error("Network error — please try again");
-    } finally {
-      setToggling(null);
-    }
-  }, []);
-
   const getAccount = (platformId: string) =>
     accounts.find((a) => a.platform === platformId.toUpperCase());
 
-  // ─── Loading skeleton ────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="p-4 sm:p-6 max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-36 bg-muted animate-pulse rounded-xl" />
+          <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
         ))}
       </div>
     );
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
-      <header className="mb-6">
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-6">
+      <div>
         <h1 className="text-xl font-bold text-foreground">Connections</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Manage your linked social media accounts to publish directly.
+        <p className="text-sm text-muted-foreground mt-1">
+          Connect your social accounts to publish directly from PostSathi.
         </p>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {PLATFORMS.map((platform) => {
           const account      = getAccount(platform.id);
           const Icon         = platform.icon;
           const isConnecting = connecting === platform.id;
 
           return (
-            <Card key={platform.id} className="border-none shadow-sm rounded-xl overflow-hidden">
-              <CardContent className="p-4">
-                {/* Platform header */}
-                <div className="flex items-center gap-3 mb-4">
+            <Card key={platform.id} className="border shadow-sm rounded-xl">
+              <CardContent className="p-0">
+                <div className="flex items-center gap-4 px-4 py-3">
+                  {/* Icon */}
                   <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
                     <Icon className={`w-4 h-4 ${platform.color}`} />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-sm">{platform.name}</h3>
+
+                  {/* Name + account */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{platform.name}</p>
                     {account ? (
-                      <p className="text-[11px] text-foreground flex items-center gap-1 font-medium mt-0.5">
-                        <CheckCircle2 className="w-3 h-3" />
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {account.accountName || "Connected"}
                       </p>
                     ) : (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">Not connected</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Not connected</p>
                     )}
                   </div>
-                </div>
 
-                {/* Action area */}
-                <div className="bg-muted/30 rounded-lg p-3">
+                  {/* Action */}
                   {account ? (
-                    <div className="flex flex-col gap-3">
-                      {/* Auto-publish toggle */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs font-bold text-foreground">Auto-Publishing</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Allow system to post on your behalf
-                          </p>
-                        </div>
-                        <Switch
-                          id={`active-${platform.id}`}
-                          checked={account.isActive}
-                          disabled={toggling === platform.id}
-                          onCheckedChange={() => handleToggle(platform.id, account.isActive)}
-                          className="data-[state=checked]:bg-foreground"
-                        />
-                      </div>
-
-                      <div className="h-px bg-border" />
-
-                      {/* Change Preview */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-foreground hover:bg-muted text-xs font-bold w-full h-8"
-                        onClick={() => router.push(`/user/generate?preview=${platform.id}`)}
-                      >
-                        <Eye className="w-3 h-3 mr-2" />
-                        Change Preview
-                      </Button>
-
-                      <div className="h-px bg-border" />
-
-                      {/* Disconnect */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:bg-red-50 hover:text-red-600 text-xs font-bold w-full h-8"
-                        onClick={() => handleDisconnect(platform.id, platform.name)}
-                      >
-                        <Unlink className="w-3 h-3 mr-2" />
-                        Disconnect
-                      </Button>
-                    </div>
-                  ) : (
-                    /* Connect */
                     <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 text-xs font-semibold h-8 px-3 shrink-0"
+                      onClick={() => handleDisconnect(platform.id, platform.name)}
+                    >
+                      <Unlink className="w-3 h-3 mr-1.5" />
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
                       onClick={() => handleConnect(platform.id, platform.name, platform.authUrl)}
                       disabled={isConnecting}
-                      className="w-full bg-foreground hover:bg-foreground/80 text-background font-bold text-xs h-9"
+                      className="bg-[#0D7C8A] hover:bg-[#0b6b78] text-white text-xs font-semibold h-8 px-3 shrink-0"
                     >
                       {isConnecting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
                         <>
-                          <Link2 className="w-3 h-3 mr-2" />
-                          Connect {platform.name}
+                          <Link2 className="w-3 h-3 mr-1.5" />
+                          Connect
                         </>
                       )}
                     </Button>

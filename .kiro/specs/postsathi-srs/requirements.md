@@ -148,6 +148,9 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 4. WHEN a User has connected a Facebook account, THE System SHALL fetch and display the Facebook profile photo in the preview.
 5. THE preview SHALL display the full media without cropping, using `object-contain` layout.
 6. WHEN a User navigates from the connections page using the "Change Preview" button, THE generate page SHALL pre-select that platform's preview.
+7. THE generate page caption input area SHALL display a character count indicator.
+8. THE generate button SHALL use the `Wand2` icon from lucide-react and SHALL be visually smaller than the primary publish buttons.
+9. THE date picker in the Schedule & Publish section SHALL use the application's teal color (`#0D7C8A`) for the selected date highlight, matching the rest of the UI.
 
 ---
 
@@ -157,10 +160,14 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 #### Acceptance Criteria
 
-1. THE generate page SHALL display real-time usage badges showing `captions used / caption limit` and `schedules used / schedule limit`.
+1. THE analytics page SHALL display two circular gauge widgets side by side showing daily caption usage and monthly schedule usage against their respective limits.
 2. THE System SHALL fetch usage data from `/api/user/usage` which returns `captions`, `schedules`, `posts`, `plan`, `captionLimit`, and `scheduleLimit`.
-3. WHEN a User is on the PRO plan, THE System SHALL return `null` for `captionLimit` and `scheduleLimit`, and the UI SHALL display `∞` as the limit.
+3. WHEN a User is on the PRO plan, THE System SHALL return `null` for `captionLimit` and `scheduleLimit`, and the gauges SHALL display `∞` with "Unlimited" as the sub-label and render as fully filled circles.
 4. THE daily caption limit SHALL be read from the `PlanLimit` database table when available, falling back to the hardcoded default of 10 for FREE users. The monthly schedule limit of 15 for FREE users is hardcoded in application logic.
+5. WHEN a FREE User's daily caption limit is reached, THE analytics page SHALL display a toast notification prompting the User to upgrade, and SHALL show an inline "Upgrade →" link beneath the gauge.
+6. WHEN a FREE User's monthly schedule limit is reached, THE analytics page SHALL display a toast notification prompting the User to upgrade, and SHALL show an inline "Upgrade →" link beneath the gauge.
+7. THE limit-hit toast notifications SHALL fire at most once per page session (tracked via a ref) to avoid repeated toasts on re-renders.
+8. THE analytics page SHALL display a note for FREE users indicating that caption limits reset every 24 hours and schedule limits reset monthly.
 
 ---
 
@@ -201,11 +208,12 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. THE System SHALL provide a dashboard at `/user/dashboard` with the following sections: Quick Actions, Recent Posts, Upcoming Posts, and Plan Banner.
 2. THE Quick Actions section SHALL provide direct navigation links to: Create Post (`/user/generate`), View Calendar (`/user/calendar`), and Analytics (`/user/analytics`).
-3. THE Recent Posts section SHALL display the last 5 ScheduledPost records with caption preview, status badge, platform icons, and date.
+3. THE Recent Posts section SHALL display the last 5 ScheduledPost records with a thumbnail image (or a placeholder icon if no image), caption preview, status badge, platform icons, and date.
 4. THE Upcoming Posts section SHALL display the next 3 scheduled posts with thumbnail, caption preview, scheduled time, and platform icon.
 5. THE Plan Banner SHALL display the User's current plan with an "Upgrade Now" link to `/api/checkout` for FREE users and a "Manage Plan" link to `/api/billing-portal` for PRO users.
 6. THE status badges SHALL use dark colored backgrounds (dark green for Published, dark blue for Scheduled) with white text.
 7. THE platform column SHALL display real brand SVG icons instead of text abbreviations.
+8. WHEN the dashboard loads, THE System SHALL auto-publish any ScheduledPost records whose `scheduledFor` datetime has passed and whose status is still `SCHEDULED`, setting their status to `PUBLISHED`.
 
 ---
 
@@ -216,9 +224,11 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 #### Acceptance Criteria
 
 1. THE System SHALL provide an analytics view at `/user/analytics` displaying usage statistics for the authenticated User.
-2. THE System SHALL display the total number of captions generated and posts published.
-3. THE System SHALL display usage trend data over the past 30 days using chart visualizations powered by `@mui/x-charts`.
-4. THE System SHALL display a breakdown of Generation records by Platform.
+2. THE System SHALL display four stat cards: Total Captions Generated, Posts Published, Scheduled Posts, and Connected Accounts.
+3. THE System SHALL display a Publishing Activity line chart showing captions generated and posts published over the selected date range (7d, 30d, 90d), powered by `recharts`.
+4. THE System SHALL display a Platform Breakdown donut chart with a legend showing each platform's post count and percentage, powered by `recharts`.
+5. THE System SHALL display a Caption Limit card alongside the Platform Breakdown, containing two circular arc gauges side by side: one for daily captions (teal) and one for monthly schedules (blue).
+6. THE analytics data SHALL only be shown when the User has at least one connected social account; otherwise all charts display zero/empty states.
 
 ---
 

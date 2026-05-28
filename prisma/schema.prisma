@@ -18,6 +18,8 @@ enum Platform {
   FACEBOOK
   YOUTUBE
   TIKTOK
+  TWITTER
+  LINKEDIN
 }
 
 enum Role {
@@ -30,6 +32,7 @@ enum ScheduleStatus {
   PUBLISHED
   FAILED
   CANCELLED
+  DRAFT
 }
 
 enum SocialPlatform {

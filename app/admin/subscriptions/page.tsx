@@ -77,9 +77,9 @@ export default function AdminSubscriptionsPage() {
     setSearch(searchParams.get("q") || "");
   }, [searchParams]);
 
-  const subscriptions = data?.subscriptions || [];
   const filteredSubscriptions = useMemo(() => {
     const query = search.toLowerCase();
+    const subscriptions = data?.subscriptions || [];
 
     return subscriptions.filter(
       (subscription) =>
@@ -88,7 +88,7 @@ export default function AdminSubscriptionsPage() {
         subscription.plan.toLowerCase().includes(query) ||
         subscription.stripeCustomerId?.toLowerCase().includes(query)
     );
-  }, [search, subscriptions]);
+  }, [data?.subscriptions, search]);
 
   const updatePlan = async (userId: string, plan: "FREE" | "PRO") => {
     setUpdatingId(userId);
@@ -112,15 +112,15 @@ export default function AdminSubscriptionsPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-10 w-1/4 rounded bg-muted" />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="h-8 w-40 rounded bg-muted" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-28 rounded bg-muted" />
+              <div key={index} className="h-24 rounded-lg bg-muted" />
             ))}
           </div>
-          <div className="h-80 rounded bg-muted" />
+          <div className="h-80 rounded-lg bg-muted" />
         </div>
       </div>
     );
@@ -134,55 +134,55 @@ export default function AdminSubscriptionsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Subscriptions</h1>
-        <p className="mt-1 text-muted-foreground">Manage user billing status and subscription plans</p>
+    <div className="p-4 sm:p-6 space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-foreground">Billing</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Manage subscription plans and revenue health.</p>
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <Card className="border-none shadow-sm rounded-lg">
           <CardContent className="flex items-center justify-between p-4">
             <div>
-              <p className="text-sm text-muted-foreground">Total Users</p>
-              <p className="text-2xl font-bold">{summary.totalUsers}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">{summary.totalUsers}</p>
             </div>
             <Users className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardContent className="flex items-center justify-between p-4">
             <div>
-              <p className="text-sm text-muted-foreground">Pro Users</p>
-              <p className="text-2xl font-bold">{summary.proUsers}</p>
+              <p className="text-sm font-medium text-muted-foreground">Pro Users</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">{summary.proUsers}</p>
             </div>
             <Crown className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardContent className="flex items-center justify-between p-4">
             <div>
-              <p className="text-sm text-muted-foreground">Free Users</p>
-              <p className="text-2xl font-bold">{summary.freeUsers}</p>
+              <p className="text-sm font-medium text-muted-foreground">Free Users</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">{summary.freeUsers}</p>
             </div>
             <Users className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-none shadow-sm rounded-lg">
           <CardContent className="flex items-center justify-between p-4">
             <div>
-              <p className="text-sm text-muted-foreground">Projected MRR</p>
-              <p className="text-2xl font-bold">${summary.monthlyRevenue.toFixed(0)}</p>
+              <p className="text-sm font-medium text-muted-foreground">Projected MRR</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums">${summary.monthlyRevenue.toFixed(0)}</p>
             </div>
             <CreditCard className="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-none shadow-sm rounded-lg">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>Billing Accounts ({filteredSubscriptions.length})</CardTitle>
+            <CardTitle className="text-base font-bold">Billing Accounts ({filteredSubscriptions.length})</CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
