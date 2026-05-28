@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { PRO_PLAN_PRICE_USD } from "@/lib/constants";
 
 export type AdminDateRange = "7d" | "30d" | "90d";
 
@@ -8,7 +9,7 @@ const RANGE_DAYS: Record<AdminDateRange, number> = {
   "90d": 90,
 };
 
-const PLAN_PRICE = 12;
+const PLAN_PRICE = PRO_PLAN_PRICE_USD;
 
 function normalizeRange(range?: string | null): AdminDateRange {
   return range === "7d" || range === "90d" ? range : "30d";
@@ -240,14 +241,24 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     topUsers,
     systemHealth: [
       {
-        label: "Active accounts",
-        value: activeUsers,
-        total: users.length,
+        label: "Pro conversion",
+        value: proUsers,
+        total: Math.max(users.length, 1),
       },
       {
-        label: "Connected socials",
+        label: "Posts published",
+        value: publishedPosts,
+        total: Math.max(publishedPosts + pendingScheduledPosts, 1),
+      },
+      {
+        label: "Platform adoption",
         value: activeConnections,
-        total: Math.max(users.length * 4, 1),
+        total: Math.max(activeUsers, 1),
+      },
+      {
+        label: "New users (this period)",
+        value: rangeUsers.length,
+        total: Math.max(users.length, 1),
       },
     ],
   };

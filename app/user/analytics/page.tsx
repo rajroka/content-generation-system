@@ -481,10 +481,10 @@ export default function AnalyticsPage() {
                 )}
               </ChartCard>
 
-              {/* Platform Breakdown + Caption Limit — side by side */}
+              {/* Popular Platforms + Caption Limit — side by side */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {/* Platform Breakdown */}
-                <ChartCard title="Platform Breakdown">
+                {/* Popular Platforms */}
+                <ChartCard title="Popular Platforms">
                   {platformPieData.length === 0 || totalPlatformEngagement === 0 ? (
                     <EmptyChart message="No platform data in this range." />
                   ) : (

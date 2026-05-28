@@ -1,3 +1,5 @@
+import { PRO_PLAN_PRICE_USD } from "@/lib/constants";
+
 export const dynamic = "force-dynamic";
 
 import prisma from "@/lib/prisma";
@@ -46,7 +48,7 @@ export async function GET() {
 
     const proUsers = users.filter((user) => user.plan === "PRO").length;
     const freeUsers = users.length - proUsers;
-    const monthlyRevenue = proUsers * 12;
+    const monthlyRevenue = proUsers * PRO_PLAN_PRICE_USD;
 
     return NextResponse.json({
       summary: {

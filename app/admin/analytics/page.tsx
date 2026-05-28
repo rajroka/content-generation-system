@@ -329,7 +329,7 @@ export default function AdminAnalyticsPage() {
               </ChartCard>
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <ChartCard title="Platform Breakdown">
+                <ChartCard title="Popular Platforms">
                   {platformData.length === 0 ? (
                     <EmptyChart message="No platform data in this range." />
                   ) : (
