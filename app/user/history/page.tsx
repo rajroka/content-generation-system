@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { BookOpen, Sparkles, Hash, Trash2, Search, X } from "lucide-react";
 import Link from "next/link";
 import { CopyButton } from "@/componentss/shared/CopyButton";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
+import { getPlatformColor } from "@/lib/platforms";
 
 interface Generation {
   id: string;
@@ -20,15 +19,8 @@ interface Generation {
   createdAt: string;
 }
 
-const PLATFORM_COLORS: Record<string, string> = {
-  INSTAGRAM: "#E1306C",
-  FACEBOOK:  "#1877F2",
-  TIKTOK:    "#69C9D0",
-  YOUTUBE:   "#FF0000",
-};
-
 function platformBadgeStyle(platform: string) {
-  const color = PLATFORM_COLORS[platform.toUpperCase()] ?? "var(--color-primary)";
+  const color = getPlatformColor(platform);
   return {
     color,
     borderColor: `${color}55`,

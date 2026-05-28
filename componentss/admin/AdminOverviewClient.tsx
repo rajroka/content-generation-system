@@ -3,7 +3,8 @@
 import type React from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity, ArrowRight, CreditCard, Users } from "lucide-react";
+import { Activity, ArrowRight, CreditCard, Crown, Users } from "lucide-react";
+import { format } from "date-fns";
 import {
   CartesianGrid,
   Line,
@@ -166,6 +167,49 @@ export function AdminOverviewClient({ data }: { data: AdminAnalytics }) {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* New Pro Users */}
+      <div>
+        <h2 className="text-base font-bold text-foreground mb-3">
+          New Pro Users
+          {data.newProUsers.length > 0 && (
+            <span className="ml-2 text-xs font-semibold text-muted-foreground">
+              ({data.newProUsers.length} this period)
+            </span>
+          )}
+        </h2>
+        <Card className="border-none shadow-sm rounded-lg">
+          <CardContent className="p-0">
+            {data.newProUsers.length === 0 ? (
+              <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                No new Pro upgrades in this period.
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {data.newProUsers.map((u) => (
+                  <div key={u.id} className="flex items-center gap-3 px-4 py-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/40">
+                      <Crown className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {u.name || u.email.split("@")[0]}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">
+                      {format(new Date(u.upgradedAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
+
+// ── New Pro Users section appended to AdminOverviewClient ────────────────────
+// (This is a standalone export used inside the same file's JSX above)

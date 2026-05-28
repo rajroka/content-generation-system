@@ -375,14 +375,14 @@ export default function AnalyticsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <h1 className="text-xl font-bold text-foreground">Analytics</h1>
 
-        <div className="inline-flex w-full sm:w-auto rounded-lg border border-border bg-card p-1">
+        <div className="inline-flex rounded-lg border border-border bg-card p-1">
           {DATE_RANGES.map((range) => (
             <button
               key={range.value}
               type="button"
               onClick={() => setDateRange(range.value)}
               className={[
-                "flex-1 sm:flex-none rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                "rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
                 dateRange === range.value
                   ? "bg-[#169B7F] text-white"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",

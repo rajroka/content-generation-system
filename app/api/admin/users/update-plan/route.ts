@@ -29,9 +29,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid user or plan" }, { status: 400 });
     }
 
+    // Fetch current plan to detect FREE → PRO transition
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { plan: true },
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const isUpgradingToPro = plan === "PRO" && targetUser.plan === "FREE";
+
     await prisma.user.update({
       where: { id: targetUserId },
-      data: { plan },
+      data: {
+        plan,
+        ...(isUpgradingToPro && { upgradedToPROAt: new Date() }),
+      },
     });
 
     return NextResponse.json({ success: true });

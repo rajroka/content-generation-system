@@ -70,6 +70,29 @@ export async function POST(req: Request) {
       },
     });
 
+    // Enforce monthly post limit for FREE users (shared with scheduling)
+    if (user.plan === "FREE") {
+      const { startOfMonth, endOfMonth } = await import("date-fns");
+      const monthStart = startOfMonth(new Date());
+      const monthEnd   = endOfMonth(new Date());
+      const MONTHLY_LIMIT = 15;
+
+      const monthlyCount = await prisma.scheduledPost.count({
+        where: {
+          userId:    user.id,
+          status:    { in: ["SCHEDULED", "PUBLISHED"] },
+          createdAt: { gte: monthStart, lte: monthEnd },
+        },
+      });
+
+      if (monthlyCount >= MONTHLY_LIMIT) {
+        return NextResponse.json(
+          { error: `Monthly post limit reached (${MONTHLY_LIMIT}/month on FREE plan). Upgrade to Pro for unlimited.` },
+          { status: 429 }
+        );
+      }
+    }
+
     // Fetch connected accounts from DB to get Zernio account IDs
     const socialAccounts = await prisma.socialAccount.findMany({
       where: { userId: user.id, platform: { in: platforms }, isActive: true },

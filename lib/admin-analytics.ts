@@ -83,6 +83,7 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     scheduledPosts,
     previousScheduledPosts,
     activeConnections,
+    newProUsers,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -130,6 +131,21 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       where: { createdAt: { gte: previousStart, lte: previousEnd } },
     }),
     prisma.socialAccount.count({ where: { isActive: true } }),
+    // Dedicated query for new PRO users using the accurate upgradedToPROAt field
+    prisma.user.findMany({
+      where: {
+        plan: "PRO",
+        upgradedToPROAt: { gte: start, lte: new Date() },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        upgradedToPROAt: true,
+      },
+      orderBy: { upgradedToPROAt: "desc" },
+      take: 10,
+    }),
   ]);
 
   rangeUsers.forEach((user) => {
@@ -150,15 +166,19 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     if (post.status === "SCHEDULED") bucket.scheduledPosts += 1;
   });
 
+  const SUPPORTED_PLATFORMS = new Set(["INSTAGRAM", "FACEBOOK", "YOUTUBE", "TIKTOK"]);
+
   const platformMap = new Map<string, number>();
   generations.forEach((generation) => {
     const platform = String(generation.platform);
+    if (!SUPPORTED_PLATFORMS.has(platform)) return;
     platformMap.set(platform, (platformMap.get(platform) ?? 0) + 1);
   });
 
   scheduledPosts.forEach((post) => {
     post.platforms.forEach((platform) => {
       const key = String(platform);
+      if (!SUPPORTED_PLATFORMS.has(key)) return;
       platformMap.set(key, (platformMap.get(key) ?? 0) + 1);
     });
   });
@@ -237,6 +257,12 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       isActive: u.isActive,
       createdAt: u.createdAt.toISOString(),
       generations: u._count.generations,
+    })),
+    newProUsers: newProUsers.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      upgradedAt: u.upgradedToPROAt!.toISOString(),
     })),
     topUsers,
     systemHealth: [

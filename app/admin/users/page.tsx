@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, RefreshCw, Users, ShieldCheck, UserX } from "lucide-react";
+import { Search, RefreshCcw, Users, ShieldCheck, UserX } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface User {
@@ -28,6 +28,10 @@ interface User {
   createdAt: string;
   updatedAt: string;
   _count: { generations: number };
+}
+
+function isNewUser(user: User, now: number): boolean {
+  return now - new Date(user.createdAt).getTime() < 24 * 60 * 60 * 1000;
 }
 
 function StatCard({
@@ -60,9 +64,44 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [updatingPlanId, setUpdatingPlanId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  // Ticks every minute so the "New" badge disappears in real-time once 24h passes
+  const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    // Silently sync Clerk → DB first, then fetch the updated list
+    const init = async () => {
+      await silentSync();
+      await fetchUsers();
+    };
+    init();
+
+    // Re-sync every 5 minutes to catch any new signups automatically
+    const syncInterval = setInterval(async () => {
+      await silentSync();
+      await fetchUsers();
+    }, 5 * 60_000);
+
+    // Tick "now" every 60 seconds so badge expiry is accurate
+    const nowInterval = setInterval(() => setNow(Date.now()), 60_000);
+
+    return () => {
+      clearInterval(syncInterval);
+      clearInterval(nowInterval);
+    };
+  }, []);
+
   useEffect(() => { setSearch(searchParams.get("q") || ""); }, [searchParams]);
+
+  // Silent background sync — no toast, no loading state
+  const silentSync = async () => {
+    try {
+      await fetch("/api/admin/users/sync", { method: "POST" });
+    } catch {
+      // silently ignore — fetchUsers will still show whatever is in DB
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -75,6 +114,43 @@ export default function AdminUsersPage() {
       setUsers([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncFromClerk = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/admin/users/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const msg = data.removed > 0
+        ? `Synced ${data.synced} users, removed ${data.removed} deleted`
+        : `Synced ${data.synced} users from Clerk`;
+      toast.success(msg);
+      await fetchUsers();
+    } catch {
+      toast.error("Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
+  const handleUpdatePlan = async (userId: string, plan: "FREE" | "PRO") => {
+    setUpdatingPlanId(userId);
+    try {
+      const res = await fetch("/api/admin/users/update-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, plan }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(plan === "PRO" ? "User upgraded to PRO" : "User downgraded to FREE");
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, plan } : u))
+      );
+    } catch {
+      toast.error("Failed to update plan");
+    } finally {
+      setUpdatingPlanId(null);
     }
   };
 
@@ -154,8 +230,8 @@ export default function AdminUsersPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" onClick={fetchUsers} aria-label="Refresh">
-                <RefreshCw className="w-4 h-4" />
+              <Button variant="outline" size="icon" onClick={syncFromClerk} disabled={syncing} aria-label="Sync from Clerk">
+                <RefreshCcw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
               </Button>
             </div>
           </div>
@@ -166,10 +242,10 @@ export default function AdminUsersPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Generations</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>Badge</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -186,7 +262,6 @@ export default function AdminUsersPage() {
                       {user.plan}
                     </Badge>
                   </TableCell>
-                  <TableCell className="tabular-nums">{user._count.generations}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </TableCell>
@@ -195,15 +270,38 @@ export default function AdminUsersPage() {
                       {user.isActive ? "Active" : "Suspended"}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    {isNewUser(user, now) ? (
+                      <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                        New
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/40">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant={user.isActive ? "destructive" : "outline"}
-                      disabled={togglingId === user.id}
-                      onClick={() => handleToggleActive(user.id, user.isActive)}
-                    >
-                      {user.isActive ? "Suspend" : "Activate"}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      {/* Downgrade — only shown for PRO users */}
+                      {user.plan === "PRO" && (
+                        <Button
+                          size="sm"
+                          disabled={updatingPlanId === user.id}
+                          onClick={() => handleUpdatePlan(user.id, "FREE")}
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          Downgrade
+                        </Button>
+                      )}
+                      {/* Suspend / Activate */}
+                      <Button
+                        size="sm"
+                        variant={user.isActive ? "destructive" : "outline"}
+                        disabled={togglingId === user.id}
+                        onClick={() => handleToggleActive(user.id, user.isActive)}
+                      >
+                        {user.isActive ? "Suspend" : "Activate"}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

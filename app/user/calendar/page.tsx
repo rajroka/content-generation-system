@@ -31,12 +31,10 @@ import {
   Image as ImageIcon,
   Loader2,
 } from "lucide-react";
-import { FaFacebookF, FaLinkedinIn, FaYoutube } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
-import { SiInstagram, SiTiktok } from "react-icons/si";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { getPlatformColor, getPlatformIcon } from "@/lib/platforms";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -81,15 +79,6 @@ const STATUS_TEXT: Record<string, string> = {
   CANCELLED: "text-zinc-500",
 };
 
-const PLATFORM_COLORS: Record<string, string> = {
-  INSTAGRAM: "#E1306C",
-  FACEBOOK:  "#1877F2",
-  TWITTER:   "#111827",
-  LINKEDIN:  "#0A66C2",
-  TIKTOK:    "#111827",
-  YOUTUBE:   "#FF0000",
-};
-
 function PlatformIcon({
   platform,
   className = "size-3",
@@ -97,21 +86,9 @@ function PlatformIcon({
   platform: string;
   className?: string;
 }) {
-  const normalized = platform.toUpperCase();
-  const color = PLATFORM_COLORS[normalized] || "#64748b";
-
-  if (normalized === "INSTAGRAM") return <SiInstagram className={className} style={{ color }} />;
-  if (normalized === "FACEBOOK") return <FaFacebookF className={className} style={{ color }} />;
-  if (normalized === "TWITTER" || normalized === "X") return <FaXTwitter className={className} style={{ color }} />;
-  if (normalized === "LINKEDIN") return <FaLinkedinIn className={className} style={{ color }} />;
-  if (normalized === "TIKTOK") return <SiTiktok className={className} style={{ color }} />;
-  if (normalized === "YOUTUBE") return <FaYoutube className={className} style={{ color }} />;
-
-  return (
-    <span className="flex size-3 items-center justify-center rounded-full bg-muted-foreground/20 text-[7px] font-bold text-muted-foreground">
-      {normalized.slice(0, 1)}
-    </span>
-  );
+  const Icon = getPlatformIcon(platform);
+  const color = getPlatformColor(platform);
+  return <Icon className={className} style={{ color }} />;
 }
 
 function PlatformIcons({ platforms }: { platforms: string[] }) {

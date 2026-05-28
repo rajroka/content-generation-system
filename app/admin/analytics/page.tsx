@@ -20,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { getPlatformColor } from "@/lib/platforms";
 
 type DateRange = "7d" | "30d" | "90d";
 
@@ -74,13 +75,6 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
   { value: "30d", label: "Last 30 days" },
   { value: "90d", label: "Last 90 days" },
 ];
-
-const PLATFORM_COLORS: Record<string, string> = {
-  INSTAGRAM: "#E1306C",
-  FACEBOOK: "#1877F2",
-  TIKTOK: "#69C9D0",
-  YOUTUBE: "#FF0000",
-};
 
 function formatPlatform(platform: string) {
   return platform.charAt(0).toUpperCase() + platform.slice(1).toLowerCase();
@@ -185,10 +179,10 @@ export default function AdminAnalyticsPage() {
   }, [dateRange]);
 
   const platformData = useMemo(() => {
-    return (data?.platformDistribution ?? []).map((entry, index) => ({
+    return (data?.platformDistribution ?? []).map((entry) => ({
       name: formatPlatform(entry.platform),
       value: entry.count,
-      color: PLATFORM_COLORS[entry.platform] ?? ["#64748b", "#94a3b8", "#cbd5e1"][index % 3],
+      color: getPlatformColor(entry.platform),
     }));
   }, [data]);
 
@@ -221,15 +215,15 @@ export default function AdminAnalyticsPage() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="inline-flex w-full sm:w-auto rounded-lg border border-border bg-card p-1">
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border border-border bg-card p-1">
             {DATE_RANGES.map((range) => (
               <button
                 key={range.value}
                 type="button"
                 onClick={() => setDateRange(range.value)}
                 className={[
-                  "flex-1 sm:flex-none rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                  "rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
                   dateRange === range.value
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -242,10 +236,11 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={() => fetchAnalytics(dateRange)}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground hover:bg-muted"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground hover:bg-muted sm:w-auto sm:gap-2 sm:px-3"
+            title="Refresh"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
+            <span className="hidden sm:inline text-xs font-semibold">Refresh</span>
           </button>
         </div>
       </div>

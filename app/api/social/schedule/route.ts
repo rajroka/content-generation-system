@@ -78,7 +78,7 @@ export async function POST(req: Request) {
 
       if (monthlyCount >= monthlyLimit) {
         return NextResponse.json(
-          { error: `Monthly schedule limit reached (${monthlyLimit}/month on FREE plan). Upgrade to Pro for unlimited.` },
+          { error: `Monthly post limit reached (${monthlyLimit}/month on FREE plan). Upgrade to Pro for unlimited.` },
           { status: 429 }
         );
       }

@@ -95,13 +95,13 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
           <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }} />
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-[12px] font-bold text-foreground truncate leading-none">
+              <span className="text-[13px] font-bold text-foreground truncate leading-none">
                 {user?.firstName || "Member"}
               </span>
               {plan === "PRO" && (
-                <div className="flex items-center gap-1 text-[9px] text-muted-foreground font-bold uppercase tracking-wider mt-1">
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground font-semibold mt-1">
                   <ShieldCheck size={10} />
-                  <span>Pro User</span>
+                  <span>Pro</span>
                 </div>
               )}
             </div>

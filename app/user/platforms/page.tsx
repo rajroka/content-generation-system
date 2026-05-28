@@ -4,10 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
-import {
-  Instagram, Facebook, Youtube,
-  Link2, Unlink, Loader2, Music2,
-} from "lucide-react";
+import { Link2, Unlink, Loader2 } from "lucide-react";
+import { PLATFORMS } from "@/lib/platforms";
 
 interface ConnectedAccount {
   platform:    string;
@@ -15,13 +13,6 @@ interface ConnectedAccount {
   isActive:    boolean;
   connectedAt: string;
 }
-
-const PLATFORMS = [
-  { id: "instagram", name: "Instagram", icon: Instagram, authUrl: "/api/auth/instagram", color: "text-pink-500" },
-  { id: "facebook",  name: "Facebook",  icon: Facebook,  authUrl: "/api/auth/facebook",  color: "text-blue-500" },
-  { id: "tiktok",    name: "TikTok",    icon: Music2,    authUrl: "/api/auth/tiktok",    color: "text-foreground" },
-  { id: "youtube",   name: "YouTube",   icon: Youtube,   authUrl: "/api/auth/youtube",   color: "text-red-500"  },
-];
 
 export default function ConnectionsPage() {
   const [accounts, setAccounts]     = useState<ConnectedAccount[]>([]);
@@ -73,7 +64,7 @@ export default function ConnectionsPage() {
     );
 
     const onMessage = (e: MessageEvent) => {
-      if (e.data?.platform?.toLowerCase() !== platformId) return;
+      if (e.data?.platform?.toLowerCase() !== platformId.toLowerCase()) return;
 
       if (e.data.type === "SOCIAL_CONNECT_ERROR") {
         cleanup();
@@ -152,7 +143,7 @@ export default function ConnectionsPage() {
   if (loading) {
     return (
       <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: PLATFORMS.length }).map((_, i) => (
           <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />
         ))}
       </div>
@@ -171,7 +162,7 @@ export default function ConnectionsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {PLATFORMS.map((platform) => {
           const account      = getAccount(platform.id);
-          const Icon         = platform.icon;
+          const Icon         = platform.Icon;
           const isConnecting = connecting === platform.id;
 
           return (
@@ -180,7 +171,7 @@ export default function ConnectionsPage() {
                 <div className="flex items-center gap-4 px-4 py-3">
                   {/* Icon */}
                   <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Icon className={`w-4 h-4 ${platform.color}`} />
+                    <Icon className={`w-4 h-4 ${platform.colorClass}`} />
                   </div>
 
                   {/* Name + account */}
@@ -201,7 +192,7 @@ export default function ConnectionsPage() {
                       variant="ghost"
                       size="sm"
                       className="text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 text-xs font-semibold h-8 px-3 shrink-0"
-                      onClick={() => handleDisconnect(platform.id, platform.name)}
+                      onClick={() => handleDisconnect(platform.slug, platform.name)}
                     >
                       <Unlink className="w-3 h-3 mr-1.5" />
                       Disconnect
@@ -209,7 +200,7 @@ export default function ConnectionsPage() {
                   ) : (
                     <Button
                       size="sm"
-                      onClick={() => handleConnect(platform.id, platform.name, platform.authUrl)}
+                      onClick={() => handleConnect(platform.slug, platform.name, platform.authUrl)}
                       disabled={isConnecting}
                       className="bg-[#0D7C8A] hover:bg-[#0b6b78] text-white text-xs font-semibold h-8 px-3 shrink-0"
                     >

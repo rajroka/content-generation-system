@@ -32,10 +32,18 @@ export async function POST(req: Request) {
         const customerId     = session.customer as string | null;
 
         if (userId) {
+          // Check current plan to detect FREE → PRO transition
+          const existing = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { plan: true },
+          });
+          const isUpgrade = existing?.plan === "FREE";
+
           await prisma.user.update({
             where: { id: userId },
             data: {
               plan:                "PRO",
+              ...(isUpgrade      && { upgradedToPROAt: new Date() }),
               ...(customerId     && { stripeCustomerId:     customerId }),
               ...(subscriptionId && { stripeSubscriptionId: subscriptionId }),
             },
@@ -50,9 +58,19 @@ export async function POST(req: Request) {
         const customerId = invoice.customer as string;
 
         if (customerId) {
+          // Only set upgradedToPROAt if the user is currently FREE
+          const existing = await prisma.user.findFirst({
+            where: { stripeCustomerId: customerId },
+            select: { plan: true },
+          });
+          const isUpgrade = existing?.plan === "FREE";
+
           await prisma.user.updateMany({
             where: { stripeCustomerId: customerId },
-            data:  { plan: "PRO" },
+            data: {
+              plan: "PRO",
+              ...(isUpgrade && { upgradedToPROAt: new Date() }),
+            },
           });
         }
         break;

@@ -55,6 +55,7 @@ model User {
   isActive             Boolean         @default(true)
   stripeCustomerId     String?         @unique
   stripeSubscriptionId String?         @unique
+  upgradedToPROAt      DateTime?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   usage                Usage[]

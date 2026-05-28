@@ -146,7 +146,7 @@ export default function AdminSubscriptionsPage() {
 
       <Card className="border-none shadow-sm rounded-lg">
         <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <CardTitle className="text-base font-semibold">
               Accounts ({filtered.length})
             </CardTitle>
@@ -190,7 +190,7 @@ export default function AdminSubscriptionsPage() {
                     <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="default"
                         disabled={updatingId === s.id || s.plan === "PRO"}
                         onClick={() => updatePlan(s.id, "PRO")}
                       >
@@ -198,9 +198,9 @@ export default function AdminSubscriptionsPage() {
                       </Button>
                       <Button
                         size="sm"
-                        variant="ghost"
                         disabled={updatingId === s.id || s.plan === "FREE"}
                         onClick={() => updatePlan(s.id, "FREE")}
+                        className="bg-red-500 hover:bg-red-600 text-white disabled:opacity-50"
                       >
                         Downgrade
                       </Button>

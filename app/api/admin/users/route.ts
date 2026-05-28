@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import prisma from "@/lib/prisma";
+import { Role } from "@/lib/generated/prisma";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -23,6 +24,9 @@ export async function GET() {
     }
 
     const users = await prisma.user.findMany({
+      where: {
+        role: Role.USER,
+      },
       select: {
         id: true,
         email: true,
@@ -33,6 +37,7 @@ export async function GET() {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+        upgradedToPROAt: true,
         _count: {
           select: {
             generations: true,
@@ -45,7 +50,8 @@ export async function GET() {
     });
 
     return NextResponse.json(users);
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[admin/users] GET error:", err?.message ?? err);
+    return NextResponse.json({ error: "Failed to fetch users", detail: err?.message }, { status: 500 });
   }
 }
