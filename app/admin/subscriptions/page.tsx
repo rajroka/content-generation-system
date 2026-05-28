@@ -167,9 +167,6 @@ export default function AdminSubscriptionsPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Stripe</TableHead>
-                <TableHead>Generations</TableHead>
-                <TableHead>Scheduled</TableHead>
                 <TableHead>Since</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -186,15 +183,6 @@ export default function AdminSubscriptionsPage() {
                   <TableCell>
                     <Badge variant={s.plan === "PRO" ? "default" : "secondary"}>{s.plan}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {s.stripeSubscriptionId
-                      ? <span className="font-mono text-xs">{s.stripeSubscriptionId.slice(0, 14)}…</span>
-                      : s.stripeCustomerId
-                      ? <span className="font-mono text-xs">{s.stripeCustomerId.slice(0, 14)}…</span>
-                      : <span className="text-muted-foreground/60">—</span>}
-                  </TableCell>
-                  <TableCell className="tabular-nums">{s._count.generations}</TableCell>
-                  <TableCell className="tabular-nums">{s._count.scheduledPosts}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(s.createdAt).toLocaleDateString()}
                   </TableCell>

@@ -23,7 +23,7 @@ export function AdminNavbar() {
     const query = search.trim();
     if (!query) return;
 
-    const searchableRoutes = ["/admin/users", "/admin/content", "/admin/subscriptions"];
+    const searchableRoutes = ["/admin/users", "/admin/subscriptions"];
     const target = searchableRoutes.includes(pathname) ? pathname : "/admin/users";
     router.push(`${target}?q=${encodeURIComponent(query)}`);
   };

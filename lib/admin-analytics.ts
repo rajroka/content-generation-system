@@ -82,7 +82,6 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     scheduledPosts,
     previousScheduledPosts,
     activeConnections,
-    recentGenerations,
   ] = await Promise.all([
     prisma.user.findMany({
       select: {
@@ -108,12 +107,8 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       where: { isDeleted: false, createdAt: { gte: start } },
       select: {
         id: true,
-        topic: true,
         platform: true,
-        imageUrl: true,
-        isFlagged: true,
         createdAt: true,
-        user: { select: { email: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -134,19 +129,6 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       where: { createdAt: { gte: previousStart, lte: previousEnd } },
     }),
     prisma.socialAccount.count({ where: { isActive: true } }),
-    prisma.generation.findMany({
-      where: { isDeleted: false },
-      take: 8,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        topic: true,
-        platform: true,
-        isFlagged: true,
-        createdAt: true,
-        user: { select: { email: true, name: true } },
-      },
-    }),
   ]);
 
   rangeUsers.forEach((user) => {
@@ -163,7 +145,6 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     const date = post.publishedAt ?? post.scheduledFor ?? post.createdAt;
     const bucket = buckets.get(dateKey(date));
     if (!bucket) return;
-
     if (post.status === "PUBLISHED") bucket.publishedPosts += 1;
     if (post.status === "SCHEDULED") bucket.scheduledPosts += 1;
   });
@@ -181,26 +162,22 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     });
   });
 
-  const proUsers = users.filter((user) => user.plan === "PRO").length;
+  const proUsers = users.filter((u) => u.plan === "PRO").length;
   const freeUsers = users.length - proUsers;
-  const activeUsers = users.filter((user) => user.isActive).length;
-  const flaggedContent = generations.filter((generation) => generation.isFlagged).length;
-  const totalImages = generations.filter((generation) => generation.imageUrl).length;
-  const publishedPosts = scheduledPosts.filter((post) => post.status === "PUBLISHED").length;
-  const pendingScheduledPosts = scheduledPosts.filter((post) => post.status === "SCHEDULED").length;
+  const activeUsers = users.filter((u) => u.isActive).length;
+  const publishedPosts = scheduledPosts.filter((p) => p.status === "PUBLISHED").length;
+  const pendingScheduledPosts = scheduledPosts.filter((p) => p.status === "SCHEDULED").length;
 
   const proUsersAtMonthStart = users.filter(
-    (user) => user.plan === "PRO" && user.createdAt < monthStart
+    (u) => u.plan === "PRO" && u.createdAt < monthStart
   ).length;
 
   const revenueData = Array.from({ length: 6 }, (_, index) => {
     const date = new Date();
     date.setMonth(date.getMonth() - (5 - index));
-
     const proCount = users.filter(
-      (user) => user.plan === "PRO" && user.createdAt <= new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59)
+      (u) => u.plan === "PRO" && u.createdAt <= new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59)
     ).length;
-
     return {
       month: monthLabel(date),
       revenue: proCount * PLAN_PRICE,
@@ -212,14 +189,14 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
     .slice()
     .sort((a, b) => b._count.generations + b._count.scheduledPosts - (a._count.generations + a._count.scheduledPosts))
     .slice(0, 5)
-    .map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      plan: user.plan,
-      generations: user._count.generations,
-      scheduledPosts: user._count.scheduledPosts,
-      socialAccounts: user._count.socialAccounts,
+    .map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      plan: u.plan,
+      generations: u._count.generations,
+      scheduledPosts: u._count.scheduledPosts,
+      socialAccounts: u._count.socialAccounts,
     }));
 
   return {
@@ -230,10 +207,8 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       proUsers,
       freeUsers,
       totalGenerations: generations.length,
-      totalImages,
       publishedPosts,
       scheduledPosts: pendingScheduledPosts,
-      flaggedContent,
       connectedAccounts: activeConnections,
       monthlyRevenue: proUsers * PLAN_PRICE,
     },
@@ -253,23 +228,14 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       { plan: "FREE", count: freeUsers },
     ],
     revenueData,
-    recentUsers: users.slice(0, 5).map((user) => ({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      plan: user.plan,
-      isActive: user.isActive,
-      createdAt: user.createdAt.toISOString(),
-      generations: user._count.generations,
-    })),
-    recentActivity: recentGenerations.map((generation) => ({
-      id: generation.id,
-      topic: generation.topic,
-      platform: generation.platform,
-      isFlagged: generation.isFlagged,
-      createdAt: generation.createdAt.toISOString(),
-      userEmail: generation.user?.email ?? "Unknown",
-      userName: generation.user?.name ?? null,
+    recentUsers: users.slice(0, 5).map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      plan: u.plan,
+      isActive: u.isActive,
+      createdAt: u.createdAt.toISOString(),
+      generations: u._count.generations,
     })),
     topUsers,
     systemHealth: [
@@ -282,11 +248,6 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
         label: "Connected socials",
         value: activeConnections,
         total: Math.max(users.length * 4, 1),
-      },
-      {
-        label: "Moderation clear",
-        value: Math.max(generations.length - flaggedContent, 0),
-        total: Math.max(generations.length, 1),
       },
     ],
   };

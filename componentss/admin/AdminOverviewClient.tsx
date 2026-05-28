@@ -3,7 +3,7 @@
 import type React from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity, AlertTriangle, ArrowRight, CreditCard, FileText, Users } from "lucide-react";
+import { Activity, ArrowRight, CreditCard, Users } from "lucide-react";
 
 type AdminAnalytics = Awaited<ReturnType<typeof import("@/lib/admin-analytics").getAdminAnalytics>>;
 
@@ -38,20 +38,9 @@ function StatCard({
 export function AdminOverviewClient({ data }: { data: AdminAnalytics }) {
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Platform health at a glance.</p>
-        </div>
-        {data.totals.flaggedContent > 0 && (
-          <Link
-            href="/admin/content"
-            className="inline-flex h-8 items-center gap-2 rounded-lg bg-destructive/10 px-3 text-xs font-semibold text-destructive hover:bg-destructive/20"
-          >
-            <AlertTriangle className="h-3.5 w-3.5" />
-            {data.totals.flaggedContent} flagged
-          </Link>
-        )}
+      <div>
+        <h1 className="text-xl font-bold">Overview</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Platform health at a glance.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -64,14 +53,14 @@ export function AdminOverviewClient({ data }: { data: AdminAnalytics }) {
         <StatCard
           title="Generations"
           value={data.totals.totalGenerations}
-          icon={FileText}
-          href="/admin/content"
+          icon={Activity}
+          href="/admin/analytics"
         />
         <StatCard
           title="Published Posts"
           value={data.totals.publishedPosts}
           icon={Activity}
-          href="/admin/content"
+          href="/admin/analytics"
         />
         <StatCard
           title="MRR"

@@ -31,10 +31,8 @@ interface AdminAnalyticsData {
     proUsers: number;
     freeUsers: number;
     totalGenerations: number;
-    totalImages: number;
     publishedPosts: number;
     scheduledPosts: number;
-    flaggedContent: number;
     connectedAccounts: number;
     monthlyRevenue: number;
   };
@@ -219,7 +217,7 @@ export default function AdminAnalyticsPage() {
         <div>
           <h1 className="text-xl font-bold text-foreground">Analytics</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Growth, revenue, publishing, and moderation performance.
+            Growth, revenue, and publishing performance.
           </p>
         </div>
 
