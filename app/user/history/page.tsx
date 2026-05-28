@@ -28,7 +28,7 @@ const PLATFORM_COLORS: Record<string, string> = {
 };
 
 function platformBadgeStyle(platform: string) {
-  const color = PLATFORM_COLORS[platform.toUpperCase()] ?? "#169B7F";
+  const color = PLATFORM_COLORS[platform.toUpperCase()] ?? "var(--color-primary)";
   return {
     color,
     borderColor: `${color}55`,
@@ -107,7 +107,7 @@ export default function LibraryPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search captions or topics…"
-            className="w-full rounded-lg border border-border bg-card pl-8 pr-8 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#169B7F]/40"
+            className="w-full rounded-lg border border-border bg-card pl-8 pr-8 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           {query && (
             <button
@@ -135,8 +135,8 @@ export default function LibraryPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center py-24 gap-4 text-center px-4"
         >
-          <div className="w-14 h-14 rounded-full bg-[#169B7F]/10 flex items-center justify-center">
-            <BookOpen className="w-7 h-7 text-[#169B7F]" />
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <BookOpen className="w-7 h-7 text-primary" />
           </div>
           <h3 className="font-semibold text-lg text-foreground">
             {query ? "No results found" : "Your library is empty"}
@@ -149,7 +149,7 @@ export default function LibraryPage() {
           {!query && (
             <Link
               href="/user/generate"
-              className="inline-flex items-center justify-center rounded-lg bg-[#169B7F] px-4 py-2 text-sm font-semibold text-white shadow hover:bg-[#138a6e] transition-colors"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate your first post
@@ -197,7 +197,7 @@ export default function LibraryPage() {
                     </div>
 
                     {/* Topic */}
-                    <p className="text-xs font-semibold text-[#169B7F] uppercase tracking-wide">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">
                       {gen.topic}
                     </p>
 
@@ -209,9 +209,9 @@ export default function LibraryPage() {
                     {/* Hashtags */}
                     {gen.hashtags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
-                        <Hash className="w-3.5 h-3.5 text-[#169B7F] mt-0.5 shrink-0" />
+                        <Hash className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                         {gen.hashtags.map((tag, idx) => (
-                          <span key={idx} className="text-xs font-medium text-[#169B7F]">
+                          <span key={idx} className="text-xs font-medium text-primary">
                             {tag.startsWith("#") ? tag : `#${tag}`}
                           </span>
                         ))}

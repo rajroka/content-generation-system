@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { AlertTriangle, CheckCircle2, Eye, FileText, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,11 +26,35 @@ interface Generation {
   imageUrl: string | null;
   isFlagged: boolean;
   createdAt: string;
-  user: {
-    id: string;
-    email: string;
-    name: string | null;
-  } | null;
+  user: { id: string; email: string; name: string | null } | null;
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  danger,
+}: {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  danger?: boolean;
+}) {
+  return (
+    <Card className="border-none shadow-sm rounded-lg">
+      <CardContent className="p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className={`mt-1.5 text-2xl font-bold tabular-nums ${danger ? "text-destructive" : ""}`}>
+            {value}
+          </p>
+        </div>
+        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function AdminContentPage() {
@@ -44,93 +68,73 @@ export default function AdminContentPage() {
 
   const fetchGenerations = async () => {
     try {
-      const response = await fetch("/api/admin/generations");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to fetch content");
-      }
-
+      const res = await fetch("/api/admin/generations");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to fetch");
       setGenerations(Array.isArray(data) ? data : []);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to fetch content");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to fetch content");
       setGenerations([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchGenerations();
-  }, []);
+  useEffect(() => { fetchGenerations(); }, []);
+  useEffect(() => { setSearch(searchParams.get("q") || ""); }, [searchParams]);
 
-  useEffect(() => {
-    setSearch(searchParams.get("q") || "");
-  }, [searchParams]);
+  const flaggedCount = generations.filter((g) => g.isFlagged).length;
 
-  const filteredGenerations = useMemo(() => {
-    const query = search.toLowerCase();
-
-    return generations.filter((generation) => {
-      const matchesFilter = filter === "all" || generation.isFlagged;
-      const matchesSearch =
-        generation.topic.toLowerCase().includes(query) ||
-        generation.caption.toLowerCase().includes(query) ||
-        generation.platform.toLowerCase().includes(query) ||
-        generation.user?.email.toLowerCase().includes(query);
-
-      return matchesFilter && matchesSearch;
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return generations.filter((g) => {
+      const matchFilter = filter === "all" || g.isFlagged;
+      const matchSearch =
+        g.topic.toLowerCase().includes(q) ||
+        g.platform.toLowerCase().includes(q) ||
+        g.user?.email.toLowerCase().includes(q);
+      return matchFilter && matchSearch;
     });
   }, [filter, generations, search]);
 
-  const flaggedCount = generations.filter((generation) => generation.isFlagged).length;
-
-  const handleFlag = async (generation: Generation) => {
-    setBusyId(generation.id);
+  const handleFlag = async (g: Generation) => {
+    setBusyId(g.id);
     try {
-      const response = await fetch("/api/admin/generations/flag", {
+      const res = await fetch("/api/admin/generations/flag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: generation.id, flag: !generation.isFlagged }),
+        body: JSON.stringify({ id: g.id, flag: !g.isFlagged }),
       });
-
-      if (!response.ok) throw new Error("Failed to update content flag");
-
-      toast.success(generation.isFlagged ? "Content unflagged" : "Content flagged");
-      setGenerations((current) =>
-        current.map((item) =>
-          item.id === generation.id ? { ...item, isFlagged: !item.isFlagged } : item
-        )
+      if (!res.ok) throw new Error();
+      toast.success(g.isFlagged ? "Unflagged" : "Flagged");
+      setGenerations((prev) =>
+        prev.map((item) => (item.id === g.id ? { ...item, isFlagged: !item.isFlagged } : item))
       );
-      setSelected((current) =>
-        current?.id === generation.id ? { ...current, isFlagged: !current.isFlagged } : current
+      setSelected((prev) =>
+        prev?.id === g.id ? { ...prev, isFlagged: !prev.isFlagged } : prev
       );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update content");
+    } catch {
+      toast.error("Failed to update flag");
     } finally {
       setBusyId(null);
     }
   };
 
-  const handleDelete = async (generation: Generation) => {
-    const confirmed = window.confirm("Hide this generation from admin content lists?");
-    if (!confirmed) return;
-
-    setBusyId(generation.id);
+  const handleDelete = async (g: Generation) => {
+    if (!window.confirm("Remove this generation from the admin view?")) return;
+    setBusyId(g.id);
     try {
-      const response = await fetch("/api/admin/generations/delete", {
+      const res = await fetch("/api/admin/generations/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: generation.id }),
+        body: JSON.stringify({ id: g.id }),
       });
-
-      if (!response.ok) throw new Error("Failed to delete content");
-
-      toast.success("Content removed");
-      setGenerations((current) => current.filter((item) => item.id !== generation.id));
-      setSelected(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete content");
+      if (!res.ok) throw new Error();
+      toast.success("Removed");
+      setGenerations((prev) => prev.filter((item) => item.id !== g.id));
+      if (selected?.id === g.id) setSelected(null);
+    } catch {
+      toast.error("Failed to remove");
     } finally {
       setBusyId(null);
     }
@@ -138,11 +142,9 @@ export default function AdminContentPage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-40 rounded bg-muted" />
-          <div className="h-80 rounded-lg bg-muted" />
-        </div>
+      <div className="p-4 sm:p-6 space-y-4 animate-pulse">
+        <div className="h-7 w-32 rounded bg-muted" />
+        <div className="h-80 rounded-lg bg-muted" />
       </div>
     );
   }
@@ -151,68 +153,46 @@ export default function AdminContentPage() {
     <div className="p-4 sm:p-6 space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Content</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Review generated posts, flags, and moderation actions.</p>
+          <h1 className="text-xl font-bold">Content</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Review and moderate generated posts.</p>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:w-[520px] sm:grid-cols-3">
-          <Card className="border-none shadow-sm rounded-lg">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums">{generations.length}</p>
-              </div>
-              <FileText className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm rounded-lg">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Clear</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums">{generations.length - flaggedCount}</p>
-              </div>
-              <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
-          <Card className="border-none shadow-sm rounded-lg">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Flagged</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-red-600">{flaggedCount}</p>
-              </div>
-              <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-3 gap-3 sm:w-[480px]">
+          <StatCard title="Total" value={generations.length} icon={FileText} />
+          <StatCard title="Clear" value={generations.length - flaggedCount} icon={CheckCircle2} />
+          <StatCard title="Flagged" value={flaggedCount} icon={AlertTriangle} danger />
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <CardTitle className="text-base font-bold">Generated Content ({filteredGenerations.length})</CardTitle>
-              <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <CardTitle className="text-base font-semibold">
+                Generations ({filtered.length})
+              </CardTitle>
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Search content..."
-                    className="w-full pl-9 sm:w-64"
+                    placeholder="Search..."
+                    className="w-full pl-9 sm:w-56"
                     value={search}
-                    onChange={(event) => setSearch(event.target.value)}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <div className="flex rounded-lg border border-border bg-card p-1">
+                <div className="flex rounded-lg border border-border bg-muted p-1 gap-1">
                   <Button
-                    className={filter === "all" ? "bg-[#169B7F] text-white hover:bg-[#138a71]" : ""}
                     variant={filter === "all" ? "default" : "ghost"}
                     size="sm"
+                    className="flex-1 sm:flex-none"
                     onClick={() => setFilter("all")}
                   >
                     All
                   </Button>
                   <Button
-                    className={filter === "flagged" ? "bg-[#169B7F] text-white hover:bg-[#138a71]" : ""}
                     variant={filter === "flagged" ? "default" : "ghost"}
                     size="sm"
+                    className="flex-1 sm:flex-none"
                     onClick={() => setFilter("flagged")}
                   >
                     Flagged
@@ -229,39 +209,53 @@ export default function AdminContentPage() {
                   <TableHead>Platform</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredGenerations.map((generation) => (
-                  <TableRow key={generation.id}>
+                {filtered.map((g) => (
+                  <TableRow
+                    key={g.id}
+                    className="cursor-pointer"
+                    onClick={() => setSelected(g)}
+                  >
                     <TableCell>
-                      <div className="max-w-[260px]">
-                        <p className="truncate font-medium">{generation.topic}</p>
-                        <p className="truncate text-xs text-muted-foreground">{generation.caption}</p>
-                      </div>
+                      <p className="max-w-[200px] truncate font-medium">{g.topic}</p>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{generation.platform}</Badge>
+                      <Badge variant="secondary">{g.platform}</Badge>
                     </TableCell>
-                    <TableCell className="text-sm">{generation.user?.email || "Unknown"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {g.user?.email || "Unknown"}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={generation.isFlagged ? "destructive" : "secondary"}>
-                        {generation.isFlagged ? "Flagged" : "Clear"}
+                      <Badge variant={g.isFlagged ? "destructive" : "secondary"}>
+                        {g.isFlagged ? "Flagged" : "Clear"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">{new Date(generation.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(g.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => setSelected(generation)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled={busyId === generation.id} onClick={() => handleFlag(generation)}>
+                      <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={busyId === g.id}
+                          onClick={() => handleFlag(g)}
+                          title={g.isFlagged ? "Unflag" : "Flag"}
+                        >
                           <AlertTriangle className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" disabled={busyId === generation.id} onClick={() => handleDelete(generation)}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={busyId === g.id}
+                          onClick={() => handleDelete(g)}
+                          title="Remove"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </TableCell>
@@ -269,12 +263,11 @@ export default function AdminContentPage() {
                 ))}
               </TableBody>
             </Table>
-
-            {filteredGenerations.length === 0 && (
+            {filtered.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
                 <FileText className="mb-3 h-8 w-8" />
                 <p className="font-medium">No content found</p>
-                <p className="text-sm">Try another search or filter.</p>
+                <p className="text-sm">Try a different search or filter.</p>
               </div>
             )}
           </CardContent>
@@ -282,43 +275,65 @@ export default function AdminContentPage() {
 
         <Card className="border-none shadow-sm rounded-lg">
           <CardHeader>
-            <CardTitle className="text-base font-bold">Content Details</CardTitle>
+            <CardTitle className="text-base font-semibold">Details</CardTitle>
           </CardHeader>
           <CardContent>
             {selected ? (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Topic</p>
-                  <p className="mt-1 font-medium">{selected.topic}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Topic</p>
+                  <p className="font-medium">{selected.topic}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caption</p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{selected.caption}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Platform</p>
+                  <Badge variant="secondary">{selected.platform}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">User</p>
+                  <p className="text-sm">{selected.user?.email || "Unknown"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Caption</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">{selected.caption}</p>
                 </div>
                 {selected.hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {selected.hashtags.map((tag) => (
-                      <Badge key={tag} variant="secondary">
-                        {tag}
-                      </Badge>
+                      <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                     ))}
                   </div>
                 )}
                 {selected.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={selected.imageUrl} alt={selected.topic} className="max-h-56 w-full rounded-lg object-cover" />
+                  <img
+                    src={selected.imageUrl}
+                    alt={selected.topic}
+                    className="max-h-48 w-full rounded-lg object-cover"
+                  />
                 )}
-                <div className="flex gap-2">
-                  <Button className="flex-1" variant={selected.isFlagged ? "secondary" : "default"} onClick={() => handleFlag(selected)}>
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    className="flex-1"
+                    variant={selected.isFlagged ? "outline" : "destructive"}
+                    disabled={busyId === selected.id}
+                    onClick={() => handleFlag(selected)}
+                  >
                     {selected.isFlagged ? "Unflag" : "Flag"}
                   </Button>
-                  <Button className="flex-1" variant="destructive" onClick={() => handleDelete(selected)}>
+                  <Button
+                    className="flex-1"
+                    variant="destructive"
+                    disabled={busyId === selected.id}
+                    onClick={() => handleDelete(selected)}
+                  >
                     Remove
                   </Button>
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Select a generated post to review the full caption, hashtags, image, and moderation actions.</p>
+              <p className="text-sm text-muted-foreground">
+                Click a row to review the full caption, hashtags, and moderation actions.
+              </p>
             )}
           </CardContent>
         </Card>

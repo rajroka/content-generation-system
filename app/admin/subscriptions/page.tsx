@@ -28,10 +28,7 @@ interface SubscriptionUser {
   createdAt: string;
   updatedAt: string;
   billingStatus: string;
-  _count: {
-    generations: number;
-    scheduledPosts: number;
-  };
+  _count: { generations: number; scheduledPosts: number };
 }
 
 interface SubscriptionData {
@@ -44,6 +41,30 @@ interface SubscriptionData {
   subscriptions: SubscriptionUser[];
 }
 
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+}) {
+  return (
+    <Card className="border-none shadow-sm rounded-lg">
+      <CardContent className="p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="mt-1.5 text-2xl font-bold tabular-nums">{value}</p>
+        </div>
+        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminSubscriptionsPage() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<SubscriptionData | null>(null);
@@ -53,58 +74,43 @@ export default function AdminSubscriptionsPage() {
 
   const fetchSubscriptions = async () => {
     try {
-      const response = await fetch("/api/admin/subscriptions");
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload?.error || "Failed to fetch subscriptions");
-      }
-
+      const res = await fetch("/api/admin/subscriptions");
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error || "Failed to fetch");
       setData(payload);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to fetch subscriptions");
-      setData(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to fetch subscriptions");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+  useEffect(() => { fetchSubscriptions(); }, []);
+  useEffect(() => { setSearch(searchParams.get("q") || ""); }, [searchParams]);
 
-  useEffect(() => {
-    setSearch(searchParams.get("q") || "");
-  }, [searchParams]);
-
-  const filteredSubscriptions = useMemo(() => {
-    const query = search.toLowerCase();
-    const subscriptions = data?.subscriptions || [];
-
-    return subscriptions.filter(
-      (subscription) =>
-        subscription.email.toLowerCase().includes(query) ||
-        subscription.name?.toLowerCase().includes(query) ||
-        subscription.plan.toLowerCase().includes(query) ||
-        subscription.stripeCustomerId?.toLowerCase().includes(query)
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return (data?.subscriptions || []).filter(
+      (s) =>
+        s.email.toLowerCase().includes(q) ||
+        s.name?.toLowerCase().includes(q) ||
+        s.plan.toLowerCase().includes(q)
     );
   }, [data?.subscriptions, search]);
 
   const updatePlan = async (userId: string, plan: "FREE" | "PRO") => {
     setUpdatingId(userId);
     try {
-      const response = await fetch("/api/admin/users/update-plan", {
+      const res = await fetch("/api/admin/users/update-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, plan }),
       });
-
-      if (!response.ok) throw new Error("Failed to update subscription plan");
-
+      if (!res.ok) throw new Error();
       toast.success(`Plan updated to ${plan}`);
       await fetchSubscriptions();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update plan");
+    } catch {
+      toast.error("Failed to update plan");
     } finally {
       setUpdatingId(null);
     }
@@ -112,84 +118,45 @@ export default function AdminSubscriptionsPage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-40 rounded bg-muted" />
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-24 rounded-lg bg-muted" />
-            ))}
-          </div>
-          <div className="h-80 rounded-lg bg-muted" />
+      <div className="p-4 sm:p-6 space-y-4 animate-pulse">
+        <div className="h-7 w-32 rounded bg-muted" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="h-20 rounded-lg bg-muted" />)}
         </div>
+        <div className="h-80 rounded-lg bg-muted" />
       </div>
     );
   }
 
-  const summary = data?.summary || {
-    totalUsers: 0,
-    proUsers: 0,
-    freeUsers: 0,
-    monthlyRevenue: 0,
-  };
+  const summary = data?.summary ?? { totalUsers: 0, proUsers: 0, freeUsers: 0, monthlyRevenue: 0 };
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">Billing</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage subscription plans and revenue health.</p>
+        <h1 className="text-xl font-bold">Billing</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Subscription plans and revenue.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{summary.totalUsers}</p>
-            </div>
-            <Users className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pro Users</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{summary.proUsers}</p>
-            </div>
-            <Crown className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Free Users</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{summary.freeUsers}</p>
-            </div>
-            <Users className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Projected MRR</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">${summary.monthlyRevenue.toFixed(0)}</p>
-            </div>
-            <CreditCard className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard title="Total Users" value={summary.totalUsers} icon={Users} />
+        <StatCard title="Pro Users" value={summary.proUsers} icon={Crown} />
+        <StatCard title="Free Users" value={summary.freeUsers} icon={Users} />
+        <StatCard title="MRR" value={`$${summary.monthlyRevenue}`} icon={CreditCard} />
       </div>
 
       <Card className="border-none shadow-sm rounded-lg">
         <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-base font-bold">Billing Accounts ({filteredSubscriptions.length})</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="text-base font-semibold">
+              Accounts ({filtered.length})
+            </CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search billing..."
-                className="w-full pl-9 sm:w-72"
+                placeholder="Search..."
+                className="w-full pl-9 sm:w-64"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
@@ -200,53 +167,52 @@ export default function AdminSubscriptionsPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Billing</TableHead>
-                <TableHead>Usage</TableHead>
-                <TableHead>Updated</TableHead>
+                <TableHead>Stripe</TableHead>
+                <TableHead>Generations</TableHead>
+                <TableHead>Scheduled</TableHead>
+                <TableHead>Since</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubscriptions.map((subscription) => (
-                <TableRow key={subscription.id}>
+              {filtered.map((s) => (
+                <TableRow key={s.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{subscription.name || "Anonymous"}</p>
-                      <p className="text-xs text-muted-foreground">{subscription.email}</p>
+                      <p className="font-medium">{s.name || "Anonymous"}</p>
+                      <p className="text-xs text-muted-foreground">{s.email}</p>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={subscription.plan === "PRO" ? "default" : "secondary"}>{subscription.plan}</Badge>
+                    <Badge variant={s.plan === "PRO" ? "default" : "secondary"}>{s.plan}</Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Badge variant={subscription.billingStatus === "Active" ? "default" : "secondary"}>
-                        {subscription.billingStatus}
-                      </Badge>
-                      <p className="max-w-[220px] truncate text-xs text-muted-foreground">
-                        {subscription.stripeSubscriptionId || subscription.stripeCustomerId || "No Stripe record"}
-                      </p>
-                    </div>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {s.stripeSubscriptionId
+                      ? <span className="font-mono text-xs">{s.stripeSubscriptionId.slice(0, 14)}…</span>
+                      : s.stripeCustomerId
+                      ? <span className="font-mono text-xs">{s.stripeCustomerId.slice(0, 14)}…</span>
+                      : <span className="text-muted-foreground/60">—</span>}
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {subscription._count.generations} generations, {subscription._count.scheduledPosts} scheduled
+                  <TableCell className="tabular-nums">{s._count.generations}</TableCell>
+                  <TableCell className="tabular-nums">{s._count.scheduledPosts}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(s.createdAt).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="text-sm">{new Date(subscription.updatedAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
-                        variant={subscription.plan === "PRO" ? "secondary" : "default"}
-                        disabled={updatingId === subscription.id || subscription.plan === "PRO"}
-                        onClick={() => updatePlan(subscription.id, "PRO")}
+                        variant="outline"
+                        disabled={updatingId === s.id || s.plan === "PRO"}
+                        onClick={() => updatePlan(s.id, "PRO")}
                       >
                         Upgrade
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
-                        disabled={updatingId === subscription.id || subscription.plan === "FREE"}
-                        onClick={() => updatePlan(subscription.id, "FREE")}
+                        variant="ghost"
+                        disabled={updatingId === s.id || s.plan === "FREE"}
+                        onClick={() => updatePlan(s.id, "FREE")}
                       >
                         Downgrade
                       </Button>
@@ -256,11 +222,10 @@ export default function AdminSubscriptionsPage() {
               ))}
             </TableBody>
           </Table>
-
-          {filteredSubscriptions.length === 0 && (
+          {filtered.length === 0 && (
             <div className="py-16 text-center text-muted-foreground">
-              <p className="font-medium">No billing accounts found</p>
-              <p className="text-sm">Try another search term.</p>
+              <p className="font-medium">No accounts found</p>
+              <p className="text-sm">Try a different search term.</p>
             </div>
           )}
         </CardContent>

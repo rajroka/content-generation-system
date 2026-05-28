@@ -91,22 +91,19 @@ function formatPlatform(platform: string) {
 function StatCard({
   title,
   value,
-  note,
 }: {
   title: string;
   value: number | string | null;
-  note: string;
 }) {
   return (
     <Card className="border-none shadow-sm rounded-lg">
       <CardContent className="p-4">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <p className="text-sm text-muted-foreground">{title}</p>
         {value === null ? (
-          <div className="mt-3 h-8 w-20 animate-pulse rounded-lg bg-muted" />
+          <div className="mt-2 h-8 w-20 animate-pulse rounded-lg bg-muted" />
         ) : (
-          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{value}</p>
+          <p className="mt-1.5 text-2xl font-bold tabular-nums">{value}</p>
         )}
-        <p className="mt-1 text-xs text-muted-foreground">{note}</p>
       </CardContent>
     </Card>
   );
@@ -236,7 +233,7 @@ export default function AdminAnalyticsPage() {
                 className={[
                   "flex-1 sm:flex-none rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
                   dateRange === range.value
-                    ? "bg-[#169B7F] text-white"
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 ].join(" ")}
               >
@@ -265,26 +262,10 @@ export default function AdminAnalyticsPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <StatCard
-              title="Total Users"
-              value={isLoading ? null : data?.totals.totalUsers ?? 0}
-              note={`${data?.totals.activeUsers ?? 0} active`}
-            />
-            <StatCard
-              title="Generated Content"
-              value={isLoading ? null : data?.totals.totalGenerations ?? 0}
-              note={`${data?.totals.totalImages ?? 0} image posts`}
-            />
-            <StatCard
-              title="Published Posts"
-              value={isLoading ? null : data?.totals.publishedPosts ?? 0}
-              note={`${data?.totals.scheduledPosts ?? 0} scheduled`}
-            />
-            <StatCard
-              title="Projected MRR"
-              value={isLoading ? null : `$${data?.totals.monthlyRevenue ?? 0}`}
-              note={`${data?.totals.proUsers ?? 0} Pro users`}
-            />
+            <StatCard title="Total Users" value={isLoading ? null : data?.totals.totalUsers ?? 0} />
+            <StatCard title="Generations" value={isLoading ? null : data?.totals.totalGenerations ?? 0} />
+            <StatCard title="Published Posts" value={isLoading ? null : data?.totals.publishedPosts ?? 0} />
+            <StatCard title="MRR" value={isLoading ? null : `$${data?.totals.monthlyRevenue ?? 0}`} />
           </div>
 
           {isLoading ? (

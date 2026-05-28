@@ -138,7 +138,7 @@ export function Pricing({ currentPlan }: PricingProps) {
                     href={ctaHref}
                     className={
                       plan.highlighted
-                        ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#0d7c8a] text-sm font-black text-white shadow-lg transition hover:bg-[#0b6a75] active:scale-[0.98]"
+                        ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground shadow-lg transition hover:bg-primary/90 active:scale-[0.98]"
                         : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-black text-foreground transition hover:bg-muted"
                     }
                   >
@@ -151,7 +151,7 @@ export function Pricing({ currentPlan }: PricingProps) {
                       isCurrentPlan
                         ? "mt-6 inline-flex h-11 w-full pointer-events-none items-center justify-center rounded-lg border border-border text-sm font-black text-muted-foreground"
                         : plan.highlighted
-                        ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#0d7c8a] text-sm font-black text-white shadow-lg transition hover:bg-[#0b6a75] active:scale-[0.98]"
+                        ? "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-black text-primary-foreground shadow-lg transition hover:bg-primary/90 active:scale-[0.98]"
                         : "mt-6 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-black text-foreground transition hover:bg-muted"
                     }
                   >

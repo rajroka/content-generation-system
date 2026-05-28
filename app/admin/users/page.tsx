@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -15,15 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Search, MoreVertical, Eye, Ban, Mail, RefreshCw, Users, ShieldCheck, UserX } from "lucide-react";
+import { Search, RefreshCw, Users, ShieldCheck, UserX } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface User {
@@ -36,9 +27,31 @@ interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  _count: {
-    generations: number;
-  };
+  _count: { generations: number };
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+}: {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+}) {
+  return (
+    <Card className="border-none shadow-sm rounded-lg">
+      <CardContent className="p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="mt-1.5 text-2xl font-bold tabular-nums">{value}</p>
+        </div>
+        <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function AdminUsersPage() {
@@ -46,28 +59,17 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    setSearch(searchParams.get("q") || "");
-  }, [searchParams]);
+  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { setSearch(searchParams.get("q") || ""); }, [searchParams]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/users");
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setUsers(data);
-      } else {
-        console.error("API did not return an array of users:", data);
-        setUsers([]);
-      }
+      const res = await fetch("/api/admin/users");
+      const data = await res.json();
+      setUsers(Array.isArray(data) ? data : []);
     } catch {
       toast.error("Failed to fetch users");
       setUsers([]);
@@ -76,62 +78,49 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleToggleActive = async (userId: string, isActive: boolean) => {
-    setUpdatingId(userId);
+  const handleToggleActive = async (userId: string, currentlyActive: boolean) => {
+    setTogglingId(userId);
     try {
-      const response = await fetch("/api/admin/users/toggle-active", {
+      const res = await fetch("/api/admin/users/toggle-active", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, isActive: !isActive }),
+        body: JSON.stringify({ userId, isActive: !currentlyActive }),
       });
-
-      if (response.ok) {
-        toast.success(`User ${!isActive ? "activated" : "deactivated"}`);
-        setUsers((current) =>
-          current.map((user) => (user.id === userId ? { ...user, isActive: !isActive } : user))
-        );
-        setSelectedUser((current) =>
-          current?.id === userId ? { ...current, isActive: !isActive } : current
-        );
-      } else {
-        throw new Error("Failed to update");
-      }
+      if (!res.ok) throw new Error();
+      toast.success(currentlyActive ? "User suspended" : "User activated");
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isActive: !currentlyActive } : u))
+      );
     } catch {
-      toast.error("Failed to update user status");
+      toast.error("Failed to update user");
     } finally {
-      setUpdatingId(null);
+      setTogglingId(null);
     }
   };
 
   const safeUsers = useMemo(() => (Array.isArray(users) ? users : []), [users]);
-  const activeUsers = safeUsers.filter((user) => user.isActive).length;
-  const adminUsers = safeUsers.filter((user) => user.role === "ADMIN").length;
-  const suspendedUsers = safeUsers.length - activeUsers;
+  const activeCount = safeUsers.filter((u) => u.isActive).length;
+  const adminCount = safeUsers.filter((u) => u.role === "ADMIN").length;
+  const suspendedCount = safeUsers.length - activeCount;
 
-  const filteredUsers = useMemo(() => {
-    const query = search.toLowerCase();
-
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
     return safeUsers.filter(
-      (user) =>
-        user.email?.toLowerCase().includes(query) ||
-        user.name?.toLowerCase().includes(query) ||
-        user.plan?.toLowerCase().includes(query) ||
-        user.role?.toLowerCase().includes(query)
+      (u) =>
+        u.email?.toLowerCase().includes(q) ||
+        u.name?.toLowerCase().includes(q) ||
+        u.plan?.toLowerCase().includes(q)
     );
   }, [safeUsers, search]);
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-40" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {[...Array(3)].map((_, index) => (
-              <div key={index} className="h-24 bg-muted rounded-lg" />
-            ))}
-          </div>
-          <div className="h-64 bg-muted rounded-lg" />
+      <div className="p-4 sm:p-6 space-y-4 animate-pulse">
+        <div className="h-7 w-32 rounded bg-muted" />
+        <div className="grid grid-cols-3 gap-3">
+          {[0, 1, 2].map((i) => <div key={i} className="h-20 rounded-lg bg-muted" />)}
         </div>
+        <div className="h-64 rounded-lg bg-muted" />
       </div>
     );
   }
@@ -139,55 +128,33 @@ export default function AdminUsersPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">Users</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage account access, status, and support actions.</p>
+        <h1 className="text-xl font-bold">Users</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Manage account access and status.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{safeUsers.length}</p>
-            </div>
-            <Users className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Admins</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{adminUsers}</p>
-            </div>
-            <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Suspended</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums">{suspendedUsers}</p>
-            </div>
-            <UserX className="h-5 w-5 text-muted-foreground" />
-          </CardContent>
-        </Card>
+        <StatCard title="Total Users" value={safeUsers.length} icon={Users} />
+        <StatCard title="Admins" value={adminCount} icon={ShieldCheck} />
+        <StatCard title="Suspended" value={suspendedCount} icon={UserX} />
       </div>
 
       <Card className="border-none shadow-sm rounded-lg">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-base font-bold">All Users ({filteredUsers.length})</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-base font-semibold">
+              All Users ({filtered.length})
+            </CardTitle>
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search users..."
-                  className="pl-9 w-full sm:w-64"
+                  className="pl-9 w-full sm:w-60"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" onClick={fetchUsers} aria-label="Refresh users">
+              <Button variant="outline" size="icon" onClick={fetchUsers} aria-label="Refresh">
                 <RefreshCw className="w-4 h-4" />
               </Button>
             </div>
@@ -199,29 +166,19 @@ export default function AdminUsersPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Posts</TableHead>
+                <TableHead>Generations</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {filtered.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        {user.imageUrl && <AvatarImage src={user.imageUrl} alt={user.name || user.email} />}
-                        <AvatarFallback>
-                          {user.email[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{user.name || "Anonymous"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="font-medium">{user.name || "Anonymous"}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -229,117 +186,37 @@ export default function AdminUsersPage() {
                       {user.plan}
                     </Badge>
                   </TableCell>
-                  <TableCell>{user._count.generations}</TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="tabular-nums">{user._count.generations}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={user.isActive ? "default" : "destructive"}
-                      className={user.isActive ? "bg-green-500" : ""}
-                    >
+                    <Badge variant={user.isActive ? "default" : "destructive"}>
                       {user.isActive ? "Active" : "Suspended"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setSelectedUser(user)}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.location.assign(`mailto:${user.email}`)}>
-                          <Mail className="w-4 h-4 mr-2" />
-                          Email User
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          disabled={updatingId === user.id}
-                          onClick={() => handleToggleActive(user.id, user.isActive)}
-                        >
-                          <Ban className="w-4 h-4 mr-2" />
-                          {user.isActive ? "Suspend" : "Activate"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant={user.isActive ? "destructive" : "outline"}
+                      disabled={togglingId === user.id}
+                      onClick={() => handleToggleActive(user.id, user.isActive)}
+                    >
+                      {user.isActive ? "Suspend" : "Activate"}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-          {filteredUsers.length === 0 && (
+          {filtered.length === 0 && (
             <div className="py-16 text-center text-muted-foreground">
               <p className="font-medium">No users found</p>
-              <p className="text-sm">Try another search term.</p>
+              <p className="text-sm">Try a different search term.</p>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {selectedUser && (
-        <Card className="border-none shadow-sm rounded-lg">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <CardTitle>User Details</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
-                Close
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">User</p>
-                <p className="mt-1 font-medium">{selectedUser.name || "Anonymous"}</p>
-                <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Access</p>
-                <div className="mt-2 flex gap-2">
-                  <Badge>{selectedUser.role}</Badge>
-                  <Badge variant={selectedUser.isActive ? "default" : "destructive"}>
-                    {selectedUser.isActive ? "Active" : "Suspended"}
-                  </Badge>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan</p>
-                <p className="mt-1 font-medium">{selectedUser.plan}</p>
-                <p className="text-sm text-muted-foreground">{selectedUser._count.generations} generations</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dates</p>
-                <p className="mt-1 text-sm">Joined {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
-                <p className="text-sm text-muted-foreground">Updated {new Date(selectedUser.updatedAt).toLocaleDateString()}</p>
-              </div>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant={selectedUser.isActive ? "destructive" : "default"}
-                disabled={updatingId === selectedUser.id}
-                onClick={() => handleToggleActive(selectedUser.id, selectedUser.isActive)}
-              >
-                {selectedUser.isActive ? "Suspend User" : "Activate User"}
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => window.location.assign(`mailto:${selectedUser.email}`)}
-              >
-                Email User
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
