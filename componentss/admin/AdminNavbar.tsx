@@ -4,12 +4,13 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { Menu, Search, Shield, ShieldCheck } from "lucide-react";
+import { Menu, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../shared/ThemeToggle";
+import { Logo } from "../shared/Logo";
 import { navItems } from "./AdminSidebar";
 
 export function AdminNavbar() {
@@ -40,12 +41,7 @@ export function AdminNavbar() {
           <SheetContent side="left" className="w-64 p-0 bg-background border-r-0">
             <div className="flex flex-col h-full">
               <div className="h-16 flex items-center px-4 border-b border-border">
-                <Link href="/admin" className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                    <Shield className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>
-                </Link>
+                <Logo href="/admin" size="md" />
               </div>
 
               <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto mt-4">

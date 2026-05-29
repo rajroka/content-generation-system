@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../shared/ThemeToggle";
+import { Logo } from "../shared/Logo";
 
 export function DashboardNavbar({ plan = "FREE" }: { plan?: string }) {
   const { user } = useUser();
@@ -28,12 +29,7 @@ export function DashboardNavbar({ plan = "FREE" }: { plan?: string }) {
             <div className="flex flex-col h-full">
               {/* Brand Logo */}
               <div className="h-16 flex items-center px-4 border-b border-border">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                    <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
-                  </div>
-                  <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>
-                </div>
+                <Logo href="/user/dashboard" size="md" />
               </div>
 
               {/* New Post Button */}

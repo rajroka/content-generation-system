@@ -20,12 +20,12 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 - **ImageKit**: The CDN service used for storing and serving uploaded images and videos.
 - **Stripe**: The payment processor used for subscription billing and checkout.
 - **Generation**: A single content generation event, producing a caption and hashtags, stored in the `Generation` database model.
-- **ScheduledPost**: A database record representing a post in SCHEDULED, PUBLISHED, FAILED, or CANCELLED state.
+- **ScheduledPost**: A database record representing a post in SCHEDULED, PUBLISHED, FAILED, or CANCELLED state. Note: DRAFT status does not exist in this system.
 - **SocialAccount**: A database record linking a User to a connected social media platform account via Zernio.
 - **Plan**: A subscription tier — FREE or PRO — that determines usage limits and feature access.
 - **PlanLimit**: A database record defining the daily caption limit for each Plan. Note: the `monthlySchedules` limit is hardcoded in application logic, not stored in this table.
 - **Usage**: A database record tracking a User's daily consumption of captions, images, and posts.
-- **Platform**: One of INSTAGRAM, FACEBOOK, YOUTUBE, or TIKTOK.
+- **Platform**: One of INSTAGRAM, FACEBOOK, YOUTUBE, or TIKTOK. Note: TWITTER and LINKEDIN are not supported platforms in this system.
 - **Tone**: One of PROFESSIONAL, CASUAL, INSPIRATIONAL, or HUMOROUS — the stylistic register for generated content.
 - **Webhook**: An HTTP callback from an external service (Stripe or Clerk) to notify the System of events.
 - **CDN_URL**: A publicly accessible URL returned by ImageKit after a successful media upload.
@@ -180,7 +180,6 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 1. THE System SHALL provide a calendar view at `/user/calendar` displaying all ScheduledPost records for the authenticated User.
 2. WHEN the calendar is rendered, THE System SHALL display posts grouped by their `scheduledFor` date.
 3. THE System SHALL visually distinguish posts by their `status` (SCHEDULED, PUBLISHED, FAILED, CANCELLED) using distinct color-coded badges.
-4. WHEN a User selects a date on the calendar, THE System SHALL display all ScheduledPost records for that date.
 5. THE System SHALL display the `caption`, `platforms`, and `status` for each post in the calendar view.
 6. THE calendar SHALL poll for updates every 60 seconds to reflect status changes.
 7. THE System SHALL allow a User to reschedule, publish immediately, or delete a scheduled post from the calendar via a post detail drawer.

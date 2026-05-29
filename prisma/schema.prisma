@@ -18,8 +18,6 @@ enum Platform {
   FACEBOOK
   YOUTUBE
   TIKTOK
-  TWITTER
-  LINKEDIN
 }
 
 enum Role {
@@ -32,7 +30,6 @@ enum ScheduleStatus {
   PUBLISHED
   FAILED
   CANCELLED
-  DRAFT
 }
 
 enum SocialPlatform {
@@ -62,7 +59,6 @@ model User {
   generations          Generation[]
   scheduledPosts       ScheduledPost[]
   socialAccounts       SocialAccount[]
-  brandVoice           BrandVoice?
 }
 
 model Generation {
@@ -97,8 +93,6 @@ model ScheduledPost {
   status        ScheduleStatus @default(SCHEDULED)
   publishedAt   DateTime?
   failureReason String?
-  zernioPostId  String?        // Zernio post _id for status sync
-  retryCount    Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -147,14 +141,3 @@ model SocialAccount {
   @@unique([userId, platform])
 }
 
-model BrandVoice {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tone        String   @default("CASUAL")   // CASUAL | PROFESSIONAL | INSPIRATIONAL | HUMOROUS
-  style       String?  @db.Text             // Free-text style notes e.g. "always use emojis, never exclamation marks"
-  keywords    String[] @default([])         // Brand keywords to include
-  avoidWords  String[] @default([])         // Words to avoid
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}

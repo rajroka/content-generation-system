@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { Logo } from "../shared/Logo";
 import {
   LayoutDashboard,
   PenLine,
@@ -56,12 +57,7 @@ export function Sidebar({ plan = "FREE" }: { plan?: string }) {
 
       {/* Brand Logo */}
       <div className={cn("h-16 flex items-center px-4 shrink-0", collapsed && "justify-center")}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
-          </div>
-          {!collapsed && <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>}
-        </div>
+        <Logo href="/user/dashboard" size={collapsed ? "sm" : "md"} variant={collapsed ? "mark" : "wordmark"} />
       </div>
 
       {/* Navigation */}

@@ -21,7 +21,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div className="flex flex-col gap-4">
-            <Logo className="[&_span]:text-white" />
+            <Logo />
             <p className="max-w-[240px] text-sm leading-7 text-slate-400">
               PostSathi turns your content idea into a caption, a schedule, and a published post — in one place.
             </p>

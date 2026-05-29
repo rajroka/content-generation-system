@@ -5,13 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { Logo } from "../shared/Logo";
 import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
   CreditCard,
   LayoutDashboard,
-  Shield,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -53,12 +53,7 @@ export function AdminSidebar() {
       </button>
 
       <div className={cn("h-16 flex items-center px-4 shrink-0", collapsed && "justify-center")}>
-        <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
-            <Shield className="w-4 h-4 text-white" />
-          </div>
-          {!collapsed && <span className="font-bold text-lg text-foreground tracking-tight">PostSathi</span>}
-        </Link>
+        <Logo href="/admin" size={collapsed ? "sm" : "md"} variant={collapsed ? "mark" : "wordmark"} />
       </div>
 
       <nav className="flex-1 px-2 space-y-0.5">
