@@ -11,7 +11,6 @@ const plans = [
       "10 captions per day",
       "15 posts/schedules per month",
       "Connect up to 4 platforms",
-      "AI caption & hashtag generator",
       "Post history & content calendar",
     ],
     featuresLabel: "Plan includes:",
