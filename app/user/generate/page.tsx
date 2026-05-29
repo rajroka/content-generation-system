@@ -266,7 +266,18 @@ export default function GeneratePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");
-      const tags = data.hashtags ? `\n\n${data.hashtags.join(" ")}` : "";
+
+      // If hashtags are already embedded in the caption, don't append them again
+      const hashtags: string[] = data.hashtags ?? [];
+      const captionAlreadyHasHashtags =
+        hashtags.length > 0 &&
+        hashtags.some((tag: string) =>
+          data.caption.includes(tag.startsWith("#") ? tag : `#${tag}`)
+        );
+
+      const tags = !captionAlreadyHasHashtags && hashtags.length > 0
+        ? `\n\n${hashtags.join(" ")}`
+        : "";
       setCaption(`${data.caption}${tags}`);
       setUsage((prev) => ({ ...prev, captions: prev.captions + 1 }));
       toast.success("Content generated!");

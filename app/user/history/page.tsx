@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Sparkles, Hash, Trash2, Search, X } from "lucide-react";
+import { BookOpen, Sparkles, Trash2, Search, X } from "lucide-react";
 import Link from "next/link";
 import { CopyButton } from "@/componentss/shared/CopyButton";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
-import { getPlatformColor } from "@/lib/platforms";
 
 interface Generation {
   id: string;
@@ -17,15 +16,6 @@ interface Generation {
   caption: string;
   hashtags: string[];
   createdAt: string;
-}
-
-function platformBadgeStyle(platform: string) {
-  const color = getPlatformColor(platform);
-  return {
-    color,
-    borderColor: `${color}55`,
-    backgroundColor: `${color}12`,
-  };
 }
 
 export default function LibraryPage() {
@@ -71,7 +61,7 @@ export default function LibraryPage() {
     }
   };
 
-  // ── Loading skeleton ────────────────────────────────────────────────────────
+  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="p-4 sm:p-6">
@@ -86,7 +76,7 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="p-4 sm:p-6 bg-background min-h-screen">
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-bold text-foreground">Library</h1>
@@ -154,68 +144,69 @@ export default function LibraryPage() {
           className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
         >
           <AnimatePresence mode="popLayout">
-            {filtered.map((gen, i) => (
-              <motion.div
-                key={gen.id}
-                layout
-                initial={{ opacity: 0, y: 16, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                transition={{ duration: 0.25, delay: i * 0.04 }}
-              >
-                <Card className="border-none shadow-sm rounded-lg flex flex-col h-full">
-                  <CardContent className="flex flex-col gap-3 p-4 flex-1">
-                    {/* Top row: platform badge + date + delete */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className="inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold"
-                        style={platformBadgeStyle(gen.platform)}
-                      >
-                        {gen.platform.charAt(0) + gen.platform.slice(1).toLowerCase()}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                          {format(new Date(gen.createdAt), "MMM d, yyyy")}
+            {filtered.map((gen, i) => {
+              // Caption already contains hashtags appended during generation.
+              // Only show the separate hashtag row if not already in caption.
+              const captionHasHashtags =
+                gen.hashtags.length > 0 &&
+                gen.hashtags.some((tag) =>
+                  gen.caption.includes(tag.startsWith("#") ? tag : `#${tag}`)
+                );
+
+              return (
+                <motion.div
+                  key={gen.id}
+                  layout
+                  initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                  transition={{ duration: 0.25, delay: i * 0.04 }}
+                >
+                  <Card className="border border-border bg-card shadow-sm rounded-xl flex flex-col h-full">
+                    <CardContent className="flex flex-col gap-3 p-4 flex-1">
+                      {/* Top row: date + delete */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          <span className="text-foreground font-semibold">Topic:</span> {gen.topic}
                         </span>
-                        <button
-                          onClick={() => handleDelete(gen.id)}
-                          disabled={deleting === gen.id}
-                          className="text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-40"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Topic */}
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">
-                      {gen.topic}
-                    </p>
-
-                    {/* Caption */}
-                    <p className="text-sm text-foreground leading-relaxed flex-1">
-                      {gen.caption}
-                    </p>
-
-                    {/* Hashtags */}
-                    {gen.hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
-                        <Hash className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                        {gen.hashtags.map((tag, idx) => (
-                          <span key={idx} className="text-xs font-medium text-primary">
-                            {tag.startsWith("#") ? tag : `#${tag}`}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                            {format(new Date(gen.createdAt), "MMM d, yyyy")}
                           </span>
-                        ))}
+                          <button
+                            onClick={() => handleDelete(gen.id)}
+                            disabled={deleting === gen.id}
+                            className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    )}
 
-                    {/* Copy button */}
-                    <CopyButton text={`${gen.caption}\n\n${gen.hashtags.join(" ")}`} />
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                      {/* Caption — already includes hashtags */}
+                      <p className="text-sm text-foreground leading-relaxed flex-1 whitespace-pre-wrap">
+                        {gen.caption}
+                      </p>
+
+                      {/* Hashtag row — only if NOT already in caption */}
+                      {!captionHasHashtags && gen.hashtags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
+                          {gen.hashtags.map((tag, idx) => (
+                            <span key={idx} className="text-xs font-medium text-primary">
+                              {tag.startsWith("#") ? tag : `#${tag}`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Copy button */}
+                      <CopyButton text={gen.caption} />
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </motion.div>
       )}

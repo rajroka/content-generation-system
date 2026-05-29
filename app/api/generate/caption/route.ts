@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes
 
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -74,6 +75,12 @@ export async function POST(req: Request) {
     if (err.message?.includes("Model not deployed yet")) {
       return NextResponse.json(
         { error: "Caption generation is not available yet. The model is being deployed." },
+        { status: 503 }
+      );
+    }
+    if (err.message?.includes("timed out")) {
+      return NextResponse.json(
+        { error: "The model is taking too long to respond. Please try again in a moment." },
         { status: 503 }
       );
     }

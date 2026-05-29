@@ -1,6 +1,10 @@
 // PostSathi Caption Generator
-// Uses a fine-tuned Phi-2 model hosted on Hugging Face Inference API
-// Set HF_MODEL_ID and HF_API_KEY in .env.local when model is deployed
+// Supports two backends:
+//   1. Friend's model server (dev tunnel or hosted) — set MODEL_API_URL in .env.local
+//   2. Hugging Face Inference API — set HF_MODEL_ID and HF_API_KEY in .env.local
+// MODEL_API_URL takes priority if set.
+
+const MODEL_API_URL = process.env.MODEL_API_URL ?? null;
 
 const HF_API_URL = process.env.HF_MODEL_ID
   ? `https://api-inference.huggingface.co/models/${process.env.HF_MODEL_ID}`
@@ -21,9 +25,69 @@ const platformGuide: Record<string, string> = {
   youtube:   "descriptive, 200-300 chars, include keywords, encourage subscribe",
 };
 
-async function callModel(prompt: string): Promise<string> {
+// ── Backend 1: Custom model server (friend's tunnel / hosted API) ─────────────
+async function callCustomServer(params: TextParams): Promise<{ caption: string; hashtags: string[] }> {
+  const guide = platformGuide[params.platform.toLowerCase()] ?? "engaging, 150-200 chars";
+
+  const prompt = `Generate a ${params.tone} social media caption for ${params.platform} about: "${params.topic}".
+Platform guidelines: ${guide}
+Return ONLY a JSON object: { "caption": "...", "hashtags": ["#tag1", "#tag2"] }`;
+
+  // 5-minute timeout — model inference can be slow on CPU
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
+  let res: Response;
+  try {
+    res = await fetch(`${MODEL_API_URL}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      throw new Error("Model server timed out. The model may be loading — please try again in a moment.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Custom model server error (${res.status}): ${err}`);
+  }
+
+  const data = await res.json();
+
+  // Accept either { caption, hashtags } directly, or { generated_text } (raw string)
+  if (data.caption) {
+    return {
+      caption:  data.caption,
+      hashtags: Array.isArray(data.hashtags) ? data.hashtags : [],
+    };
+  }
+
+  // Fallback: try to parse JSON from generated_text
+  const raw: string = data.generated_text ?? JSON.stringify(data);
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      caption:  parsed.caption  ?? `Check out this content about ${params.topic}!`,
+      hashtags: parsed.hashtags ?? ["#content", "#socialmedia"],
+    };
+  }
+
+  // Last resort: treat the whole response as the caption
+  return { caption: raw.trim(), hashtags: ["#content", "#socialmedia"] };
+}
+
+// ── Backend 2: Hugging Face Inference API ─────────────────────────────────────
+async function callHuggingFace(prompt: string): Promise<string> {
   if (!HF_API_URL || !HF_API_KEY) {
-    throw new Error("Model not deployed yet. Set HF_MODEL_ID and HF_API_KEY in .env.local");
+    throw new Error("Model not deployed yet. Set MODEL_API_URL or HF_MODEL_ID + HF_API_KEY in .env.local");
   }
 
   const res = await fetch(HF_API_URL, {
@@ -48,18 +112,23 @@ async function callModel(prompt: string): Promise<string> {
   }
 
   const data = await res.json();
-  // HF Inference API returns [{ generated_text: "..." }]
   return Array.isArray(data) ? (data[0]?.generated_text ?? "") : (data?.generated_text ?? "");
 }
 
 export async function generateCaption({ topic, platform, tone }: TextParams): Promise<{ caption: string; hashtags: string[] }> {
+  // Prefer custom model server if configured
+  if (MODEL_API_URL) {
+    return callCustomServer({ topic, platform, tone });
+  }
+
+  // Fall back to Hugging Face Inference API
   const guide = platformGuide[platform.toLowerCase()] ?? "engaging, 150-200 chars";
 
   const prompt = `Generate a ${tone} social media caption for ${platform} about: "${topic}".
 Platform guidelines: ${guide}
 Return ONLY a JSON object: { "caption": "...", "hashtags": ["#tag1", "#tag2"] }`;
 
-  const output = await callModel(prompt);
+  const output = await callHuggingFace(prompt);
 
   const jsonMatch = output.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Invalid model response");

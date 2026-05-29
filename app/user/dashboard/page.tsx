@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   PenLine, Calendar, ArrowRight, Zap,
-  BarChart3, FileText, Sparkles,
+  BarChart3, FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -90,10 +90,7 @@ export default async function DashboardPage({
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-xl font-bold flex items-center gap-2">
-          Welcome, {clerkUser?.firstName}
-          <Sparkles className="w-5 h-5 text-yellow-400" />
-        </h1>
+        <h1 className="text-2xl sm:text-xl font-bold">Welcome, {clerkUser?.firstName} 👋</h1>
       </div>
 
       {/* Quick Actions */}
