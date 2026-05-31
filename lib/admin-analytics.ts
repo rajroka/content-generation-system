@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Platform } from "@/lib/generated/prisma";
 import { PRO_PLAN_PRICE_USD } from "@/lib/constants";
 
 export type AdminDateRange = "7d" | "30d" | "90d";
@@ -106,7 +107,11 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       where: { createdAt: { gte: previousStart, lte: previousEnd } },
     }),
     prisma.generation.findMany({
-      where: { isDeleted: false, createdAt: { gte: start } },
+      where: {
+        isDeleted: false,
+        createdAt: { gte: start },
+        platform: { in: Object.values(Platform) },
+      },
       select: {
         id: true,
         platform: true,
@@ -115,7 +120,11 @@ export async function getAdminAnalytics(rangeParam?: string | null) {
       orderBy: { createdAt: "desc" },
     }),
     prisma.generation.count({
-      where: { isDeleted: false, createdAt: { gte: previousStart, lte: previousEnd } },
+      where: {
+        isDeleted: false,
+        createdAt: { gte: previousStart, lte: previousEnd },
+        platform: { in: Object.values(Platform) },
+      },
     }),
     prisma.scheduledPost.findMany({
       where: { createdAt: { gte: start } },

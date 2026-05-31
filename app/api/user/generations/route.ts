@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Platform } from "@/lib/generated/prisma";
 
 export async function GET() {
   try {
@@ -13,7 +14,11 @@ export async function GET() {
     if (!user) return NextResponse.json([], { status: 200 });
 
     const generations = await prisma.generation.findMany({
-      where: { userId: user.id, isDeleted: false },
+      where: {
+        userId: user.id,
+        isDeleted: false,
+        platform: { in: Object.values(Platform) },
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id:        true,

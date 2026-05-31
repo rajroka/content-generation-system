@@ -25,7 +25,7 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 - **Plan**: A subscription tier — FREE or PRO — that determines usage limits and feature access.
 - **PlanLimit**: A database record defining the daily caption limit for each Plan. Note: the `monthlySchedules` limit is hardcoded in application logic, not stored in this table.
 - **Usage**: A database record tracking a User's daily consumption of captions, images, and posts.
-- **Platform**: One of INSTAGRAM, FACEBOOK, YOUTUBE, or TIKTOK. Note: TWITTER and LINKEDIN are not supported platforms in this system.
+- **Platform**: One of INSTAGRAM, FACEBOOK, YOUTUBE, or TIKTOK. Note: LINKEDIN is not a supported platform in this system.
 - **Tone**: One of PROFESSIONAL, CASUAL, INSPIRATIONAL, or HUMOROUS — the stylistic register for generated content.
 - **Webhook**: An HTTP callback from an external service (Stripe or Clerk) to notify the System of events.
 - **CDN_URL**: A publicly accessible URL returned by ImageKit after a successful media upload.
@@ -342,7 +342,7 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 
 1. THE landing page SHALL include the following sections in order: Hero, Social Connect, Features, Pricing, Testimonials, Footer.
 2. THE Hero section SHALL display the tagline "Create once. Post everywhere." with CTA buttons linking to sign-up and sign-in.
-3. THE Social Connect section SHALL display brand icons for social platforms (Facebook, Instagram, X, YouTube, TikTok, Threads, Telegram, Snapchat, WhatsApp) as a decorative showcase with the heading "Connect your favorite accounts". Note: X (Twitter) appears here as a visual element only — it is not a connectable platform in the app.
+3. THE Social Connect section SHALL display brand icons for social platforms (Facebook, Instagram, YouTube, TikTok, Threads, Telegram, Snapchat, WhatsApp) as a decorative showcase with the heading "Connect your favorite accounts".
 4. THE Pricing section SHALL display Free ($0) and Premium ($10/mo) plan cards with feature lists.
 5. THE Testimonials section SHALL display 3 cards with the side cards tilted and the center card scaled up.
 6. THE landing page SHALL be fully responsive and dark mode compatible.

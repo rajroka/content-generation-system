@@ -32,7 +32,7 @@ PostSathi is a web-based social media content management and scheduling SaaS pla
 | YouTube   | `/api/auth/youtube`      |
 | TikTok    | `/api/auth/tiktok`       |
 
-> **Note:** LinkedIn and Twitter/X are NOT supported platforms. Empty route folders exist in the codebase but contain no implementation. X (Twitter) appears as a decorative icon on the landing page only.
+> **Note:** LinkedIn is NOT supported. An empty route folder exists at `app/api/auth/linkedin/` but contains no implementation.
 
 ## Plans
 

@@ -51,7 +51,7 @@
 - **Disconnect** — `app/api/social/disconnect/route.ts` calls `zernio.accounts.deleteAccount(accountId)` (best-effort) then removes the local DB record
 - **Connections list** — `app/api/social/connections/route.ts` reads from local `SocialAccount` table (populated during callback)
 - **Supported platforms**: `instagram`, `facebook`, `youtube`, `tiktok` (Zernio platform value is lowercase)
-- ⚠️ LinkedIn and Twitter/X are NOT supported. Empty route folders exist at `app/api/auth/linkedin/` and `app/api/auth/twitter/` but contain no implementation. Do not add code there.
+- ⚠️ LinkedIn is NOT supported. An empty route folder exists at `app/api/auth/linkedin/` but contains no implementation. Do not add code there.
 
 ## Media
 

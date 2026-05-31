@@ -10,11 +10,6 @@ const platforms = [
     darkSrc: "https://cdn.simpleicons.org/instagram/E1306C",
   },
   {
-    label: "X (Twitter)",
-    src: "https://cdn.simpleicons.org/x/000000",
-    darkSrc: "https://cdn.simpleicons.org/x/ffffff",
-  },
-  {
     label: "YouTube",
     src: "https://cdn.simpleicons.org/youtube/FF0000",
     darkSrc: "https://cdn.simpleicons.org/youtube/FF0000",
