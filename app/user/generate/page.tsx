@@ -76,13 +76,13 @@ export default function GeneratePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/user/usage")
+    fetch("/api/user/usage", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => setUsage(d))
       .catch(() => {});
 
     // Fetch Facebook profile photo from connections
-    fetch("/api/social/connections")
+    fetch("/api/social/connections", { cache: "no-store" })
       .then((r) => r.json())
       .then((data: ConnectedAccount[]) => {
         if (!Array.isArray(data)) return;

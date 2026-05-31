@@ -24,7 +24,7 @@ export default function ConnectionsPage() {
 
   const fetchConnections = useCallback(async (): Promise<ConnectedAccount[]> => {
     try {
-      const res = await fetch("/api/social/connections");
+      const res = await fetch("/api/social/connections", { cache: "no-store" });
       if (!res.ok) return accountsRef.current;
       const data = await res.json();
       const list: ConnectedAccount[] = Array.isArray(data) ? data : [];

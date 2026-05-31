@@ -261,8 +261,8 @@ export default function AnalyticsPage() {
     setError(null);
 
     Promise.all([
-      fetch(`/api/dashboard/analytics?range=${dateRange}`).then((r) => r.json()),
-      fetch("/api/user/usage").then((r) => r.json()),
+      fetch(`/api/dashboard/analytics?range=${dateRange}`, { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/user/usage", { cache: "no-store" }).then((r) => r.json()),
     ])
       .then(([analyticsPayload, usagePayload]) => {
         if (analyticsPayload.error) throw new Error(analyticsPayload.error);

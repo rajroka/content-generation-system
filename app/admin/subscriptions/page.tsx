@@ -74,7 +74,7 @@ export default function AdminSubscriptionsPage() {
 
   const fetchSubscriptions = async () => {
     try {
-      const res = await fetch("/api/admin/subscriptions");
+      const res = await fetch("/api/admin/subscriptions", { cache: "no-store" });
       const payload = await res.json();
       if (!res.ok) throw new Error(payload?.error || "Failed to fetch");
       setData(payload);

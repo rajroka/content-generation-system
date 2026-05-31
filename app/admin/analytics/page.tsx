@@ -157,7 +157,7 @@ export default function AdminAnalyticsPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/analytics?range=${range}`);
+      const response = await fetch(`/api/admin/analytics?range=${range}`, { cache: "no-store" });
       const payload = await response.json();
 
       if (!response.ok) {

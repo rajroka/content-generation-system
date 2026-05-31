@@ -453,7 +453,7 @@ export default function ContentCalendar() {
   const fetchPosts = async (all = showAll) => {
     setIsLoading(true);
     try {
-      const res  = await fetch(`/api/social/scheduled?all=${all}`);
+      const res  = await fetch(`/api/social/scheduled?all=${all}`, { cache: "no-store" });
       const data = await res.json();
       setPosts(Array.isArray(data.posts) ? data.posts : []);
     } catch {
