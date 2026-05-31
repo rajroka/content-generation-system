@@ -19,7 +19,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-white dark:border-white/10">
       <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-10">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-3">
           <div className="flex flex-col gap-4">
             <Logo />
             <p className="max-w-[240px] text-sm leading-7 text-slate-400">

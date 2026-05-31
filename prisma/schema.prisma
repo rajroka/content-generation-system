@@ -93,6 +93,7 @@ model ScheduledPost {
   status        ScheduleStatus @default(SCHEDULED)
   publishedAt   DateTime?
   failureReason String?
+  zernioPostId  String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 

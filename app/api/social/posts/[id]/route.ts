@@ -206,6 +206,7 @@ export async function PATCH(
           scheduledFor: new Date(),
           status: "PUBLISHED",
           publishedAt: new Date(),
+          zernioPostId: publishedZernioPostId ?? null,
           failureReason: null,
         },
       });
@@ -306,6 +307,7 @@ export async function PATCH(
         ...(imageUrl !== undefined && imageUrls === undefined && { imageUrl, imageUrls: nextImageUrls }),
         scheduledFor: nextScheduledFor,
         status:       nextStatus as any,
+        zernioPostId: nextZernioPostId ?? null,
         ...(post.failureReason?.startsWith("zernio:") && { failureReason: null }),
       },
     });

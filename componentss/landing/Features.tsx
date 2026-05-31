@@ -85,7 +85,7 @@ export function Features() {
         </div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 
           {/* Card 1 — Multi-Platform Scheduling */}
           <div className="md:col-span-1 rounded-2xl border border-border bg-card p-6 flex flex-col gap-3 overflow-hidden">
@@ -212,7 +212,7 @@ export function Features() {
           </div>
 
           {/* Card 4 — Caption Generator (wide) */}
-          <div className="md:col-span-2 rounded-2xl border border-border bg-card p-6 flex flex-col gap-4">
+          <div className="sm:col-span-2 md:col-span-2 rounded-2xl border border-border bg-card p-6 flex flex-col gap-4">
             <div>
               <h3 className="text-base font-bold text-foreground">Caption Generator</h3>
               <p className="text-sm text-muted-foreground mt-1">Write better captions faster using our fine-tuned Phi-2 model</p>

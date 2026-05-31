@@ -49,7 +49,7 @@ export function Testimonials() {
         </div>
 
         {/* Cards */}
-        <div className="grid gap-5 md:grid-cols-3 md:items-center">
+        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 md:items-center">
           {testimonials.map((item, i) => (
             <figure
               key={item.name}
@@ -59,7 +59,7 @@ export function Testimonials() {
                   i === 2 ? "rotate(2.5deg)" :
                   "scale(1.03)",
               }}
-              className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-transform dark:border-white/10 dark:bg-white/[0.04]"
+              className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-transform dark:border-white/10 dark:bg-white/[0.04] sm:[&:nth-child(3)]:col-span-2 md:[&:nth-child(3)]:col-span-1"
             >
               {/* Top: avatar + rating */}
               <div className="flex items-start justify-between mb-5">

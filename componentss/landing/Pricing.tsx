@@ -74,7 +74,7 @@ export function Pricing({ currentPlan }: PricingProps) {
         </div>
 
         {/* Cards */}
-        <div className="grid gap-4 md:grid-cols-2 max-w-3xl mx-auto">
+        <div className="grid gap-4 sm:grid-cols-2 max-w-3xl mx-auto">
           {plans.map((plan) => {
             const isCurrentPlan = isLoggedIn && currentPlan === plan.planKey;
             const ctaLabel = isLoggedIn
