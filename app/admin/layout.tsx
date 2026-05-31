@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AdminSidebar } from "@/componentss/admin/AdminSidebar";
