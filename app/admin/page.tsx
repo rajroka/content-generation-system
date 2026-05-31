@@ -13,7 +13,13 @@ export default async function AdminOverview() {
   const user = await client.users.getUser(userId);
   if (user.publicMetadata?.role !== "admin") redirect("/user/dashboard");
 
-  const data = await getAdminAnalytics("30d");
+  let data;
+  try {
+    data = await getAdminAnalytics("30d");
+  } catch (err) {
+    console.error("[admin] analytics error:", err);
+    throw err; // re-throw so Next.js shows the error boundary
+  }
 
   return <AdminOverviewClient data={data} />;
 }

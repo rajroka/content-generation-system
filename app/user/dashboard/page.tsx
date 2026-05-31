@@ -36,35 +36,44 @@ export default async function DashboardPage({
   const upgraded = params.upgraded === "true";
   const clerkUser = await currentUser();
 
-  let user = await prisma.user.findUnique({ where: { clerkId: userId } });
-  let plan = user?.plan ?? "FREE";
+  let user = null;
+  let plan = "FREE";
 
-  if (upgraded && user && plan !== "PRO") {
-    user = await prisma.user.update({ where: { id: user.id }, data: { plan: "PRO" } });
-    plan = "PRO";
-  }
+  try {
+    user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    plan = user?.plan ?? "FREE";
 
-  if (user) {
-    await prisma.scheduledPost.updateMany({
-      where: {
-        userId: user.id,
-        status: "SCHEDULED",
-        scheduledFor: { lte: new Date() },
-      },
-      data: {
-        status: "PUBLISHED",
-        publishedAt: new Date(),
-      },
-    });
+    if (upgraded && user && plan !== "PRO") {
+      user = await prisma.user.update({ where: { id: user.id }, data: { plan: "PRO" } });
+      plan = "PRO";
+    }
+
+    if (user) {
+      await prisma.scheduledPost.updateMany({
+        where: {
+          userId: user.id,
+          status: "SCHEDULED",
+          scheduledFor: { lte: new Date() },
+        },
+        data: {
+          status: "PUBLISHED",
+          publishedAt: new Date(),
+        },
+      });
+    }
+  } catch (err) {
+    console.error("[dashboard] DB error:", err);
+    // Continue with empty state rather than crashing
   }
 
   const isUnlimited = plan === "PRO";
 
-  const [
-    recentPosts,
-    upcomingPosts,
-  ] = user
-    ? await Promise.all([
+  let recentPosts: any[] = [];
+  let upcomingPosts: any[] = [];
+
+  try {
+    if (user) {
+      [recentPosts, upcomingPosts] = await Promise.all([
         prisma.scheduledPost.findMany({
           where: { userId: user.id, status: { in: ["PUBLISHED", "SCHEDULED"] } },
           orderBy: { createdAt: "desc" },
@@ -75,8 +84,11 @@ export default async function DashboardPage({
           orderBy: { scheduledFor: "asc" },
           take: 3,
         }),
-      ])
-    : [[], []];
+      ]);
+    }
+  } catch (err) {
+    console.error("[dashboard] posts fetch error:", err);
+  }
 
   const quickActions = [
     { label: "Create Post",   icon: PenLine,   href: "/user/generate"  },
