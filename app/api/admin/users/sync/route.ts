@@ -68,7 +68,6 @@ export async function POST() {
         // Manually delete all related records first to avoid FK constraint issues
         // (in case DB-level cascade wasn't applied due to migration history)
         await prisma.$transaction([
-          prisma.brandVoice.deleteMany({ where: { userId: u.id } }),
           prisma.socialAccount.deleteMany({ where: { userId: u.id } }),
           prisma.usage.deleteMany({ where: { userId: u.id } }),
           // Null out generationId on scheduledPosts before deleting generations
