@@ -64,7 +64,7 @@ export function Hero() {
         {/* Right */}
         <div className="flex items-center justify-center order-first lg:order-last">
           <Image
-            src="/final-hero.png"
+            src="/newheroimage.png"
             alt="PostSathi creator"
             width={520}
             height={580}
