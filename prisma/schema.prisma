@@ -140,4 +140,3 @@ model SocialAccount {
 
   @@unique([userId, platform])
 }
-
