@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { topic, platform, tone } = await req.json();
+    const { topic, platform, tone = "engaging" } = await req.json();
     if (!topic) return NextResponse.json({ error: "Topic is required" }, { status: 400 });
 
     const safePlatform = platform.toUpperCase() as Platform;

@@ -262,7 +262,7 @@ export default function GeneratePage() {
       const res = await fetch("/api/generate/caption", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, platform: selectedPlatforms[0] || "TWITTER" }),
+        body: JSON.stringify({ topic, platform: selectedPlatforms[0] || "INSTAGRAM" }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");

@@ -26,7 +26,8 @@ export async function GET() {
     });
 
     return NextResponse.json(generations);
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch generations" }, { status: 500 });
+  } catch (err: any) {
+    console.error("[generations] error:", err?.message);
+    return NextResponse.json({ error: "Failed to fetch generations", detail: err?.message }, { status: 500 });
   }
 }

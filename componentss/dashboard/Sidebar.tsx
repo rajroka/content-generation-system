@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   PenLine,
   Calendar,
-  Clock,
   Globe,
   BarChart3,
   ChevronLeft,
@@ -22,7 +21,6 @@ export const navItems = [
   { href: "/user/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/user/generate", label: "Create Content", icon: PenLine },
   { href: "/user/calendar", label: "Schedule", icon: Calendar },
-  { href: "/user/history", label: "Library", icon: Clock },
   { href: "/user/platforms", label: "Connections", icon: Globe },
   { href: "/user/analytics", label: "Analytics", icon: BarChart3 },
 ];

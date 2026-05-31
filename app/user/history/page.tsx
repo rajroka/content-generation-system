@@ -21,14 +21,22 @@ interface Generation {
 export default function LibraryPage() {
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState<string | null>(null);
   const [query, setQuery]             = useState("");
   const [deleting, setDeleting]       = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/user/generations")
       .then((r) => r.json())
-      .then((data) => setGenerations(Array.isArray(data) ? data : []))
-      .catch(() => setGenerations([]))
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setGenerations(data);
+        } else {
+          setError(data?.error || "Failed to load history");
+          setGenerations([]);
+        }
+      })
+      .catch(() => setError("Network error — could not load history"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -71,6 +79,24 @@ export default function LibraryPage() {
             <div key={i} className="h-52 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 sm:p-6 flex flex-col items-center justify-center py-24 gap-4 text-center">
+        <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+          <BookOpen className="w-7 h-7 text-destructive" />
+        </div>
+        <h3 className="font-semibold text-lg text-foreground">Failed to load history</h3>
+        <p className="text-muted-foreground text-sm max-w-sm">{error}</p>
+        <button
+          onClick={() => { setError(null); setLoading(true); fetch("/api/user/generations").then(r => r.json()).then(data => setGenerations(Array.isArray(data) ? data : [])).catch(() => setError("Network error")).finally(() => setLoading(false)); }}
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }
